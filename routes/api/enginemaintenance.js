@@ -27,42 +27,40 @@ function checkAuth(req, res, authSucceed){
     });
 }
 
+router.use( auth.required, (req, res, next) => {
+    checkAuth(req, res, next);
+})
+
 router.get('/\*', auth.required, (req, res, next) =>{
-    checkAuth(req, res, () => {
-        axios.get(baseUrl + "/engine-monitor/webapi/enginemaintenance" + req.path)
-		.then(response => {
-			return res.json(response.data);
-		})	
-		.catch(error => {
-            console.log( error );
-            return res.status(500).json(error);
-        });
+    axios.get(baseUrl + "/engine-monitor/webapi/enginemaintenance" + req.path)
+    .then(response => {
+        return res.json(response.data);
+    })	
+    .catch(error => {
+        console.log( error );
+        return res.status(500).json(error);
     });
 });
 
 router.post('/\*', auth.required, (req, res, next) => {
-    checkAuth(req, res, () => {
-        axios.post(baseUrl + "/engine-monitor/webapi/enginemaintenance" + req.path, req.body)
-        .then(response => {
-            return res.json(response.data);
-        })	
-        .catch(error => {
-            console.log( error );
-            return res.status(500).json(error);
-        });
+    axios.post(baseUrl + "/engine-monitor/webapi/enginemaintenance" + req.path, req.body)
+    .then(response => {
+        return res.json(response.data);
+    })	
+    .catch(error => {
+        console.log( error );
+        return res.status(500).json(error);
     });
 });
 
 router.delete('/tasks/\*', auth.required, (req, res, next) => {
-    checkAuth(req, res, () => {
-        axios.delete(baseUrl + "/engine-monitor/webapi/enginemaintenance" + req.path)
-        .then(response => {
-            return res.json(response.data);
-        })	
-        .catch(error => {
-            console.log( error );
-            return res.status(500).json(error);
-        });
+    axios.delete(baseUrl + "/engine-monitor/webapi/enginemaintenance" + req.path)
+    .then(response => {
+        return res.json(response.data);
+    })	
+    .catch(error => {
+        console.log( error );
+        return res.status(500).json(error);
     });
 });
 
