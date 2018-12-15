@@ -19,17 +19,43 @@ router.post('/', auth.optional, (req, res, next) => {
   if(!user.password) {
     return res.status(422).json({
       errors: {
-        password: 'is required',
+        password: 'isrequired',
       },
     });
   }
 
-  const finalUser = new Users(user);
+  if(!user.name) {
+    return res.status(422).json({
+      errors: {
+        name: 'isrequired',
+      },
+    });
+  }
 
-  finalUser.setPassword(user.password);
+  if(!user.firstname) {
+    return res.status(422).json({
+      errors: {
+        firstname: 'isrequired',
+      },
+    });
+  }
 
-  return finalUser.save()
-    .then(() => res.json({ user: finalUser.toAuthJSON() }));
+  let query = { email: user.email };
+  return Users.count(query).then((number) => {
+    if(number > 0){
+      return res.status(422).json({
+        errors: {
+          email: 'alreadyexisting',
+        },
+      });
+    }
+
+    const finalUser = new Users(user);
+
+    finalUser.setPassword(user.password);
+
+    return finalUser.save().then(() => res.json({ user: finalUser.toAuthJSON() }));
+  });
 });
 
 //POST login route (optional, everyone has access)
@@ -39,7 +65,7 @@ router.post('/login', auth.optional, (req, res, next) => {
   if(!user.email) {
     return res.status(422).json({
       errors: {
-        email: 'is required',
+        email: 'isrequired',
       },
     });
   }
@@ -47,7 +73,7 @@ router.post('/login', auth.optional, (req, res, next) => {
   if(!user.password) {
     return res.status(422).json({
       errors: {
-        password: 'is required',
+        password: 'isrequired',
       },
     });
   }
@@ -58,10 +84,7 @@ router.post('/login', auth.optional, (req, res, next) => {
     }
 
     if(passportUser) {
-      const user = passportUser;
-      user.token = passportUser.generateJWT();
-
-      return res.json({ user: user.toAuthJSON() });
+      return res.json({ user: passportUser.toAuthJSON() });
     }
 
     return res.status(400).json(info);
