@@ -1,17 +1,16 @@
 const mongoose = require('mongoose');
 const passport = require('passport');
-const router = require('express').Router();
-const auth = require('../auth');
+
 const Users = mongoose.model('Users');
 
 //POST new user route (optional, everyone has access)
-router.post('/', auth.optional, (req, res, next) => {
+function createUser(req, res){
   const { body: { user } } = req;
 
   if(!user.email) {
     return res.status(422).json({
       errors: {
-        email: 'is required',
+        email: 'isrequired',
       },
     });
   }
@@ -41,7 +40,7 @@ router.post('/', auth.optional, (req, res, next) => {
   }
 
   let query = { email: user.email };
-  return Users.count(query).then((number) => {
+  return Users.countDocuments(query).then((number) => {
     if(number > 0){
       return res.status(422).json({
         errors: {
@@ -54,12 +53,15 @@ router.post('/', auth.optional, (req, res, next) => {
 
     finalUser.setPassword(user.password);
 
-    return finalUser.save().then(() => res.json({ user: finalUser.toAuthJSON() }));
+    return finalUser.save((err, user) => {
+      if(err) res.send(err);
+      res.json({ user: user.toAuthJSON() });
+    });
   });
-});
+}
 
 //POST login route (optional, everyone has access)
-router.post('/login', auth.optional, (req, res, next) => {
+function login(req, res, next){
   const { body: { user } } = req;
 
   if(!user.email) {
@@ -89,10 +91,10 @@ router.post('/login', auth.optional, (req, res, next) => {
 
     return res.status(400).json(info);
   })(req, res, next);
-});
+}
 
 //GET current route (required, only authenticated users have access)
-router.get('/current', auth.required, (req, res, next) => {
+function getCurrent(req, res){
   const { payload: { id } } = req;
 
   return Users.findById(id)
@@ -103,6 +105,6 @@ router.get('/current', auth.required, (req, res, next) => {
 
       return res.json({ user: user.toAuthJSON() });
     });
-});
+}
 
-module.exports = router;
+module.exports = { login, getCurrent, createUser };

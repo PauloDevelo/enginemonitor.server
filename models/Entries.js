@@ -3,12 +3,11 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const EntriesSchema = new Schema({
-    idboat: String,
-    idtask: String,
-    idEntry: String,
+    boatId: Schema.Types.ObjectId,
+    taskId: Schema.Types.ObjectId,
     name: String,
     UTCDate: Date,
-    age: number,
+    age: Number,
     remarks: String
 });
 

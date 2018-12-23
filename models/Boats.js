@@ -3,8 +3,12 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const BoatsSchema = new Schema({
-    idboat: String,
-    name: String
+    ownerId: Schema.Types.ObjectId,
+    name: String,
+    engineBrand: String,
+    engineModel: String,
+    engineAge: Number,
+    engineInstallation: Date
 });
 
 mongoose.model('Boats', BoatsSchema);

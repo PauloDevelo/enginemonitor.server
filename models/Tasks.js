@@ -3,11 +3,10 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const TasksSchema = new Schema({
-    idboat: String,
-    idtask: String,
+    boatId: Schema.Types.ObjectId,
     name: String,
-    engineHours: number,
-    month: number,
+    engineHours: Number,
+    month: Number,
     description:String
 });
 
