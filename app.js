@@ -6,18 +6,36 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const errorHandler = require('errorhandler');
 
+if (process.env.NODE_ENV === undefined){
+  console.log("Please, consider setting the environment variable NODE_ENV. As NODE_ENV is undefined, the value dev will be used.");
+  process.env.NODE_ENV = "dev";
+}
+
+if (process.env.NODE_ENV !== "prod" &&
+    process.env.NODE_ENV !== "test" &&
+    process.env.NODE_ENV !== "dev"){
+  console.log("Please, consider setting the environment variable NODE_ENV with one of these values: test, dev or prod. As NODE_ENV is not set correctly, the value dev will be used.");
+  process.env.NODE_ENV = "dev";
+}
+
+let config = require('config');
+
 //Configure mongoose's promise to global promise
 mongoose.promise = global.Promise;
 
 //Configure isProduction variable
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'prod';
+const isDev = process.env.NODE_ENV === 'dev';
 
 //Initiate our app
 const app = express();
 
 //Configure our app
 app.use(cors());
-app.use(require('morgan')('dev'));
+if(isDev){
+  app.use(require('morgan')('dev'));
+}
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -28,36 +46,18 @@ if(!isProduction) {
 }
 
 //Configure Mongoose
-mongoose.connect('mongodb://localhost/passport-tutorial');
-mongoose.set('debug', true);
+mongoose.connect('mongodb:' + config.DBHost);
+if(isDev) {
+  mongoose.set('debug', true);
+}
 
 require('./models/Users');
+require('./models/Boats');
+require('./models/Tasks');
+require('./models/Entries');
 require('./config/passport');
 app.use(require('./routes'));
 
-//Error handlers & middlewares
-if(!isProduction) {
-  app.use((err, req, res) => {
-    res.status(err.status || 500);
+app.listen(config.port, () => console.log('Server running on http://localhost:' + config.port + '/'));
 
-    res.json({
-      errors: {
-        message: err.message,
-        error: err,
-      },
-    });
-  });
-}
-
-app.use((err, req, res) => {
-  res.status(err.status || 500);
-
-  res.json({
-    errors: {
-      message: err.message,
-      error: {},
-    },
-  });
-});
-
-app.listen(8000, () => console.log('Server running on http://localhost:8000/'));
+module.exports = app; // for testing
