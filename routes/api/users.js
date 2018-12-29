@@ -100,7 +100,11 @@ function getCurrent(req, res){
   return Users.findById(id)
     .then((user) => {
       if(!user) {
-        return res.sendStatus(400);
+        return res.status(400).json({
+          errors: {
+            id: 'isinvalid',
+          },
+        });
       }
 
       return res.json({ user: user.toAuthJSON() });

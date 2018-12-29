@@ -41,7 +41,11 @@ function checkAuth(req, res, authSucceed){
     return Users.findById(id)
     .then((user) => {
       if(!user) {
-        return res.sendStatus(400);
+        return res.status(400).json({
+            errors: {
+              id: 'isinvalid',
+            },
+        });
       }
 
       return authSucceed();
@@ -105,8 +109,6 @@ function changeBoat(req, res){
 }
 
 function deleteBoat(req, res){
-    const { body: { boat } } = req;
-
     return Boats.findById(req.params.boatId).then((existingBoat) => {
         if(!existingBoat){
             return res.sendStatus(400);
