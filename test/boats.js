@@ -14,8 +14,10 @@ chai.use(chaiHttp);
 
 describe('Boats', () => {
     beforeEach((done) => {
-        Boats.deleteMany({}, (err) => { 
-           done();           
+        Boats.deleteMany({}, (err) => {            
+        });  
+        Users.deleteMany({}, (err) => { 
+            done();           
         });        
     });
 
@@ -293,22 +295,20 @@ describe('Boats', () => {
                     .delete('/api/boats/' + boat._id)
                     .set("Authorization", "Token " + token)
                     .end((err, res) => {
-                            res.should.have.status(200);
-                            res.body.should.have.property("boat");
-                            res.body.boat.should.be.a("object");
+                        res.should.have.status(200);
+                        res.body.should.have.property("boat");
+                        res.body.boat.should.be.a("object");
+                        chai.request(app)
+                        .get('/api/boats')
+                        .set("Authorization", "Token " + token)
+                        .end((err, res) => {
+                                res.should.have.status(200);
+                                res.body.should.have.property("boats");
+                                res.body.boats.should.be.a("array");
+                                res.body.boats.length.should.be.eql(0);
+                            done();
+                        });
                     });
-
-                    chai.request(app)
-                    .get('/api/boats')
-                    .set("Authorization", "Token " + token)
-                    .end((err, res) => {
-                            res.should.have.status(200);
-                            res.body.should.have.property("boats");
-                            res.body.boats.should.be.a("array");
-                            res.body.boats.length.should.be.eql(0);
-                        done();
-                    });
-
                 });
             });
         });
@@ -353,6 +353,5 @@ describe('Boats', () => {
                 });
             });
         });
-
     });
 });
