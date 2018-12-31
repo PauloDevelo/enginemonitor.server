@@ -9,19 +9,19 @@ function checkTaskProperties(task){
     let errors = {};
 
     if(!task.name) {
-        errors.name = 'is required';
+        errors.name = 'isrequired';
     }
 
     if(!task.engineHours) {
-        errors.engineHours = 'is required';
+        errors.engineHours = 'isrequired';
     }
 
     if(!task.month) {
-        errors.month = 'is required';
+        errors.month = 'isrequired';
     }
 
     if(!task.description) {
-        errors.description = 'is required';
+        errors.description = 'isrequired';
     }
 
     if(Object.keys(errors).length === 0){
@@ -32,39 +32,36 @@ function checkTaskProperties(task){
     }
 }
 
-function checkAuth(req, res, next){
+async function checkAuth(req, res, next){
     const { payload: { id } } = req;
     const boatId = new mongoose.Types.ObjectId(req.params.boatId);
 
-    return Users.findById(id).then((user) => {
-        if(!user) {
-            return res.sendStatus(400);
-        }
+    let user = await Users.findById(id);
+    if(!user) {
+        return res.sendStatus(400);
+    }
 
-        Boats.findById(boatId).then((existingBoat) => {
-            if(!existingBoat){
-                return res.sendStatus(400);
-            }
+    let existingBoat = await Boats.findById(boatId);
+    if(!existingBoat){
+        return res.sendStatus(400);
+    }
 
-            if (existingBoat.ownerId.toString() !== req.payload.id){
-                return res.sendStatus(401);
-            }
+    if (existingBoat.ownerId.toString() !== req.payload.id){
+        return res.sendStatus(401);
+    }
 
-            next();
-        });
-    });
+    next();
 }
 
-function getTasks(req, res){
+async function getTasks(req, res){
     const boatId = new mongoose.Types.ObjectId(req.params.boatId);
     
     let query = { boatId: boatId };
-    return Tasks.find(query).then((tasks) => {
-        return res.json({ tasks: tasks });
-    });
+
+    return res.json({ tasks: await Tasks.find(query) });
 }
 
-function createTask(req, res){
+async function createTask(req, res){
     const boatId = new mongoose.Types.ObjectId(req.params.boatId);
     const { body: { task } } = req;
     
@@ -74,7 +71,42 @@ function createTask(req, res){
     }
 
     let query = { name: task.name, boatId: boatId };
-    return Tasks.count(query).then((number) => {
+    let number = await Tasks.count(query);
+    if(number > 0){
+        return res.status(422).json({
+            errors: {
+                name: 'alreadyexisting',
+            },
+        });
+    }
+    else{
+        const newTask = new Tasks(task);
+        newTask.boatId = boatId;
+
+        return newTask.save((err, newTask) => {
+            if(err) res.send(err);
+            res.json({ task: newTask });
+        });
+    }
+}
+
+async function changeTask(req, res){
+    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const taskId = new mongoose.Types.ObjectId(req.params.taskId);
+    const { body: { task } } = req;
+
+    let existingTask = await Tasks.findById(taskId);
+    if(!existingTask){
+        return res.sendStatus(400);
+    }
+
+    if(existingTask.boatId.toString() !== req.params.boatId){
+        return res.sendStatus(401);
+    }
+
+    if(task.name){
+        let query = { name: task.name, boatId: boatId };
+        let number = await Tasks.count(query);
         if(number > 0){
             return res.status(422).json({
                 errors: {
@@ -83,50 +115,32 @@ function createTask(req, res){
             });
         }
 
-        const newTask = new Tasks(task);
-        newTask.boatId = boatId;
-
-        return newTask.save((err, newTask) => {
-            if(err) res.send(err);
-            res.json({ task: newTask });
-        });
-    });
-}
-
-function changeTask(req, res){
-    const taskId = new mongoose.Types.ObjectId(req.params.taskId);
-    const { body: { task } } = req;
-
-    return Tasks.findById(taskId).then((existingTask) => {
-        if(!existingTask){
-            return res.sendStatus(400);
-        }
-
-        if(existingTask.boatId.toString() !== req.params.boatId){
-            return res.sendStatus(401);
-        }
-
         return Object.assign(existingTask, task).save((err, updatedTask) => {
             if(err) res.send(err);
             res.json({ task: updatedTask });
         });
-    });
+    }
+    else{
+        return Object.assign(existingTask, task).save((err, updatedTask) => {
+            if(err) res.send(err);
+            res.json({ task: updatedTask });
+        });
+    }
 }
 
-function deleteTask(req, res){
+async function deleteTask(req, res){
     const taskId = new mongoose.Types.ObjectId(req.params.taskId);
     
-    return Tasks.findById(taskId).then((existingTask) => {
-        if(!existingTask){
-            return res.sendStatus(400);
-        }
+    let existingTask = await Tasks.findById(taskId);
+    if(!existingTask){
+        return res.sendStatus(400);
+    }
 
-        if(existingTask.boatId.toString() !== req.params.boatId){
-            return res.sendStatus(401);
-        }
+    if(existingTask.boatId.toString() !== req.params.boatId){
+        return res.sendStatus(401);
+    }
 
-        return existingTask.delete().then(() => res.json({ task: existingTask }));
-    });
+    return existingTask.delete().then(() => res.json({ task: existingTask }));
 }
 
 module.exports = { checkAuth, getTasks, createTask, changeTask, deleteTask };
