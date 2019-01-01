@@ -35,32 +35,27 @@ function checkBoatProperties(boat){
     }
 }
 
-function checkAuth(req, res, authSucceed){
+async function checkAuth(req, res, authSucceed){
     const { payload: { id } } = req;
 
-    return Users.findById(id)
-    .then((user) => {
-      if(!user) {
-        return res.status(400).json({
-            errors: {
-              id: 'isinvalid',
-            },
-        });
-      }
+    let user = await Users.findById(id);
+    if(!user) {
+        return res.status(400).json({ errors: { id: 'isinvalid' } });
+    }
 
-      return authSucceed();
-    });
+    return authSucceed();
 }
 
-function getBoats(req, res){
+async function getBoats(req, res){
     const userId = new mongoose.Types.ObjectId(req.payload.id);
+
     let query = { ownerId: userId };
-    return Boats.find(query).then((boats) => {
-        return res.json({ boats: boats });
-    });
+    let boats = await Boats.find(query);
+
+    return res.json({ boats: boats });
 }
 
-function addBoat(req, res){
+async function addBoat(req, res){
     const { body: { boat } } = req;
     const userId = new mongoose.Types.ObjectId(req.payload.id);
 
@@ -70,56 +65,49 @@ function addBoat(req, res){
     }
 
     let query = { name: boat.name, ownerId: userId };
-    return Boats.count(query).then((number) => {
-        if(number > 0){
-            return res.status(422).json({
-                errors: {
-                    name: 'alreadyexisting',
-                },
-            });
-        }
+    let number = await Boats.count(query);
+    if(number > 0){
+        return res.status(422).json({ errors: { name: 'alreadyexisting' } });
+    }
 
-        const newBoat = new Boats(boat);
-        newBoat.ownerId = userId;
+    const newBoat = new Boats(boat);
+    newBoat.ownerId = userId;
 
-        return newBoat.save((err, newBoat) => {
-            if(err) res.send(err);
-            res.json({ boat: newBoat });
-        });
+    return newBoat.save((err, newBoat) => {
+        if(err) res.send(err);
+        res.json({ boat: newBoat });
     });
 }
 
-function changeBoat(req, res){
+async function changeBoat(req, res){
     const { body: { boat } } = req;
 
-    return Boats.findById(req.params.boatId).then((existingBoat) => {
-        if(!existingBoat){
-            return res.sendStatus(400);
-        }
+    let existingBoat = await Boats.findById(req.params.boatId);
+    if(!existingBoat){
+        return res.sendStatus(400);
+    }
 
-        if(existingBoat.ownerId.toString() !== req.payload.id){
-            return res.sendStatus(401);
-        }
+    if(existingBoat.ownerId.toString() !== req.payload.id){
+        return res.sendStatus(401);
+    }
 
-        return Object.assign(existingBoat, boat).save((err, existingBoat) => {
-            if(err) res.send(err);
-            res.json({ boat: existingBoat });
-        });
+    return Object.assign(existingBoat, boat).save((err, existingBoat) => {
+        if(err) res.send(err);
+        res.json({ boat: existingBoat });
     });
 }
 
-function deleteBoat(req, res){
-    return Boats.findById(req.params.boatId).then((existingBoat) => {
-        if(!existingBoat){
-            return res.sendStatus(400);
-        }
+async function deleteBoat(req, res){
+    let existingBoat = await Boats.findById(req.params.boatId);
+    if(!existingBoat){
+        return res.sendStatus(400);
+    }
 
-        if(existingBoat.ownerId.toString() !== req.payload.id){
-            return res.sendStatus(401);
-        }
+    if(existingBoat.ownerId.toString() !== req.payload.id){
+        return res.sendStatus(401);
+    }
 
-        return existingBoat.delete().then(() => res.json({ boat: existingBoat }));
-    });
+    return existingBoat.delete().then(() => res.json({ boat: existingBoat }));
 }
 
 module.exports = { checkAuth, getBoats, addBoat, deleteBoat, changeBoat };
