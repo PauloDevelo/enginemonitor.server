@@ -10,19 +10,19 @@ function checkEntryProperties(entry){
     let errors = {};
 
     if(!entry.name) {
-        errors.name = 'is required';
+        errors.name = 'isrequired';
     }
 
     if(!entry.UTCDate) {
-        errors.UTCDate = 'is required';
+        errors.UTCDate = 'isrequired';
     }
 
     if(!entry.age) {
-        errors.age = 'is required';
+        errors.age = 'isrequired';
     }
 
     if(!entry.remarks) {
-        errors.remarks = 'is required';
+        errors.remarks = 'isrequired';
     }
 
     if(Object.keys(errors).length === 0){
