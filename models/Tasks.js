@@ -105,15 +105,20 @@ TasksSchema.methods.getLevel = async function() {
     }
 }
 
-TasksSchema.methods.toJSON = function(){
+TasksSchema.methods.toJSON = async function(){
+    let level = await this.getLevel();
+    let nextDueDate = await this.getNextDueDate();
+    let engineHoursLeft = await this.getEngineHoursLeft();
+
     return {
         _id: this._id,
         name: this.name,
         engineHours: this.engineHours,
         month: this.month,
         description: this.description,
-        level: this.level,
-        nextDueDate: this.nextDueDate
+        level: level,
+        nextDueDate: nextDueDate,
+        engineHoursLeft: engineHoursLeft
     };
 }
 

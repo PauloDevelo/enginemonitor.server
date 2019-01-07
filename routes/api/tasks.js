@@ -61,9 +61,7 @@ async function getTasks(req, res){
 
     let jsonTasks = [];
     for(let i = 0; i < tasks.length; i++){
-        tasks[i].level = await tasks[i].getLevel(); 
-        tasks[i].nextDueDate = await tasks[i].getNextDueDate();
-        jsonTasks.push(tasks[i].toJSON());
+        jsonTasks.push(await tasks[i].toJSON());
     }
     
     return res.json({ tasks: jsonTasks });
@@ -92,12 +90,12 @@ async function createTask(req, res){
         newTask.boatId = boatId;
 
         return newTask.save(async (err, newTask) => {
-            if(err) res.send(err);
-
-            newTask.level = await newTask.getLevel();
-            newTask.nextDueDate = await newTask.getNextDueDate();
-
-            res.json({ task: newTask.toJSON() });
+            if(err){
+                res.send(err);
+            }
+            else {
+                res.json({ task: await newTask.toJSON() });
+            }
         });
     }
 }
@@ -129,11 +127,12 @@ async function changeTask(req, res){
     }
     
     return Object.assign(existingTask, task).save(async (err, updatedTask) => {
-        if(err) res.send(err);
-
-        updatedTask.level = await updatedTask.getLevel();
-        updatedTask.nextDueDate = await updatedTask.getNextDueDate();
-        res.json({ task: updatedTask.toJSON() });
+        if(err){
+            res.send(err);
+        }
+        else{
+            res.json({ task: await updatedTask.toJSON() });
+        }
     });
 }
 
@@ -149,7 +148,7 @@ async function deleteTask(req, res){
         return res.sendStatus(401);
     }
 
-    return existingTask.delete().then(() => res.json({ task: existingTask }));
+    return existingTask.delete().then(async () => res.json({ task: await existingTask.toJSON() }));
 }
 
 module.exports = { checkAuth, getTasks, createTask, changeTask, deleteTask };

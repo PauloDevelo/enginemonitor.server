@@ -53,6 +53,7 @@ describe('Tasks', () => {
             res.body.tasks[0].should.have.property("description");
             res.body.tasks[0].should.have.property("level");
             res.body.tasks[0].should.have.property("nextDueDate");
+            res.body.tasks[0].should.have.property("engineHoursLeft");
 
             res.body.tasks[0].name.should.be.eql("Vidange");
             res.body.tasks[0].engineHours.should.be.eql(200);
