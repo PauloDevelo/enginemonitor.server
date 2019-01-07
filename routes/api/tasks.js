@@ -57,8 +57,16 @@ async function getTasks(req, res){
     const boatId = new mongoose.Types.ObjectId(req.params.boatId);
     
     let query = { boatId: boatId };
+    let tasks = await Tasks.find(query);
 
-    return res.json({ tasks: await Tasks.find(query) });
+    let jsonTasks = [];
+    for(let i = 0; i < tasks.length; i++){
+        tasks[i].level = await tasks[i].getLevel(); 
+        tasks[i].nextDueDate = await tasks[i].getNextDueDate();
+        jsonTasks.push(tasks[i].toJSON());
+    }
+    
+    return res.json({ tasks: jsonTasks });
 }
 
 async function createTask(req, res){
@@ -83,9 +91,13 @@ async function createTask(req, res){
         const newTask = new Tasks(task);
         newTask.boatId = boatId;
 
-        return newTask.save((err, newTask) => {
+        return newTask.save(async (err, newTask) => {
             if(err) res.send(err);
-            res.json({ task: newTask });
+
+            newTask.level = await newTask.getLevel();
+            newTask.nextDueDate = await newTask.getNextDueDate();
+
+            res.json({ task: newTask.toJSON() });
         });
     }
 }
@@ -114,18 +126,15 @@ async function changeTask(req, res){
                 },
             });
         }
+    }
+    
+    return Object.assign(existingTask, task).save(async (err, updatedTask) => {
+        if(err) res.send(err);
 
-        return Object.assign(existingTask, task).save((err, updatedTask) => {
-            if(err) res.send(err);
-            res.json({ task: updatedTask });
-        });
-    }
-    else{
-        return Object.assign(existingTask, task).save((err, updatedTask) => {
-            if(err) res.send(err);
-            res.json({ task: updatedTask });
-        });
-    }
+        updatedTask.level = await updatedTask.getLevel();
+        updatedTask.nextDueDate = await updatedTask.getNextDueDate();
+        res.json({ task: updatedTask.toJSON() });
+    });
 }
 
 async function deleteTask(req, res){

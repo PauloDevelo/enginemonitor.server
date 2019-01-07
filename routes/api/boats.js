@@ -74,8 +74,12 @@ async function addBoat(req, res){
     newBoat.ownerId = userId;
 
     return newBoat.save((err, newBoat) => {
-        if(err) res.send(err);
-        res.json({ boat: newBoat });
+        if(err){
+            res.send(err);
+        }
+        else{
+            res.json({ boat: newBoat });
+        }      
     });
 }
 

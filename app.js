@@ -53,8 +53,8 @@ if(isDev) {
 
 require('./models/Users');
 require('./models/Boats');
-require('./models/Tasks');
 require('./models/Entries');
+require('./models/Tasks');
 require('./config/passport');
 app.use(require('./routes'));
 

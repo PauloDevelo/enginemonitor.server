@@ -1,6 +1,8 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
+const moment = require('moment');
+
 const app = require('../app');
 const mongoose = require('mongoose');
 const chai = require('chai');
@@ -10,6 +12,7 @@ const should = chai.should();
 
 const Users = mongoose.model('Users');
 const Boats = mongoose.model('Boats');
+const Entries = mongoose.model('Entries');
 const Tasks = mongoose.model('Tasks');
 
 chai.use(chaiHttp);
@@ -26,22 +29,18 @@ describe('Tasks', () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
-            let userId = user._id;
-            let token = user.generateJWT();
-
             user = await user.save();
 
             let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
-            boat.ownerId = userId;
-            boat = await  boat.save();
+            boat.ownerId = user._id;
+            boat = await boat.save();
 
             let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
             task.boatId = boat._id;
-
             task = await task.save();
 
             // Act
-            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + token);
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(200);
@@ -49,6 +48,17 @@ describe('Tasks', () => {
             res.body.tasks.should.be.a("array");
             res.body.tasks.length.should.be.eql(1);
             res.body.tasks[0].should.have.property("name");
+            res.body.tasks[0].should.have.property("engineHours");
+            res.body.tasks[0].should.have.property("month");
+            res.body.tasks[0].should.have.property("description");
+            res.body.tasks[0].should.have.property("level");
+            res.body.tasks[0].should.have.property("nextDueDate");
+
+            res.body.tasks[0].name.should.be.eql("Vidange");
+            res.body.tasks[0].engineHours.should.be.eql(200);
+            res.body.tasks[0].month.should.be.eql(12);
+            res.body.tasks[0].description.should.be.eql("Faire la vidange");
+            res.body.tasks[0].level.should.be.eql(3);
         });
 
         it('it should GET a 400 http code as a result because the user does not exist', async () => {
@@ -128,6 +138,216 @@ describe('Tasks', () => {
 
             // Assert
             res.should.have.status(400);
+        });
+
+        it('it should get a task with a level 1 because the task were performed less than 12 months and less than 200 hours of usage', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:12345, engineInstallation:"2015/01/20"});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
+            task.boatId = boat._id;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", UTCDate: now1.toDate().toString(), age: 12235, remarks: "RAS" });
+            entry1.boatId = boat._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(2, 'month');
+            let entry2 = new Entries({ name: "My second entry", UTCDate: now2.toDate().toString(), age: 12335, remarks: "RAS" });
+            entry2.boatId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(1);
+        });
+
+        it('it should get a task with a level 1 because the task were performed less than 12 months', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:12345, engineInstallation:"2015/01/20"});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let task = new Tasks({name:"Vidange", engineHours:-1, month:12, description:"Faire la vidange"});
+            task.boatId = boat._id;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", UTCDate: now1.toDate().toString(), age: 1, remarks: "RAS" });
+            entry1.boatId = boat._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(2, 'month');
+            let entry2 = new Entries({ name: "My second entry", UTCDate: now2.toDate().toString(), age: 100, remarks: "RAS" });
+            entry2.boatId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(1);
+        });
+
+        it('it should get a task with a level 2 because the task as to be performed in less than 20 hours of usage', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:12345, engineInstallation:"2015/01/20"});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
+            task.boatId = boat._id;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", UTCDate: now1.toDate().toString(), age: 12045, remarks: "RAS" });
+            entry1.boatId = boat._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(6, 'month');
+            let entry2 = new Entries({ name: "My second entry", UTCDate: now2.toDate().toString(), age: 12155, remarks: "RAS" });
+            entry2.boatId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(2);
+        });
+
+        it('it should get a task with a level 2 because the task has to be performed in less than 1.2 months', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:12345, engineInstallation:"2015/01/20"});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let task = new Tasks({name:"Vidange", engineHours:-1, month:12, description:"Faire la vidange"});
+            task.boatId = boat._id;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", UTCDate: now1.toDate().toString(), age: 12045, remarks: "RAS" });
+            entry1.boatId = boat._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(11, 'month');
+            let entry2 = new Entries({ name: "My second entry", UTCDate: now2.toDate().toString(), age: 12155, remarks: "RAS" });
+            entry2.boatId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(2);
+        });
+
+        it('it should get a task with a level 3 because the task is overdue', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:12345, engineInstallation:"2015/01/20"});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let task = new Tasks({name:"Vidange", engineHours:-1, month:12, description:"Faire la vidange"});
+            task.boatId = boat._id;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", UTCDate: now1.toDate().toString(), age: 12045, remarks: "RAS" });
+            entry1.boatId = boat._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(13, 'month');
+            let entry2 = new Entries({ name: "My second entry", UTCDate: now2.toDate().toString(), age: 12155, remarks: "RAS" });
+            entry2.boatId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(3);
+        });
+
+        it('it should get a task with a level 3 because the task is overdue', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:12345, engineInstallation:"2015/01/20"});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
+            task.boatId = boat._id;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", UTCDate: now1.toDate().toString(), age: 12045, remarks: "RAS" });
+            entry1.boatId = boat._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(3, 'month');
+            let entry2 = new Entries({ name: "My second entry", UTCDate: now2.toDate().toString(), age: 12135, remarks: "RAS" });
+            entry2.boatId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(3);
         });
     });
 
