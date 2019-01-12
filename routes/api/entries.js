@@ -72,12 +72,6 @@ async function createEntry(req, res){
         return res.status(422).json(errors);
     }
 
-    let query = { name: entry.name, boatId: boatId, taskId: taskId };
-    let number = await Entries.count(query);
-    if(number > 0){
-        return res.status(422).json({ errors: { name: 'alreadyexisting' } });
-    }
-
     const newEntry = new Entries(entry);
     newEntry.boatId = boatId;
     newEntry.taskId = taskId;
