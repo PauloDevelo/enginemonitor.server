@@ -1,27 +1,27 @@
 const mongoose = require('mongoose');
 const moment = require('moment');
 
-const Boats = mongoose.model('Boats');
+const Equipments = mongoose.model('Equipments');
 const Entries = mongoose.model('Entries');
 
 const { Schema } = mongoose;
 
 const TasksSchema = new Schema({
-    boatId: Schema.Types.ObjectId,
+    equipmentId: Schema.Types.ObjectId,
     name: String,
-    engineHours: Number,
-    month: Number,
+    usagePeriodInHour: Number,
+    periodInMonth: Number,
     description:String
 });
 
 TasksSchema.methods.getLastEntry = async function(){
-    let query = { boatId: this.boatId, taskId: this._id };
+    let query = { equipmentId: this.equipmentId, taskId: this._id };
     let entries = await Entries.find(query);
     entries = entries.sort((a, b) => {
-        if( a.UTCDate > b.UTCDate){
+        if( a.date > b.date){
             return -1;
         }
-        else if( a.UTCDate < b.UTCDate){
+        else if( a.date < b.date){
             return 1;
         }
         else{
@@ -37,7 +37,7 @@ TasksSchema.methods.getLastEntry = async function(){
     }
 }
 
-TasksSchema.methods.getLastEngineHour = async function(){
+TasksSchema.methods.getLastEntryAge = async function(){
     let lastEntry = await this.getLastEntry();
     if(lastEntry != null)
         return lastEntry.age;
@@ -46,30 +46,30 @@ TasksSchema.methods.getLastEngineHour = async function(){
     }
 }
 
-TasksSchema.methods.getEngineHoursLeft = async function(){
-    if(this.engineHours == -1){
+TasksSchema.methods.getTimeInHourLeft = async function(){
+    if(this.usagePeriodInHour == -1){
         return 0;
     }
 
-    let boat = await Boats.findById(this.boatId);
+    let equipment = await Equipments.findById(this.equipmentId);
     
-    return  this.engineHours + await this.getLastEngineHour() - Math.round(boat.engineAge + 0.5);
+    return  this.usagePeriodInHour + await this.getLastEntryAge() - Math.round(equipment.age + 0.5);
 }
 
-TasksSchema.methods.getLastDate = async function(){
+TasksSchema.methods.getLastEntryDate = async function(){
     let lastEntry = await this.getLastEntry();
     if(lastEntry != null) {
-        return lastEntry.UTCDate;
+        return lastEntry.date;
     }
     else{
-        let boat = await Boats.findById(this.boatId);
-        return boat.engineInstallation;
+        let equipment = await Equipments.findById(this.equipmentId);
+        return equipment.installation;
     }
 }
 
 TasksSchema.methods.getNextDueDate = async function(){
-    let nextDueDate = moment(await this.getLastDate());
-    nextDueDate.add(this.month, 'M');
+    let nextDueDate = moment(await this.getLastEntryDate());
+    nextDueDate.add(this.periodInMonth, 'M');
     
     return nextDueDate.toDate();
 }    
@@ -78,14 +78,14 @@ TasksSchema.methods.getLevel = async function() {
     let nextDueDate = await this.getNextDueDate();
     let now = new Date();
 
-    if(this.engineHours != -1){
-        let engineHourLeft = await this.getEngineHoursLeft();
+    if(this.usagePeriodInHour != -1){
+        let usageHourLeft = await this.getTimeInHourLeft();
         
 
-        if(engineHourLeft <= 0 || nextDueDate <= now){
+        if(usageHourLeft <= 0 || nextDueDate <= now){
             return 3;
         }
-        else if(engineHourLeft < Math.round(this.engineHours/10 + 0.5) || Math.abs(nextDueDate - now) <= this.month * 30.5 * 24 * 360000.5){
+        else if(usageHourLeft < Math.round(this.usagePeriodInHour/10 + 0.5) || Math.abs(nextDueDate - now) <= this.periodInMonth * 30.5 * 24 * 360000.5){
             return 2;
         }
         else{
@@ -96,7 +96,7 @@ TasksSchema.methods.getLevel = async function() {
         if(nextDueDate <= now){
             return 3;
         }
-        else if(Math.abs(nextDueDate - now) <= this.month * 30.5 * 24 * 360000.5){
+        else if(Math.abs(nextDueDate - now) <= this.periodInMonth * 30.5 * 24 * 360000.5){
             return 2;
         }
         else{
@@ -108,17 +108,17 @@ TasksSchema.methods.getLevel = async function() {
 TasksSchema.methods.toJSON = async function(){
     let level = await this.getLevel();
     let nextDueDate = await this.getNextDueDate();
-    let engineHoursLeft = await this.getEngineHoursLeft();
+    let usageInHourLeft = await this.getTimeInHourLeft();
 
     return {
         _id: this._id,
         name: this.name,
-        engineHours: this.engineHours,
-        month: this.month,
+        usagePeriodInHour: this.usagePeriodInHour,
+        periodInMonth: this.periodInMonth,
         description: this.description,
         level: level,
         nextDueDate: nextDueDate,
-        engineHoursLeft: engineHoursLeft
+        usageInHourLeft: usageInHourLeft
     };
 }
 

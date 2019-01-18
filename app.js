@@ -52,7 +52,7 @@ if(isDev) {
 }
 
 require('./models/Users');
-require('./models/Boats');
+require('./models/Equipments');
 require('./models/Entries');
 require('./models/Tasks');
 require('./config/passport');

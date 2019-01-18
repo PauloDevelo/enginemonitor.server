@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const router = require('express').Router();
 const auth = require('../auth');
-const Boats = mongoose.model('Boats');
+const Equipments = mongoose.model('Equipments');
 const Tasks = mongoose.model('Tasks');
 const Entries = mongoose.model('Entries');
 const Users = mongoose.model('Users');
@@ -13,8 +13,8 @@ function checkEntryProperties(entry){
         errors.name = 'isrequired';
     }
 
-    if(!entry.UTCDate) {
-        errors.UTCDate = 'isrequired';
+    if(!entry.date) {
+        errors.date = 'isrequired';
     }
 
     if(!entry.age) {
@@ -35,19 +35,19 @@ function checkEntryProperties(entry){
 
 async function checkAuth(req, res, next){
     const { payload: { id } } = req;
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
 
     let user = await Users.findById(id);
     if(!user) {
         return res.sendStatus(400);
     }
 
-    let existingBoat = await Boats.findById(boatId);
-    if(!existingBoat){
+    let existingEquipment = await Equipments.findById(equipmentId);
+    if(!existingEquipment){
         return res.sendStatus(400);
     }
 
-    if (existingBoat.ownerId.toString() !== req.payload.id){
+    if (existingEquipment.ownerId.toString() !== req.payload.id){
         return res.sendStatus(401);
     }
 
@@ -55,15 +55,22 @@ async function checkAuth(req, res, next){
 }
 
 async function getEntries(req, res){
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
     const taskId = new mongoose.Types.ObjectId(req.params.taskId);
     
-    let query = { boatId: boatId, taskId: taskId };
-    return res.json({ entries: await Entries.find(query) });
+    let query = { equipmentId: equipmentId, taskId: taskId };
+
+    let entries = await Entries.find(query);
+    let jsonEntries = [];
+    for(let i = 0; i < entries.length; i++){
+        jsonEntries.push(await entries[i].toJSON());
+    }
+
+    return res.json({ entries: jsonEntries });
 }
 
 async function createEntry(req, res){
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
     const taskId = new mongoose.Types.ObjectId(req.params.taskId);
     const { body: { entry } } = req;
     
@@ -73,12 +80,13 @@ async function createEntry(req, res){
     }
 
     const newEntry = new Entries(entry);
-    newEntry.boatId = boatId;
+    newEntry.equipmentId = equipmentId;
     newEntry.taskId = taskId;
 
-    return newEntry.save((err, newEntry) =>{
+    return newEntry.save(async (err, newEntry) => {
         if(err) res.send(err);
-        res.json({ entry: newEntry });
+
+        res.json({ entry: await newEntry.toJSON() });
     });
 }
 
@@ -91,13 +99,13 @@ async function changeEntry(req, res){
         return res.sendStatus(400);
     }
 
-    if(existingEntry.boatId.toString() !== req.params.boatId || existingEntry.taskId.toString() !== req.params.taskId){
+    if(existingEntry.equipmentId.toString() !== req.params.equipmentId || existingEntry.taskId.toString() !== req.params.taskId){
         return res.sendStatus(401);
     }
 
-    return Object.assign(existingEntry, entry).save((err, existingEntry) => {
+    return Object.assign(existingEntry, entry).save(async (err, existingEntry) => {
         if(err) res.send(err);
-        res.json({ entry: existingEntry });
+        res.json({ entry: await existingEntry.toJSON() });
     });
 }
 
@@ -109,11 +117,11 @@ async function deleteEntry(req, res){
         return res.sendStatus(400);
     }
 
-    if(existingEntry.boatId.toString() !== req.params.boatId || existingEntry.taskId.toString() !== req.params.taskId){
+    if(existingEntry.equipmentId.toString() !== req.params.equipmentId || existingEntry.taskId.toString() !== req.params.taskId){
         return res.sendStatus(401);
     }
 
-    return existingEntry.delete().then(() => res.json({ entry: existingEntry }));
+    return existingEntry.delete().then(async () => res.json({ entry: await existingEntry.toJSON() }));
 }
 
 module.exports = { checkAuth, createEntry, getEntries, changeEntry, deleteEntry };

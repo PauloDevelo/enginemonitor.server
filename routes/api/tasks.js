@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const router = require('express').Router();
 const auth = require('../auth');
-const Boats = mongoose.model('Boats');
+const Equipments = mongoose.model('Equipments');
 const Tasks = mongoose.model('Tasks');
 const Users = mongoose.model('Users');
 
@@ -12,12 +12,12 @@ function checkTaskProperties(task){
         errors.name = 'isrequired';
     }
 
-    if(!task.engineHours) {
-        errors.engineHours = 'isrequired';
+    if(!task.usagePeriodInHour) {
+        errors.usagePeriodInHour = 'isrequired';
     }
 
-    if(!task.month) {
-        errors.month = 'isrequired';
+    if(!task.periodInMonth) {
+        errors.periodInMonth = 'isrequired';
     }
 
     if(!task.description) {
@@ -34,19 +34,19 @@ function checkTaskProperties(task){
 
 async function checkAuth(req, res, next){
     const { payload: { id } } = req;
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
 
     let user = await Users.findById(id);
     if(!user) {
         return res.sendStatus(400);
     }
 
-    let existingBoat = await Boats.findById(boatId);
-    if(!existingBoat){
+    let existingEquipment = await Equipments.findById(equipmentId);
+    if(!existingEquipment){
         return res.sendStatus(400);
     }
 
-    if (existingBoat.ownerId.toString() !== req.payload.id){
+    if (existingEquipment.ownerId.toString() !== req.payload.id){
         return res.sendStatus(401);
     }
 
@@ -54,9 +54,9 @@ async function checkAuth(req, res, next){
 }
 
 async function getTasks(req, res){
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
     
-    let query = { boatId: boatId };
+    let query = { equipmentId: equipmentId };
     let tasks = await Tasks.find(query);
 
     let jsonTasks = [];
@@ -68,7 +68,7 @@ async function getTasks(req, res){
 }
 
 async function createTask(req, res){
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
     const { body: { task } } = req;
     
     const errors = checkTaskProperties(task);
@@ -76,7 +76,7 @@ async function createTask(req, res){
         return res.status(422).json(errors);
     }
 
-    let query = { name: task.name, boatId: boatId };
+    let query = { name: task.name, equipmentId: equipmentId };
     let number = await Tasks.count(query);
     if(number > 0){
         return res.status(422).json({
@@ -87,7 +87,7 @@ async function createTask(req, res){
     }
     else{
         const newTask = new Tasks(task);
-        newTask.boatId = boatId;
+        newTask.equipmentId = equipmentId;
 
         return newTask.save(async (err, newTask) => {
             if(err){
@@ -101,7 +101,7 @@ async function createTask(req, res){
 }
 
 async function changeTask(req, res){
-    const boatId = new mongoose.Types.ObjectId(req.params.boatId);
+    const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
     const taskId = new mongoose.Types.ObjectId(req.params.taskId);
     const { body: { task } } = req;
 
@@ -110,12 +110,12 @@ async function changeTask(req, res){
         return res.sendStatus(400);
     }
 
-    if(existingTask.boatId.toString() !== req.params.boatId){
+    if(existingTask.equipmentId.toString() !== req.params.equipmentId){
         return res.sendStatus(401);
     }
 
     if(task.name){
-        let query = { name: task.name, boatId: boatId };
+        let query = { name: task.name, equipmentId: equipmentId };
         let number = await Tasks.count(query);
         if(number > 0){
             return res.status(422).json({
@@ -144,7 +144,7 @@ async function deleteTask(req, res){
         return res.sendStatus(400);
     }
 
-    if(existingTask.boatId.toString() !== req.params.boatId){
+    if(existingTask.equipmentId.toString() !== req.params.equipmentId){
         return res.sendStatus(401);
     }
 

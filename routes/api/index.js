@@ -12,28 +12,28 @@ router  .post("/users",         auth.optional, users.createUser)
         .get( "/users/current", auth.required, users.getCurrent);
 
 
-let boats = require("./boats");
-router.use(     "/boats",         auth.required, boats.checkAuth)
-        .get(   "/boats",         auth.required, boats.getBoats)
-        .post(  "/boats",         auth.required, boats.addBoat)
-        .post(  "/boats/:boatId", auth.required, boats.changeBoat)
-        .delete("/boats/:boatId", auth.required, boats.deleteBoat);
+let equipments = require("./equipments");
+router.use(     "/equipments",         auth.required, equipments.checkAuth)
+        .get(   "/equipments",         auth.required, equipments.getEquipments)
+        .post(  "/equipments",         auth.required, equipments.addEquipment)
+        .post(  "/equipments/:equipmentId", auth.required, equipments.changeEquipment)
+        .delete("/equipments/:equipmentId", auth.required, equipments.deleteEquipment);
 
 
 let tasks = require("./tasks");
-router.use(     "/tasks/:boatId",         auth.required, tasks.checkAuth)
-        .get(   "/tasks/:boatId",         auth.required, tasks.getTasks)
-        .post(  "/tasks/:boatId",         auth.required, tasks.createTask)
-        .post(  "/tasks/:boatId/:taskId", auth.required, tasks.changeTask)
-        .delete("/tasks/:boatId/:taskId", auth.required, tasks.deleteTask);
+router.use(     "/tasks/:equipmentId",         auth.required, tasks.checkAuth)
+        .get(   "/tasks/:equipmentId",         auth.required, tasks.getTasks)
+        .post(  "/tasks/:equipmentId",         auth.required, tasks.createTask)
+        .post(  "/tasks/:equipmentId/:taskId", auth.required, tasks.changeTask)
+        .delete("/tasks/:equipmentId/:taskId", auth.required, tasks.deleteTask);
 
 
 let entries = require("./entries");
-router.use(     "/entries/:boatId",                 auth.required, entries.checkAuth)
-        .get(   "/entries/:boatId/:taskId",         auth.required, entries.getEntries)
-        .post(  "/entries/:boatId/:taskId",         auth.required, entries.createEntry)
-        .post(  "/entries/:boatId/:taskId/:entryId",auth.required, entries.changeEntry)
-        .delete("/entries/:boatId/:taskId/:entryId",auth.required, entries.deleteEntry);
+router.use(     "/entries/:equipmentId",                 auth.required, entries.checkAuth)
+        .get(   "/entries/:equipmentId/:taskId",         auth.required, entries.getEntries)
+        .post(  "/entries/:equipmentId/:taskId",         auth.required, entries.createEntry)
+        .post(  "/entries/:equipmentId/:taskId/:entryId",auth.required, entries.changeEntry)
+        .delete("/entries/:equipmentId/:taskId/:entryId",auth.required, entries.deleteEntry);
 
 
 router.use("/", (err, req, res, next) => {

@@ -9,7 +9,7 @@ const chaiHttp = require('chai-http');
 const should = chai.should();
 
 const Users = mongoose.model('Users');
-const Boats = mongoose.model('Boats');
+const Equipments = mongoose.model('Equipments');
 const Tasks = mongoose.model('Tasks');
 const Entries = mongoose.model('Entries');
 
@@ -19,27 +19,27 @@ describe('Entries', () => {
     afterEach(async () => {
         await Entries.deleteMany(); 
         await Tasks.deleteMany(); 
-        await Boats.deleteMany();  
+        await Equipments.deleteMany();  
         await Users.deleteMany();  
     });
 
-    describe('/GET/:boatId/:taskId entries', () => {
+    describe('/GET/:equipmentId/:taskId entries', () => {
         it('it should GET a 200 http code as a result because entries were returned successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -53,7 +53,7 @@ describe('Entries', () => {
             res.body.entries.length.should.be.eql(1);
             res.body.entries[0].should.have.property("name");
             res.body.entries[0].name.should.be.eql("My first entry");
-            res.body.entries[0].should.have.property("UTCDate");
+            res.body.entries[0].should.have.property("date");
             res.body.entries[0].should.have.property("age");
             res.body.entries[0].age.should.be.eql(12345);
             res.body.entries[0].should.have.property("remarks");
@@ -69,16 +69,16 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -99,12 +99,12 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
             // Act
@@ -120,11 +120,11 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
             // Act
@@ -135,22 +135,22 @@ describe('Entries', () => {
         });
     });
 
-    describe('/POST/:boatId/:taskId new entry', () => {
+    describe('/POST/:equipmentId/:taskId new entry', () => {
         it('it should GET a 200 http code as a result because the entry was return successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = { name: "My first vidange", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" }
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS" }
 
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/' + task._id.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
@@ -159,17 +159,17 @@ describe('Entries', () => {
             res.should.have.status(200);
             res.body.should.have.property("entry");
             res.body.entry.should.be.a("object");
-            res.body.entry.should.have.property("boatId");
+            res.body.entry.should.have.property("equipmentId");
             res.body.entry.should.have.property("taskId");
             res.body.entry.should.have.property("name");
-            res.body.entry.should.have.property("UTCDate");
+            res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
 
             res.body.entry.name.should.be.eql("My first vidange",);
             res.body.entry.age.should.be.eql(12345);
             res.body.entry.remarks.should.be.eql("RAS");
-            res.body.entry.boatId.should.be.eql(boat._id.toString());
+            res.body.entry.equipmentId.should.be.eql(boat._id.toString());
             res.body.entry.taskId.should.be.eql(task._id.toString());
         });
 
@@ -179,15 +179,15 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = { UTCDate: new Date().toString(), age: 12345, remarks: "RAS" }
+            let entry = { date: new Date().toString(), age: 12345, remarks: "RAS" }
 
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/' + task._id.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
@@ -200,18 +200,18 @@ describe('Entries', () => {
             res.body.errors.name.should.be.eql("isrequired");
         });
 
-        it('it should GET a 422 http code as a result because the entry UTCDate was missing', async () => {
+        it('it should GET a 422 http code as a result because the entry date was missing', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
             let entry = { name: "My first vidange", age: 12345, remarks: "RAS" }
@@ -223,8 +223,8 @@ describe('Entries', () => {
             res.should.have.status(422);
             res.body.should.have.property("errors");
             res.body.errors.should.be.a("object");
-            res.body.errors.should.have.property("UTCDate");
-            res.body.errors.UTCDate.should.be.eql("isrequired");
+            res.body.errors.should.have.property("date");
+            res.body.errors.date.should.be.eql("isrequired");
         });
 
         it('it should GET a 422 http code as a result because the entry age was missing', async () => {
@@ -233,15 +233,15 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = { name: "My first vidange", UTCDate: new Date().toString(), remarks: "RAS" }
+            let entry = { name: "My first vidange", date: new Date().toString(), remarks: "RAS" }
 
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/' + task._id.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
@@ -260,15 +260,15 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = { name: "My first vidange", UTCDate: new Date().toString(), age: 12345 }
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345 }
 
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/' + task._id.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
@@ -282,23 +282,23 @@ describe('Entries', () => {
         });
     });
 
-    describe('/POST/:boatId/:taskId/:entryId change an entry', () => {
+    describe('/POST/:equipmentId/:taskId/:entryId change an entry', () => {
         it('it should get a 200 http code as a result because the entry changed successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -312,7 +312,7 @@ describe('Entries', () => {
             res.body.should.have.property("entry");
             res.body.entry.should.be.a("object");
             res.body.entry.should.have.property("name");
-            res.body.entry.should.have.property("UTCDate");
+            res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
 
@@ -327,20 +327,20 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
-            let jsonEntry = { UTCDate: "2018-10-12" };
+            let jsonEntry = { date: "2018-10-12" };
             
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/' + task._id.toString() + '/' + entry._id.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
@@ -350,12 +350,12 @@ describe('Entries', () => {
             res.body.should.have.property("entry");
             res.body.entry.should.be.a("object");
             res.body.entry.should.have.property("name");
-            res.body.entry.should.have.property("UTCDate");
+            res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
 
             res.body.entry.name.should.be.eql("My first entry");
-            res.body.entry.UTCDate.should.be.eql( "2018-10-12T00:00:00.000Z");
+            res.body.entry.date.should.be.eql( "2018-10-12T00:00:00.000Z");
             res.body.entry.age.should.be.eql(12345);
             res.body.entry.remarks.should.be.eql("RAS");
         });
@@ -366,16 +366,16 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -389,7 +389,7 @@ describe('Entries', () => {
             res.body.should.have.property("entry");
             res.body.entry.should.be.a("object");
             res.body.entry.should.have.property("name");
-            res.body.entry.should.have.property("UTCDate");
+            res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
 
@@ -404,16 +404,16 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -427,7 +427,7 @@ describe('Entries', () => {
             res.body.should.have.property("entry");
             res.body.entry.should.be.a("object");
             res.body.entry.should.have.property("name");
-            res.body.entry.should.have.property("UTCDate");
+            res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
 
@@ -442,20 +442,20 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let boat2 = new Boats({name: "Albatros", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat2 = new Equipments({name: "Albatros", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat2.ownerId = user._id;
             boat2 = await  boat2.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat2._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat2._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat2._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat2._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -474,16 +474,16 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId =  user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             
             let jsonEntry = {name:"Vidange d'huile"};
@@ -497,23 +497,23 @@ describe('Entries', () => {
 
     });
 
-    describe('/DELETE/:boatId/:taskId/:entryId delete entry', () => {
+    describe('/DELETE/:equipmentId/:taskId/:entryId delete entry', () => {
         it('it should get a 200 http code as a result because the entry was deleted successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             entry = await entry.save();
 
@@ -534,16 +534,16 @@ describe('Entries', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Boats({name: "Arbutus", engineBrand:"Nanni", engineModel:"N3.30", engineAge:1234, engineInstallation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let task = new Tasks({name:"Vidange", engineHours:200, month:12, description:"Faire la vidange"});
-            task.boatId = boat._id;
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = new Entries({ name: "My first entry", UTCDate: new Date().toString(), age: 12345, remarks: "RAS" });
-            entry.boatId = boat._id;
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
             entry.taskId = task._id;
             
             // Act
