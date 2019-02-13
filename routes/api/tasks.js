@@ -117,7 +117,7 @@ async function changeTask(req, res){
     if(task.name){
         const query = { name: task.name, equipmentId: equipmentId };
         const tasks = await Tasks.find(query);
-        const alreadyExistingTaskWithSameNameIndex = tasks.findIndex(task => task._id !== taskId);
+        const alreadyExistingTaskWithSameNameIndex = tasks.findIndex(task => task._id.toString() !== req.params.taskId);
         if(alreadyExistingTaskWithSameNameIndex !== -1){
             return res.status(422).json({
                 errors: {
