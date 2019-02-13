@@ -40,7 +40,7 @@ describe('Equipments', () => {
             res.body.errors.id.should.be.eql("isinvalid");
         });
 
-        it('it should GET a 200 http code as a result and a boat because we set the correct token', async () => {
+        it('it should GET a 200 http code as a result and a equipment because we set the correct token', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -92,7 +92,7 @@ describe('Equipments', () => {
             res.body.errors.id.should.be.eql("isinvalid");
         });
 
-        it('it should get a 200 http code as a result because the boat was successfully created', async () => {
+        it('it should get a 200 http code as a result because the equipment was successfully created', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
 
@@ -121,7 +121,7 @@ describe('Equipments', () => {
     })
 
     describe('POST/:equipmentId equipment', () => {
-        it('it should get a 200 http code as a result because the engine age was successfully modified', async () => {
+        it('it should get a 200 http code as a result because the equipment age was successfully modified', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -138,7 +138,7 @@ describe('Equipments', () => {
             res.body.equipment.age.should.be.eql(1235);
         });
 
-        it('it should get a 200 http code as a result because the boat name was successfully modified', async () => {
+        it('it should get a 200 http code as a result because the equipment name was successfully modified', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -157,7 +157,7 @@ describe('Equipments', () => {
             res.body.equipment.name.should.be.eql('Arbatros');
         });
 
-        it('it should get a 200 http code as a result because the engine brand was successfully modified', async () => {
+        it('it should get a 200 http code as a result because the equipment brand was successfully modified', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -175,7 +175,7 @@ describe('Equipments', () => {
             res.body.equipment.brand.should.be.eql('Nanni Diesel');
         });
 
-        it('it should get a 200 http code as a result because the engine model was successfully modified', async () => {
+        it('it should get a 200 http code as a result because the equipment model was successfully modified', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -193,8 +193,8 @@ describe('Equipments', () => {
         });
     });
 
-    describe('DELETE/:boatId boat', () => {
-        it('it should get a 200 http code as a result because the engine was successfully deleted', async () => {
+    describe('DELETE/:equipmentId equipment', () => {
+        it('it should get a 200 http code as a result because the equipment was successfully deleted', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -215,7 +215,7 @@ describe('Equipments', () => {
             res.body.equipments.length.should.be.eql(0);
         });
 
-        it('it should get a 400 http code as a result because the engine does not exist', async () => {
+        it('it should get a 400 http code as a result because the equipment does not exist', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -224,7 +224,7 @@ describe('Equipments', () => {
             res.should.have.status(400);
         });
 
-        it('it should get a 401 http code as a result because the engine requested is not own by the user', async () => {
+        it('it should get a 401 http code as a result because the equipment requested is not own by the user', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
