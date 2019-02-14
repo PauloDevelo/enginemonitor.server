@@ -17,7 +17,7 @@ function checkEntryProperties(entry){
         errors.date = 'isrequired';
     }
 
-    if(!entry.age) {
+    if(entry.age === undefined) {
         errors.age = 'isrequired';
     }
 

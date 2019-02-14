@@ -19,7 +19,7 @@ function checkEquipmentProperties(equipment){
         errors.model = 'isrequired';
     }
 
-    if(!equipment.age) {
+    if(equipment.age === undefined) {
         errors.age = 'isrequired';
     }
 

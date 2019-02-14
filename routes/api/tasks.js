@@ -12,11 +12,11 @@ function checkTaskProperties(task){
         errors.name = 'isrequired';
     }
 
-    if(!task.usagePeriodInHour) {
+    if(task.usagePeriodInHour === undefined) {
         errors.usagePeriodInHour = 'isrequired';
     }
 
-    if(!task.periodInMonth) {
+    if(task.periodInMonth === undefined) {
         errors.periodInMonth = 'isrequired';
     }
 
