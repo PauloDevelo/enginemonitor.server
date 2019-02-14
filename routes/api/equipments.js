@@ -8,23 +8,23 @@ function checkEquipmentProperties(equipment){
     let errors = {};
 
     if(!equipment.name) {
-        errors.name = 'is required';
+        errors.name = 'isrequired';
     }
 
     if(!equipment.brand) {
-        errors.brand = 'is required';
+        errors.brand = 'isrequired';
     }
 
     if(!equipment.model) {
-        errors.model = 'is required';
+        errors.model = 'isrequired';
     }
 
     if(!equipment.age) {
-        errors.age = 'is required';
+        errors.age = 'isrequired';
     }
 
     if(!equipment.installation) {
-        errors.installation = 'is required';
+        errors.installation = 'isrequired';
     }
 
     if(Object.keys(errors).length === 0){
