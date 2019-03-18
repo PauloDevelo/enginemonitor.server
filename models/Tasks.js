@@ -122,4 +122,11 @@ TasksSchema.methods.toJSON = async function(){
     };
 }
 
+TasksSchema.methods.updateFromEngineMaintenanceApi = function(task){
+    this.name = task.name;
+    this.usagePeriodInHour = task.engineHours;
+    this.periodInMonth = task.month;
+    this.description = task.description;
+}
+
 mongoose.model('Tasks', TasksSchema);

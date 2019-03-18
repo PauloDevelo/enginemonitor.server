@@ -23,4 +23,11 @@ EntriesSchema.methods.toJSON = async function(){
     };
 }
 
+EntriesSchema.methods.updateFromEngineMaintenanceApi = function(entry){
+    this.name = entry.name;
+    this.date = new Date(entry.UTCDate);
+    this.age = entry.age;
+    this.remarks = entry.remarks;
+}
+
 mongoose.model('Entries', EntriesSchema);
