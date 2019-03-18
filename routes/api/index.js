@@ -5,19 +5,19 @@ const router = express.Router();
 
 router.use("/enginemaintenance", require("./enginemaintenance"));
 
-
 let users = require("./users");
 router  .post("/users",         auth.optional, users.createUser)
         .post("/users/login",   auth.optional, users.login)
         .get( "/users/current", auth.required, users.getCurrent);
 
-
+const importEngineMaintenance = require("./importEngineMaintenance")
 let equipments = require("./equipments");
-router.use(     "/equipments",         auth.required, equipments.checkAuth)
-        .get(   "/equipments",         auth.required, equipments.getEquipments)
-        .post(  "/equipments",         auth.required, equipments.addEquipment)
-        .post(  "/equipments/:equipmentId", auth.required, equipments.changeEquipment)
-        .delete("/equipments/:equipmentId", auth.required, equipments.deleteEquipment);
+router.use(     "/equipments",                  auth.required, equipments.checkAuth)
+        .get(   "/equipments",                  auth.required, equipments.getEquipments)
+        .get(   "/equipments/:equipmentId/import/:serverIpAddress",     auth.required, importEngineMaintenance.importMaintenanceHistory)
+        .post(  "/equipments",                  auth.required, equipments.addEquipment)
+        .post(  "/equipments/:equipmentId",     auth.required, equipments.changeEquipment)
+        .delete("/equipments/:equipmentId",     auth.required, equipments.deleteEquipment);
 
 
 let tasks = require("./tasks");
