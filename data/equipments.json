@@ -1,0 +1,1 @@
+{"_id":{"$oid":"5c8f95558c5fdd20c4202ff8"},"name":"Engine","brand":"Nanni","model":"N3.30","age":{"$numberInt":"2563"},"installation":{"$date":{"$numberLong":"1264377600000"}},"ownerId":{"$oid":"5c25bfbf5418e34dbc7b9e93"},"__v":{"$numberInt":"0"}}
