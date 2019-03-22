@@ -1,6 +1,0 @@
-{ 
-    "DBHost": "//localhost/enginemaintenancedev",
-    "port": 8000,
-    "hostURL": "http://localhost:8000/api/",
-    "frontEndUrl": "http://localhost:3000/"
- }
