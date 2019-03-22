@@ -9,8 +9,15 @@ const UsersSchema = new Schema({
   firstname: String,
   email: String,
   hash: String,
+  verificationToken: String,
   salt: String,
+  isVerified: Boolean
 });
+
+UsersSchema.methods.initUser = function(){
+  this.verificationToken = crypto.randomBytes(16).toString('hex');
+  this.isVerified = false;
+}
 
 UsersSchema.methods.setPassword = function(password) {
   this.salt = crypto.randomBytes(16).toString('hex');

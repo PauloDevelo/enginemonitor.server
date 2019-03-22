@@ -13,6 +13,9 @@ passport.use(new LocalStrategy({
       if(!user){
         return done(null, false, { errors: { 'email': 'invalid' } });
       }
+      else if(user.isVerified === undefined || user.isVerified === false){
+        return done(null, false, { errors: { 'email': 'needVerification' } });
+      }
       else if(!user.validatePassword(password)) {
         return done(null, false, { errors: { 'password': 'invalid' } });
       }

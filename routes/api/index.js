@@ -8,6 +8,7 @@ router.use("/enginemaintenance", require("./enginemaintenance"));
 let users = require("./users");
 router  .post("/users",         auth.optional, users.createUser)
         .post("/users/login",   auth.optional, users.login)
+        .get("/users/verification",   auth.optional, users.checkEmail)
         .get( "/users/current", auth.required, users.getCurrent);
 
 const importEngineMaintenance = require("./importEngineMaintenance")

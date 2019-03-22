@@ -1,41 +1,77 @@
+let config = require('config');
 const mongoose = require('mongoose');
 const passport = require('passport');
+const { sendVerificationEmail } = require('../../utils/sendGridEmailHelper');
 
 const Users = mongoose.model('Users');
+const { saveModel } = require('../../utils/mogoUtils')
 
 //POST new user route (optional, everyone has access)
 async function createUser(req, res){
-  const { body: { user } } = req;
+  try{
+    const { body: { user } } = req;
 
-  if(!user.email) {
-    return res.status(422).json({ errors: { email: 'isrequired' } });
+    if(!user.email) {
+      return res.status(422).json({ errors: { email: 'isrequired' } });
+    }
+
+    if(!user.password) {
+      return res.status(422).json({ errors: { password: 'isrequired' } });
+    }
+
+    if(!user.name) {
+      return res.status(422).json({ errors: { name: 'isrequired' } });
+    }
+
+    if(!user.firstname) {
+      return res.status(422).json({ errors: { firstname: 'isrequired' } });
+    }
+
+    let query = { email: user.email };
+    let number = await Users.countDocuments(query);
+    if(number > 0){
+      return res.status(422).json({ errors: { email: 'alreadyexisting' } });
+    }
+
+    let finalUser = new Users(user);
+    finalUser.initUser();
+    finalUser.setPassword(user.password);
+
+    await sendVerificationEmail(finalUser.email, finalUser.verificationToken);
+
+    finalUser = await saveModel(finalUser);
+
+    res.json({ user: finalUser.toAuthJSON() });
   }
-
-  if(!user.password) {
-    return res.status(422).json({ errors: { password: 'isrequired' } });
+  catch(error){
+    res.send(error);
   }
+}
 
-  if(!user.name) {
-    return res.status(422).json({ errors: { name: 'isrequired' } });
+async function checkEmail(req, res){
+  try{
+    const { query: { email, token } } = req;
+
+    const query = { email: email };
+    const user = await Users.find(query);
+
+    if(!user[0]){
+      return res.status(400).json({ errors: { email: 'isinvalid' } });
+    }
+
+    if(user[0].verificationToken !== token){
+      return res.status(400).json({ errors: { token: 'isinvalid' } });
+    }
+
+    user[0].isVerified = true;
+
+    await saveModel(user[0]);
+
+    res.redirect(config.frontEndUrl);
   }
-
-  if(!user.firstname) {
-    return res.status(422).json({ errors: { firstname: 'isrequired' } });
+  catch(error){
+    res.send(err);
   }
-
-  let query = { email: user.email };
-  let number = await Users.countDocuments(query);
-  if(number > 0){
-    return res.status(422).json({ errors: { email: 'alreadyexisting' } });
-  }
-
-  const finalUser = new Users(user);
-  finalUser.setPassword(user.password);
-
-  return finalUser.save((err, user) => {
-    if(err) res.send(err);
-    res.json({ user: user.toAuthJSON() });
-  });
 }
 
 //POST login route (optional, everyone has access)
@@ -75,4 +111,4 @@ async function getCurrent(req, res){
   return res.json({ user: user.toAuthJSON() });
 }
 
-module.exports = { login, getCurrent, createUser };
+module.exports = { login, getCurrent, createUser, checkEmail };
