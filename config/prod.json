@@ -1,4 +1,6 @@
 { 
     "DBHost": "//localhost/enginemaintenance",
-    "port": 8000
+    "port": 8000,
+    "hostURL": "http://104.199.207.9:8000/api/",
+    "frontEndUrl": "http://www.ecogium.fr/equipmentmaintenance/"
  }
