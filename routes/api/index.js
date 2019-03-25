@@ -6,10 +6,12 @@ const router = express.Router();
 router.use("/enginemaintenance", require("./enginemaintenance"));
 
 let users = require("./users");
-router  .post("/users",         auth.optional, users.createUser)
-        .post("/users/login",   auth.optional, users.login)
-        .get("/users/verification",   auth.optional, users.checkEmail)
-        .get( "/users/current", auth.required, users.getCurrent);
+router  .post("/users",                 auth.optional, users.createUser)
+        .post("/users/login",           auth.optional, users.login)
+        .post( "/users/resetpassword",   auth.optional, users.resetPassword)
+        .get( "/users/changepassword",    auth.optional, users.changePassword)
+        .get( "/users/verification",    auth.optional, users.checkEmail)
+        .get( "/users/current",         auth.required, users.getCurrent);
 
 const importEngineMaintenance = require("./importEngineMaintenance")
 let equipments = require("./equipments");
@@ -20,7 +22,6 @@ router.use(     "/equipments",                  auth.required, equipments.checkA
         .post(  "/equipments/:equipmentId",     auth.required, equipments.changeEquipment)
         .delete("/equipments/:equipmentId",     auth.required, equipments.deleteEquipment);
 
-
 let tasks = require("./tasks");
 router.use(     "/tasks/:equipmentId",         auth.required, tasks.checkAuth)
         .get(   "/tasks/:equipmentId",         auth.required, tasks.getTasks)
@@ -28,14 +29,12 @@ router.use(     "/tasks/:equipmentId",         auth.required, tasks.checkAuth)
         .post(  "/tasks/:equipmentId/:taskId", auth.required, tasks.changeTask)
         .delete("/tasks/:equipmentId/:taskId", auth.required, tasks.deleteTask);
 
-
 let entries = require("./entries");
 router.use(     "/entries/:equipmentId",                 auth.required, entries.checkAuth)
         .get(   "/entries/:equipmentId/:taskId",         auth.required, entries.getEntries)
         .post(  "/entries/:equipmentId/:taskId",         auth.required, entries.createEntry)
         .post(  "/entries/:equipmentId/:taskId/:entryId",auth.required, entries.changeEntry)
         .delete("/entries/:equipmentId/:taskId/:entryId",auth.required, entries.deleteEntry);
-
 
 router.use("/", (err, req, res, next) => {
     if(err){

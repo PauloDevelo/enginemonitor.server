@@ -1,9 +1,10 @@
 let config = require('config');
 const mongoose = require('mongoose');
 const passport = require('passport');
-const { sendVerificationEmail } = require('../../utils/sendGridEmailHelper');
+const { sendVerificationEmail, sendChangePasswordEmail } = require('../../utils/sendGridEmailHelper');
 
 const Users = mongoose.model('Users');
+const NewPasswords = mongoose.model('NewPasswords');
 const { saveModel } = require('../../utils/mogoUtils')
 
 //POST new user route (optional, everyone has access)
@@ -27,8 +28,7 @@ async function createUser(req, res){
       return res.status(422).json({ errors: { firstname: 'isrequired' } });
     }
 
-    let query = { email: user.email };
-    let number = await Users.countDocuments(query);
+    let number = await Users.countDocuments({ email: user.email });
     if(number > 0){
       return res.status(422).json({ errors: { email: 'alreadyexisting' } });
     }
@@ -36,10 +36,9 @@ async function createUser(req, res){
     let finalUser = new Users(user);
     finalUser.initUser();
     finalUser.setPassword(user.password);
+    finalUser = await saveModel(finalUser);
 
     await sendVerificationEmail(finalUser.email, finalUser.verificationToken);
-
-    finalUser = await saveModel(finalUser);
 
     res.json({ user: finalUser.toAuthJSON() });
   }
@@ -48,12 +47,12 @@ async function createUser(req, res){
   }
 }
 
+//GET Verify the user's email
 async function checkEmail(req, res){
   try{
     const { query: { email, token } } = req;
 
-    const query = { email: email };
-    const user = await Users.find(query);
+    const user = await Users.find({ email: email });
 
     if(!user[0]){
       return res.status(400).json({ errors: { email: 'isinvalid' } });
@@ -71,6 +70,68 @@ async function checkEmail(req, res){
   }
   catch(error){
     res.send(err);
+  }
+}
+
+// GET Change the user's password after clicking on the confirmation email
+async function changePassword(req, res){
+  try{
+    const { query: { token } } = req;
+
+    const newPassword = await NewPasswords.find({ verificationToken: token });
+
+    if(!newPassword[0]){
+      return res.status(400).json({ errors: { token: 'isinvalid' } });
+    }
+
+    const user = await Users.find({ email: newPassword[0].email });
+    if(!user[0]){
+      return res.status(400).json({ errors: { email: 'isinvalid' } });
+    }
+
+    user[0].isVerified = true;
+    user[0].salt = newPassword[0].salt;
+    user[0].hash = newPassword[0].hash;
+
+    await saveModel(user[0]);
+    await newPassword[0].delete();
+
+    res.redirect(config.frontEndUrl);
+  }
+  catch(error){
+    res.send(err);
+  }
+}
+
+// POST create a new password and send an email to confirm the change of password
+async function resetPassword(req, res){
+  try{
+    const { body: { email, newPassword } } = req;
+
+    const user = await Users.find({ email: email });
+  
+    if(!user[0]){
+      return res.status(400).json({ errors: { email: 'isinvalid' } });
+    }
+  
+    if(!email) {
+      return res.status(422).json({ errors: { email: 'isrequired' } });
+    }
+  
+    if(!newPassword) {
+      return res.status(422).json({ errors: { password: 'isrequired' } });
+    }
+  
+    let newPasswords = new NewPasswords();
+    newPasswords.initNewPassword(email, newPassword);
+    newPasswords = await saveModel(newPasswords);
+  
+    await sendChangePasswordEmail(newPasswords.email, newPasswords.verificationToken);
+
+    return res.status(200).json({});
+  }
+  catch(error){
+    res.send(error);
   }
 }
 
@@ -111,4 +172,4 @@ async function getCurrent(req, res){
   return res.json({ user: user.toAuthJSON() });
 }
 
-module.exports = { login, getCurrent, createUser, checkEmail };
+module.exports = { login, getCurrent, createUser, checkEmail, resetPassword, changePassword };

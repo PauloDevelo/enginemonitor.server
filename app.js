@@ -51,6 +51,7 @@ if(isDev) {
   mongoose.set('debug', true);
 }
 
+require('./models/NewPasswords');
 require('./models/Users');
 require('./models/Equipments');
 require('./models/Entries');
