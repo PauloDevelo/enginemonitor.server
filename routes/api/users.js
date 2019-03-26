@@ -135,6 +135,35 @@ async function resetPassword(req, res){
   }
 }
 
+//POST send another verification email
+async function verificationEmail(req, res, next){
+  try{
+    const { body: { user } } = req;
+
+    if(!user.email) {
+      return res.status(422).json({ errors: { email: 'isrequired' } });
+    }
+
+    const usersInDb = await Users.find({email: user.email});
+    if(!usersInDb[0]){
+      return res.status(400).json({ errors: { email: 'isinvalid' } });
+    }
+
+    let userInDb = usersInDb[0];
+    if(!userInDb.isVerified){
+      userInDb.initUser();
+      userInDb = await saveModel(userInDb);
+
+      await sendVerificationEmail(userInDb.email, userInDb.verificationToken);
+    }
+
+    return res.status(200).json({});
+  }
+  catch(error){
+    res.send(error);
+  }
+} 
+
 //POST login route (optional, everyone has access)
 function login(req, res, next){
   const { body: { user } } = req;
@@ -172,4 +201,4 @@ async function getCurrent(req, res){
   return res.json({ user: user.toAuthJSON() });
 }
 
-module.exports = { login, getCurrent, createUser, checkEmail, resetPassword, changePassword };
+module.exports = { login, getCurrent, createUser, checkEmail, resetPassword, changePassword, verificationEmail };

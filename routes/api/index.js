@@ -8,8 +8,9 @@ router.use("/enginemaintenance", require("./enginemaintenance"));
 let users = require("./users");
 router  .post("/users",                 auth.optional, users.createUser)
         .post("/users/login",           auth.optional, users.login)
-        .post( "/users/resetpassword",   auth.optional, users.resetPassword)
-        .get( "/users/changepassword",    auth.optional, users.changePassword)
+        .post("/users/resetpassword",   auth.optional, users.resetPassword)
+        .post("/users/verificationemail",auth.optional, users.verificationEmail)
+        .get( "/users/changepassword",  auth.optional, users.changePassword)
         .get( "/users/verification",    auth.optional, users.checkEmail)
         .get( "/users/current",         auth.required, users.getCurrent);
 
