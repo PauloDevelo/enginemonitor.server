@@ -34,7 +34,7 @@ const sendVerificationEmail = (to, token) => {
     const msg = createMsg();
     msg.to = to;
     msg.subject = 'Confirm change of password';
-    msg.text = `Click on this link to confirm the change of password ${hostUrl}users/changepassword?token=${token}`;
+    msg.text = `Click on this link to confirm the change of password ${hostUrl}users/changepassword?token=${token} `;
     msg.html = `Click on this <a href=" ${hostUrl}users/changepassword?token=${token}">link</a> to confirm the change of password. If you are not at the origin of this change, please ignore this email.`;
 
     return sendMsg(msg);
