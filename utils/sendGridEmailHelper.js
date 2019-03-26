@@ -22,7 +22,7 @@ const sendVerificationEmail = (to, token) => {
     const msg = createMsg();
     msg.to = to;
     msg.subject = 'Verify Your Email';
-    msg.text = `Click on this link to verify your email ${hostUrl}users/verification?token=${token}&email=${to}`;
+    msg.text = `Click on this link to verify your email ${hostUrl}users/verification?token=${token}&email=${to} `;
     msg.html = `Click on this <a href="${hostUrl}users/verification?token=${token}&email=${to}">link</a> to verify your email`;
 
     return sendMsg(msg);
