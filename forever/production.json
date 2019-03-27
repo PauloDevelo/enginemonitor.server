@@ -1,0 +1,6 @@
+{
+    "uid": "Equipment Maintenance Server",
+    "append": true,
+    "watch": true,
+    "script": "app.js"
+}
