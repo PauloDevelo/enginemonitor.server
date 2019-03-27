@@ -51,7 +51,7 @@ describe('Users', () => {
             let user = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
 
             let res = await chai.request(app).post('/api/users').send({ user:user });
-            
+
             res.should.have.status(200);
             res.body.should.be.a('object');
             res.body.should.have.property('user');
@@ -147,11 +147,12 @@ describe('Users', () => {
     });
 
     describe('/POST login', () => {
-        it('it should login because the password is correct', async () => {
+        it('it should login because the password is correct and the email is verified', async () => {
             let jsonuser = {
                 name: "t",
                 firstname: "paul",
-                email: "paul.t@mail.com"
+                email: "paul.t@mail.com",
+                isVerified: true
             };
 
             let user = new Users(jsonuser);
@@ -172,11 +173,33 @@ describe('Users', () => {
             res.body.user.email.should.be.eql(user.email);
         });
 
+        it('it should not login because the password is correct and the email is not verified', async () => {
+            let jsonuser = {
+                name: "t",
+                firstname: "paul",
+                email: "paul.t@mail.com",
+                isVerified: false
+            };
+
+            let user = new Users(jsonuser);
+            user.setPassword("test");
+            user = await user.save();
+
+            let res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"test"}});
+            
+            res.should.have.status(400);
+            res.body.should.be.a('object');
+            res.body.should.have.property('errors');
+            res.body.errors.should.have.property('email');
+            res.body.errors.email.should.be.eql('needVerification');
+        });
+
         it('it should not login because the password is incorrect', async () => {
             let jsonuser = {
                 name: "t",
                 firstname: "paul",
-                email: "paul.t@mail.com"
+                email: "paul.t@mail.com",
+                isVerified: true
             };
 
             let user = new Users(jsonuser);

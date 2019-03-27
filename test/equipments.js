@@ -32,12 +32,23 @@ describe('Equipments', () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
-            
-            let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhdWwudG9ycnVlbGxhQGdtYWlsLmNvbSIsImlkIjoiNWMyNWJmYmY1NDE4ZTM0ZGJjN2I5ZTkzIiwiZXhwIjoxNTUxMTYxNzkxLCJpYXQiOjE1NDU5Nzc3OTF9.uBge-2VvmJiweF-jCPOcLonn0ewBlNjy9wm6mFdSVQo");
+
+            const userDeletedToken = user.generateJWT();
+            await user.delete();
+
+            let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token " + userDeletedToken);
             res.should.have.status(400);
             res.body.should.have.property("errors");
             res.body.errors.should.have.property("id");
             res.body.errors.id.should.be.eql("isinvalid");
+        });
+
+        it('it should get a 401 http code as a result because the token is expired', async () => {
+            let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhdWwudG9ycnVlbGxhQGdtYWlsLmNvbSIsImlkIjoiNWMyNWJmYmY1NDE4ZTM0ZGJjN2I5ZTkzIiwiZXhwIjoxNTUxMTYxNzkxLCJpYXQiOjE1NDU5Nzc3OTF9.uBge-2VvmJiweF-jCPOcLonn0ewBlNjy9wm6mFdSVQo");
+            res.should.have.status(401);
+            res.body.should.have.property("errors");
+            res.body.errors.error.should.have.property("message");
+            res.body.errors.error.message.should.be.eql("jwt expired");
         });
 
         it('it should GET a 200 http code as a result and a equipment because we set the correct token', async () => {
@@ -50,7 +61,7 @@ describe('Equipments', () => {
 
             equipment = await equipment.save();
             let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token " + user.generateJWT());
-               
+
             res.should.have.status(200);
             res.body.should.have.property("equipments");
             res.body.equipments.should.be.a("array");
@@ -81,10 +92,12 @@ describe('Equipments', () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
+            const deletedUserToken = user.generateJWT();
+            await user.delete();
                 
             let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z" };
 
-            let res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhdWwudG9ycnVlbGxhQGdtYWlsLmNvbSIsImlkIjoiNWMyNWJmYmY1NDE4ZTM0ZGJjN2I5ZTkzIiwiZXhwIjoxNTUxMTYxNzkxLCJpYXQiOjE1NDU5Nzc3OTF9.uBge-2VvmJiweF-jCPOcLonn0ewBlNjy9wm6mFdSVQo");
+            let res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + deletedUserToken);
             
             res.should.have.status(400);
             res.body.should.have.property("errors");
@@ -117,6 +130,22 @@ describe('Equipments', () => {
             res.body.equipment.age.should.be.eql(1234);
             res.body.equipment.installation.should.be.eql("2018-01-09T23:00:00.000Z");
             res.body.equipment.ownerId.should.be.eql(user._id.toString());  
+        });
+
+        it('it should get a 422 http error code because there is already an equipment with the same name', async () => {
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+
+            user = await user.save();
+            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z" };
+
+            let res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + user.generateJWT());
+            res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + user.generateJWT());
+            
+            res.should.have.status(422);
+            res.body.should.have.property("errors");
+            res.body.errors.should.have.property("name");
+            res.body.errors.name.should.be.eql("alreadyexisting");
         });
     })
 
