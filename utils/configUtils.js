@@ -25,5 +25,7 @@ let config = require('config');
 //Configure isProduction variable
 config.isProduction = process.env.NODE_ENV === 'prod';
 config.isDev = process.env.NODE_ENV === 'dev';
+console.log(config);
+
 
 module.exports = config;
