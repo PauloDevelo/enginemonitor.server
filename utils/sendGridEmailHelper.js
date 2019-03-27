@@ -3,10 +3,8 @@ let config = require('./configUtils');
 const from = 'no-reply@ecogium.fr';
 
 const sendMsg = (msg) => {
-  if(config.isProd === false){
-      console.log(msg);
-  }
-  else{
+  console.log(msg);
+  if(config.isProd === true){
     const sgMail = require('@sendgrid/mail');
     sgMail.setApiKey(config.SENDGRID_API_KEY);
 
