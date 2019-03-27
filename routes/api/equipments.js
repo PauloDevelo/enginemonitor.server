@@ -65,7 +65,7 @@ async function addEquipment(req, res){
     }
 
     let query = { name: equipment.name, ownerId: userId };
-    let number = await Equipments.count(query);
+    let number = await Equipments.countDocuments(query);
     if(number > 0){
         return res.status(422).json({ errors: { name: 'alreadyexisting' } });
     }

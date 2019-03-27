@@ -77,7 +77,7 @@ async function createTask(req, res){
     }
 
     let query = { name: task.name, equipmentId: equipmentId };
-    let number = await Tasks.count(query);
+    let number = await Tasks.countDocuments(query);
     if(number > 0){
         return res.status(422).json({
             errors: {
