@@ -54,14 +54,7 @@ describe('Users', () => {
 
             res.should.have.status(200);
             res.body.should.be.a('object');
-            res.body.should.have.property('user');
-            res.body.user.should.have.property('name');
-            res.body.user.should.have.property('firstname');
-            res.body.user.should.have.property('email');
-            res.body.user.should.have.property('token');
-            res.body.user.name.should.be.eql(user.name);
-            res.body.user.firstname.should.be.eql(user.firstname);
-            res.body.user.email.should.be.eql(user.email);  
+            res.body.should.not.have.property('user');
         });
         
         it('it should not POST a new user when name field is missing', async () => {

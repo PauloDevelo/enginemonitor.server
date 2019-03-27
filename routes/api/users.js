@@ -40,7 +40,7 @@ async function createUser(req, res){
 
     await sendVerificationEmail(finalUser.email, finalUser.verificationToken);
 
-    res.json({ user: finalUser.toAuthJSON() });
+    res.status(200).json({ });
   }
   catch(error){
     res.send(error);
