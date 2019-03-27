@@ -1,9 +1,9 @@
-let config = require('config');
+let config = require('./configUtils');
 
 const from = 'no-reply@ecogium.fr';
 
 const sendMsg = (msg) => {
-  if(config.LogEmailInsteadOfSending === true){
+  if(config.isProd === false){
       console.log(msg);
   }
   else{
