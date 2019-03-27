@@ -1,11 +1,12 @@
 let config = require('config');
 const mongoose = require('mongoose');
 const passport = require('passport');
-const { sendVerificationEmail, sendChangePasswordEmail } = require('../../utils/sendGridEmailHelper');
+const sendGridHelper = require('../../utils/sendGridEmailHelper');
 
 const Users = mongoose.model('Users');
 const NewPasswords = mongoose.model('NewPasswords');
 const { saveModel } = require('../../utils/mogoUtils')
+const { asyncForEach } = require('../../utils/asyncUtils');
 
 //POST new user route (optional, everyone has access)
 async function createUser(req, res){
@@ -38,7 +39,7 @@ async function createUser(req, res){
     finalUser.setPassword(user.password);
     finalUser = await saveModel(finalUser);
 
-    await sendVerificationEmail(finalUser.email, finalUser.verificationToken);
+    await sendGridHelper.sendVerificationEmail(finalUser.email, finalUser.verificationToken);
 
     res.status(200).json({ });
   }
@@ -51,6 +52,14 @@ async function createUser(req, res){
 async function checkEmail(req, res){
   try{
     const { query: { email, token } } = req;
+
+    if(!email) {
+      return res.status(422).json({ errors: { email: 'isrequired' } });
+    }
+
+    if(!token) {
+      return res.status(422).json({ errors: { token: 'isrequired' } });
+    }
 
     const user = await Users.find({ email: email });
 
@@ -78,8 +87,11 @@ async function changePassword(req, res){
   try{
     const { query: { token } } = req;
 
-    const newPassword = await NewPasswords.find({ verificationToken: token });
+    if(!token){
+      return res.status(422).json({ errors: { token: 'isrequired' } });
+    }
 
+    const newPassword = await NewPasswords.find({ verificationToken: token });
     if(!newPassword[0]){
       return res.status(400).json({ errors: { token: 'isinvalid' } });
     }
@@ -108,12 +120,6 @@ async function resetPassword(req, res){
   try{
     const { body: { email, newPassword } } = req;
 
-    const user = await Users.find({ email: email });
-  
-    if(!user[0]){
-      return res.status(400).json({ errors: { email: 'isinvalid' } });
-    }
-  
     if(!email) {
       return res.status(422).json({ errors: { email: 'isrequired' } });
     }
@@ -121,12 +127,23 @@ async function resetPassword(req, res){
     if(!newPassword) {
       return res.status(422).json({ errors: { password: 'isrequired' } });
     }
+
+    const user = await Users.find({ email: email });
+  
+    if(!user[0]){
+      return res.status(400).json({ errors: { email: 'isinvalid' } });
+    }
+
+    const currentNewPasswords = await NewPasswords.find({ email: email });
+    await asyncForEach(currentNewPasswords, async (newPassword) =>{ 
+      await newPassword.delete(); 
+    });
   
     let newPasswords = new NewPasswords();
     newPasswords.initNewPassword(email, newPassword);
     newPasswords = await saveModel(newPasswords);
   
-    await sendChangePasswordEmail(newPasswords.email, newPasswords.verificationToken);
+    await sendGridHelper.sendChangePasswordEmail(newPasswords.email, newPasswords.verificationToken);
 
     return res.status(200).json({});
   }
@@ -140,7 +157,7 @@ async function verificationEmail(req, res, next){
   try{
     const { body: { user } } = req;
 
-    if(!user.email) {
+    if(!user || !user.email) {
       return res.status(422).json({ errors: { email: 'isrequired' } });
     }
 
@@ -154,7 +171,7 @@ async function verificationEmail(req, res, next){
       userInDb.initUser();
       userInDb = await saveModel(userInDb);
 
-      await sendVerificationEmail(userInDb.email, userInDb.verificationToken);
+      await sendGridHelper.sendVerificationEmail(userInDb.email, userInDb.verificationToken);
     }
 
     return res.status(200).json({});

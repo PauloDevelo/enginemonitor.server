@@ -1,19 +1,27 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
+const config = require('../utils/configUtils');
 const app = require('../app');
 const mongoose = require('mongoose');
 const chai = require('chai');
-const chaiHttp = require('chai-http');
+const expect = chai.expect;
 
+const chaiHttp = require('chai-http');
 const should = chai.should();
+const sinon = require('sinon');
+
 const Users = mongoose.model('Users');
+const NewPasswords = mongoose.model('NewPasswords');
+const sendGridEmailHelper = require('../utils/sendGridEmailHelper');
 
 chai.use(chaiHttp);
 
 describe('Users', () => {
     afterEach(async () => {
-        await Users.deleteMany();        
+        await Users.deleteMany();
+        await NewPasswords.deleteMany();
+        sinon.restore();        
     });
 
     describe('/GET current user', () => {
@@ -48,29 +56,39 @@ describe('Users', () => {
 
     describe('/POST createUser', () => {
         it('it should POST a user because all the fields exist', async () => {
+            // Arrange
             let user = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
+            // Act
             let res = await chai.request(app).post('/api/users').send({ user:user });
 
+            // Assert
             res.should.have.status(200);
             res.body.should.be.a('object');
             res.body.should.not.have.property('user');
+            expect(sendGridEmailHelper.sendVerificationEmail.calledOnceWith("paul.t@mail.com")).to.be.true;
         });
         
         it('it should not POST a new user when name field is missing', async () => {
+            // Arrange
             let user = {
                 firstname: "paul",
                 password: "test",
                 email: "paul.t@mail.com"
             };
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
             
+            // Act
             let res = await chai.request(app).post('/api/users').send({user:user});
             
+            // Assert
             res.should.have.status(422);
             res.body.should.be.a('object');
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('name');
             res.body.errors.name.should.be.eql('isrequired');
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
         });
 
         it('it should not POST a new user when firstname field is missing', async () => {
@@ -79,6 +97,7 @@ describe('Users', () => {
                 password: "test",
                 email: "paul.t@mail.com"
             };
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             let res = await chai.request(app).post('/api/users').send({user:user});
             
@@ -87,6 +106,7 @@ describe('Users', () => {
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('firstname');
             res.body.errors.firstname.should.be.eql('isrequired');
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
         });
 
         it('it should not POST a new user when password field is missing', async () => {
@@ -95,6 +115,7 @@ describe('Users', () => {
                 firstname: "paul",
                 email: "paul.t@mail.com"
             };
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             let res = await chai.request(app).post('/api/users').send({user:user})
             
@@ -103,6 +124,7 @@ describe('Users', () => {
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('password');
             res.body.errors.password.should.be.eql('isrequired');
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
         });
 
         it('it should not POST a new user when email field is missing', async () => {
@@ -267,6 +289,341 @@ describe('Users', () => {
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('password');
             res.body.errors.password.should.be.eql('isrequired');
+        });
+    });
+
+    describe('/POST verificationemail', () => {
+        it('Should called the function sendVerificationEmail because the user asked it', async() =>{
+            // Arrange
+            const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com" };
+            let user = new Users(jsonUser);
+            user.setPassword("test");
+            user = await user.save();
+
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+
+            // Assert
+            res.should.have.status(200);
+            expect(sendGridEmailHelper.sendVerificationEmail.calledOnceWith(jsonUser.email)).to.be.true;
+        });
+
+        it('Should not called the function sendVerificationEmail because the user asked to resend the verification link for an email that does not exist', async() =>{
+            // Arrange
+            const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com" };
+
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+
+            // Assert
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.have.property("email");
+            res.body.errors.email.should.be.eql("isinvalid");
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+        });
+
+        it('Should not called the function sendVerificationEmail because the user asked to resend the verification link for an email that does not exist', async() =>{
+            // Arrange
+            const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com" };
+
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+
+            // Assert
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.have.property("email");
+            res.body.errors.email.should.be.eql("isinvalid");
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+        });
+
+        it('Should not called the function sendVerificationEmail because the user asked to resend the verification link but some the user is not sent', async() =>{
+            // Arrange
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/verificationemail').send({ });
+
+            // Assert
+            res.should.have.status(422);
+            res.body.should.have.property("errors");
+            res.body.errors.should.have.property("email");
+            res.body.errors.email.should.be.eql("isrequired");
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+        });
+
+        it('Should not called the function sendVerificationEmail because the user asked to resend the verification link but the email is undefined', async() =>{
+            // Arrange
+            const jsonUser = { name: "r" };
+            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/verificationemail').send({ user: jsonUser });
+
+            // Assert
+            res.should.have.status(422);
+            res.body.should.have.property("errors");
+            res.body.errors.should.have.property("email");
+            res.body.errors.email.should.be.eql("isrequired");
+            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+        });
+
+    });
+
+    describe('/POST resetPassword', () => {
+        it('should send an email to confirm the change of password', async() => {
+            // Arrange
+            const jsonReset = { email: "pt@g.com", newPassword: "test" };
+
+            let user = new Users({ name: "r", firstname: "p", email: jsonReset.email });
+            user.setPassword("t");
+            user = await user.save();
+
+            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+
+            // Assert
+            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
+            res.should.have.status(200);
+            nbNewPasswordDoc.should.be.eq(1);
+            expect(sendGridEmailHelper.sendChangePasswordEmail.calledOnceWith(jsonReset.email)).to.be.true;
+        });
+
+        it('should not send an email to confirm the change of password because the email passed does not exist', async() => {
+            // Arrange
+            const jsonReset = { email: "pt@g.com", newPassword: "test" };
+
+            let user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
+            user.setPassword("t");
+            user = await user.save();
+
+            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+
+            // Assert
+            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
+            nbNewPasswordDoc.should.be.eq(0);
+
+            res.should.have.status(400);
+            res.body.errors.email.should.be.eq('isinvalid');
+            expect(sendGridEmailHelper.sendChangePasswordEmail.called).to.be.false;
+        });
+
+        it('should not send an email to confirm the change of password because there is no email passed', async() => {
+            // Arrange
+            const jsonReset = { newPassword: "test" };
+
+            let user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
+            user.setPassword("t");
+            user = await user.save();
+
+            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+
+            // Assert
+            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
+            nbNewPasswordDoc.should.be.eq(0);
+
+            res.should.have.status(422);
+            res.body.errors.email.should.be.eq('isrequired');
+            expect(sendGridEmailHelper.sendChangePasswordEmail.called).to.be.false;
+        });
+
+        it('should not send an email to confirm the change of password because there is no email passed', async() => {
+            // Arrange
+            const jsonReset = { email: "test" };
+
+            let user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
+            user.setPassword("t");
+            user = await user.save();
+
+            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+
+            // Act
+            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+
+            // Assert
+            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
+            nbNewPasswordDoc.should.be.eq(0);
+
+            res.should.have.status(422);
+            res.body.errors.password.should.be.eq('isrequired');
+            expect(sendGridEmailHelper.sendChangePasswordEmail.called).to.be.false;
+        });
+    });
+
+    describe('/GET Check email', () => {
+        it('should change the flag isVerified', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.initUser();
+            user.setPassword("test");
+            user = await user.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/verification').query({email: user.email, token: user.verificationToken});
+
+            // Assert
+            res.status.should.be.eq(200);
+            expect(res).to.redirectTo(config.frontEndUrl);
+            user = await Users.findById(user._id);
+            user.isVerified.should.be.true;
+        });
+
+        it('should send an error code 422 the email is not passed', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.initUser();
+            user.setPassword("test");
+            user = await user.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/verification').query({token: user.verificationToken});
+
+            // Assert
+            res.status.should.be.eq(422);
+            res.body.errors.email.should.be.eql('isrequired')
+            user = await Users.findById(user._id);
+            user.isVerified.should.be.false;
+        });
+
+        it('should send an error code 422 the token is not passed', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.initUser();
+            user.setPassword("test");
+            user = await user.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/verification').query({email: user.email});
+
+            // Assert
+            res.status.should.be.eq(422);
+            res.body.errors.token.should.be.eql('isrequired')
+            user = await Users.findById(user._id);
+            user.isVerified.should.be.false;
+        });
+
+        it('should change the flag isVerified', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.initUser();
+            user.setPassword("test");
+            user = await user.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/verification').query({email: "tr@gmail.com", token: user.verificationToken});
+
+            // Assert
+            res.status.should.be.eq(400);
+            res.body.errors.email.should.be.eql('isinvalid');
+
+            user = await Users.findById(user._id);
+            user.isVerified.should.be.false;
+        });
+
+        it('should change the flag isVerified', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.initUser();
+            user.setPassword("test");
+            user = await user.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/verification').query({email: user.email, token: "sdffsdfgsdofhhnogn"});
+
+            // Assert
+            res.status.should.be.eq(400);
+            res.body.errors.token.should.be.eql('isinvalid');
+
+            user = await Users.findById(user._id);
+            user.isVerified.should.be.false;
+        });
+    });
+
+    describe('/GET changePassword', () => {
+        it('should change the password', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let newPassword = new NewPasswords();
+            newPassword.initNewPassword(user.email, 'newpassword');
+            newPassword = await newPassword.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/changepassword').query({token: newPassword.verificationToken});
+
+            // Assert
+            res.status.should.be.eq(200);
+            expect(res).to.redirectTo(config.frontEndUrl);
+            user = await Users.findById(user._id);
+            user.validatePassword('newpassword').should.be.true;
+
+            const nbNewPassword = await NewPasswords.countDocuments({email: user.email});
+            nbNewPassword.should.be.eq(0);
+        });
+
+        it('should not change the password and return a error 422 because the token is missing in the query', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let newPassword = new NewPasswords();
+            newPassword.initNewPassword(user.email, 'newpassword');
+            newPassword = await newPassword.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/changepassword');
+
+            // Assert
+            res.status.should.be.eq(422);
+            res.body.errors.token.should.be.eql('isrequired');
+            
+            user = await Users.findById(user._id);
+            user.validatePassword('test').should.be.true;
+
+            const nbNewPassword = await NewPasswords.countDocuments({email: user.email});
+            nbNewPassword.should.be.eq(1);
+        });
+
+        it('should not change the password and return a error 400 because the token is invalid', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let newPassword = new NewPasswords();
+            newPassword.initNewPassword(user.email, 'newpassword');
+            newPassword = await newPassword.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/users/changepassword').query({token: 'fjbslvbeevbqurrv'});;
+
+            // Assert
+            res.status.should.be.eq(400);
+            res.body.errors.token.should.be.eql('isinvalid');
+            
+            user = await Users.findById(user._id);
+            user.validatePassword('test').should.be.true;
+
+            const nbNewPassword = await NewPasswords.countDocuments({email: user.email});
+            nbNewPassword.should.be.eq(1);
         });
     });
 });
