@@ -22,10 +22,10 @@ console.log('process.env.NODE_ENV=' + process.env.NODE_ENV);
 
 let config = require('config');
 
-//Configure isProduction variable
-config.isProduction = process.env.NODE_ENV === 'prod';
+//Configure isProd and isDev variables
+config.isProd = process.env.NODE_ENV === 'prod';
 config.isDev = process.env.NODE_ENV === 'dev';
-console.log(config);
 
+console.log(config);
 
 module.exports = config;
