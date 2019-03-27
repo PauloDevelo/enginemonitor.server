@@ -46,7 +46,7 @@ if(!isProduction) {
 }
 
 //Configure Mongoose
-mongoose.connect('mongodb:' + config.DBHost);
+mongoose.connect('mongodb:' + config.DBHost, {useNewUrlParser: true});
 if(isDev) {
   mongoose.set('debug', true);
 }
