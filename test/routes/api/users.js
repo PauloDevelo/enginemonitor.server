@@ -1,9 +1,9 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const app = require('../src/app');
-const config = require('../src/utils/configUtils');
-const sendGridEmailHelper = require('../src/utils/sendGridEmailHelper');
+const app = require('../../../src/app');
+const config = require('../../../src/utils/configUtils');
+const sendGridEmailHelper = require('../../../src/utils/sendGridEmailHelper');
 
 const mongoose = require('mongoose');
 const chai = require('chai');

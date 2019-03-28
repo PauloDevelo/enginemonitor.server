@@ -24,7 +24,7 @@
                 "-u", "tdd",
                 "--timeout", "999999",
                 "--colors", "--recursive",
-                "${workspaceFolder}/test/*"
+                "${workspaceFolder}/test/routes/api/*"
             ],
             "internalConsoleOptions": "openOnSessionStart"
         }
