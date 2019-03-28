@@ -39,7 +39,7 @@ require('./models/Users');
 require('./models/Equipments');
 require('./models/Entries');
 require('./models/Tasks');
-require('./config/passport');
+require('../config/passport');
 app.use(require('./routes'));
 
 app.listen(config.port, () => console.log('Server running on http://localhost:' + config.port + '/'));

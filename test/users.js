@@ -1,19 +1,20 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const config = require('../utils/configUtils');
-const app = require('../app');
+const app = require('../src/app');
+const config = require('../src/utils/configUtils');
+const sendGridEmailHelper = require('../src/utils/sendGridEmailHelper');
+
 const mongoose = require('mongoose');
 const chai = require('chai');
 const expect = chai.expect;
-
 const chaiHttp = require('chai-http');
 const should = chai.should();
 const sinon = require('sinon');
 
 const Users = mongoose.model('Users');
 const NewPasswords = mongoose.model('NewPasswords');
-const sendGridEmailHelper = require('../utils/sendGridEmailHelper');
+
 
 chai.use(chaiHttp);
 

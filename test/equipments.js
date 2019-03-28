@@ -1,7 +1,7 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const app = require('../app');
+const app = require('../src/app');
 const mongoose = require('mongoose');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
