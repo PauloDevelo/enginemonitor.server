@@ -4,7 +4,6 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import errorHandler from "errorhandler";
 import express from "express";
-import session from "express-session";
 import mongoose from "mongoose";
 import morgan from "morgan";
 import path from "path";
@@ -26,7 +25,6 @@ if (isDev) {
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(session({ secret: "passport-tutorial", cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
 
 if (!isProd) {
   app.use(errorHandler());
