@@ -1,0 +1,13 @@
+//the filename has to be either dev, prod, test or ... .json 
+{ 
+    "DBHost": "//localhost/enginemaintenancetest",
+
+    "port": 8000,
+    "hostURL": "http://localhost:8000/api/",
+
+    "frontEndUrl": "https://www.google.com/",
+
+    "SENDGRID_API_KEY": "Send grid API key",
+
+    "JWT_PrivateKey": "secret"
+ }

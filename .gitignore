@@ -27,4 +27,3 @@ yarn-debug.log*
 yarn-error.log*
 config/dev.json
 config/prod.json
-config/test.json
