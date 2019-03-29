@@ -1,26 +1,26 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const app = require('../../../src/app');
-const mongoose = require('mongoose');
-const chai = require('chai');
-const chaiHttp = require('chai-http');
+import app from '../../../src/app';
 
+const chai = require('chai')
+  , chaiHttp = require('chai-http');
+ 
+chai.use(chaiHttp);
+const expect = chai.expect;
 const should = chai.should();
 
-const Users = mongoose.model('Users');
-const Equipments = mongoose.model('Equipments');
-const Tasks = mongoose.model('Tasks');
-const Entries = mongoose.model('Entries');
-
-chai.use(chaiHttp);
+import Users from '../../../src/models/Users';
+import Equipments from '../../../src/models/Equipments';
+import Tasks from '../../../src/models/Tasks';
+import Entries from '../../../src/models/Entries';
 
 describe('Entries', () => {
     afterEach(async () => {
-        await Entries.deleteMany(); 
-        await Tasks.deleteMany(); 
-        await Equipments.deleteMany();  
-        await Users.deleteMany();  
+        await Entries.deleteMany({}); 
+        await Tasks.deleteMany({}); 
+        await Equipments.deleteMany({});  
+        await Users.deleteMany({});  
     });
 
     describe('/GET/:equipmentId/:taskId entries', () => {

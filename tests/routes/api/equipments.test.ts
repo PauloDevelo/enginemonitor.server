@@ -1,21 +1,24 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const app = require('../../../src/app');
-const mongoose = require('mongoose');
-const chai = require('chai');
-const chaiHttp = require('chai-http');
+import app from '../../../src/app';
+import mongoose from 'mongoose';
 
-const should = chai.should();
-const Users = mongoose.model('Users');
-const Equipments = mongoose.model('Equipments');
-
+const chai = require('chai')
+  , chaiHttp = require('chai-http');
+ 
 chai.use(chaiHttp);
+const expect = chai.expect;
+const should = chai.should();
+
+import Users from '../../../src/models/Users';
+import Equipments from '../../../src/models/Equipments';
+
 
 describe('Equipments', () => {
     afterEach(async () => {
-        await Equipments.deleteMany();  
-        await Users.deleteMany();        
+        await Equipments.deleteMany({});  
+        await Users.deleteMany({});        
     });
 
     describe('/GET equipments', () => {
@@ -34,7 +37,7 @@ describe('Equipments', () => {
             user = await user.save();
 
             const userDeletedToken = user.generateJWT();
-            await user.delete();
+            await user.remove();
 
             let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token " + userDeletedToken);
             res.should.have.status(400);
@@ -93,7 +96,7 @@ describe('Equipments', () => {
             user.setPassword("test");
             user = await user.save();
             const deletedUserToken = user.generateJWT();
-            await user.delete();
+            await user.remove();
                 
             let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z" };
 
@@ -259,7 +262,7 @@ describe('Equipments', () => {
             user = await user.save();
 
             let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
-            boat.ownerId = "5c27912a9bc7e61fdcd2e82c";
+            boat.ownerId = new mongoose.Types.ObjectId("5c27912a9bc7e61fdcd2e82c");
             boat = await boat.save();
 
             let res = await chai.request(app).delete('/api/equipments/' + boat._id).set("Authorization", "Token " + user.generateJWT());

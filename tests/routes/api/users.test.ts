@@ -1,35 +1,34 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const app = require('../../../src/app');
-const config = require('../../../src/utils/configUtils');
-const sendGridEmailHelper = require('../../../src/utils/sendGridEmailHelper');
+import app from '../../../src/app';
+import config from '../../../src/utils/configUtils';
+import sendGridEmailHelper from '../../../src/utils/sendGridEmailHelper';
 
-const mongoose = require('mongoose');
-const chai = require('chai');
-const expect = chai.expect;
-const chaiHttp = require('chai-http');
-const should = chai.should();
-const sinon = require('sinon');
-
-const Users = mongoose.model('Users');
-const NewPasswords = mongoose.model('NewPasswords');
-
-
+const chai = require('chai')
+  , chaiHttp = require('chai-http');
+ 
 chai.use(chaiHttp);
+const expect = chai.expect;
+const should = chai.should();
+
+import sinon from 'sinon';
+
+import Users from '../../../src/models/Users';
+import NewPasswords from '../../../src/models/NewPasswords';
 
 describe('Users', () => {
     afterEach(async () => {
-        await Users.deleteMany();
-        await NewPasswords.deleteMany();
+        await Users.deleteMany({});
+        await NewPasswords.deleteMany({});
         sinon.restore();        
     });
 
     describe('/GET current user', () => {
         it('it should GET a 401 http code as a result because the request does not have the token', async () => {
-            let res = await chai.request(app).get('/api/users/current')
+            const res = await chai.request(app).get('/api/users/current')
             
-            res.should.have.status(401);
+            res.status.should.be.eql(401);
             res.body.errors.message.should.be.eql("No authorization token was found");
             res.body.errors.error.name.should.be.eql("UnauthorizedError");
             res.body.errors.error.code.should.be.eql("credentials_required");
@@ -37,11 +36,11 @@ describe('Users', () => {
         });
 
         it('it should GET a 200 http code as a result and a user because we set the correct token', async () => {
-            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            let res = await chai.request(app).get('/api/users/current').set("Authorization", "Token " + user.generateJWT());
+            const res = await chai.request(app).get('/api/users/current').set("Authorization", "Token " + user.generateJWT());
             
             res.should.have.status(200);
             res.body.should.have.property("user");
@@ -58,17 +57,21 @@ describe('Users', () => {
     describe('/POST createUser', () => {
         it('it should POST a user because all the fields exist', async () => {
             // Arrange
-            let user = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users').send({ user:user });
+            const res = await chai.request(app).post('/api/users').send({ user:jsonUser });
 
             // Assert
+            const user = await Users.findOne({email: jsonUser.email});
+            expect(user !== null).to.be.true;
+
             res.should.have.status(200);
             res.body.should.be.a('object');
             res.body.should.not.have.property('user');
-            expect(sendGridEmailHelper.sendVerificationEmail.calledOnceWith("paul.t@mail.com")).to.be.true;
+            expect(sendVerificationEmailSpy.calledOnce).to.be.true;
+            expect(sendVerificationEmailSpy.withArgs("paul.t@mail.com", user.verificationToken).calledOnce).to.be.true;
         });
         
         it('it should not POST a new user when name field is missing', async () => {
@@ -78,10 +81,10 @@ describe('Users', () => {
                 password: "test",
                 email: "paul.t@mail.com"
             };
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
             
             // Act
-            let res = await chai.request(app).post('/api/users').send({user:user});
+            const res = await chai.request(app).post('/api/users').send({user:user});
             
             // Assert
             res.should.have.status(422);
@@ -89,7 +92,7 @@ describe('Users', () => {
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('name');
             res.body.errors.name.should.be.eql('isrequired');
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            expect(sendVerificationEmailSpy.called).to.be.false;
         });
 
         it('it should not POST a new user when firstname field is missing', async () => {
@@ -98,16 +101,16 @@ describe('Users', () => {
                 password: "test",
                 email: "paul.t@mail.com"
             };
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
-            let res = await chai.request(app).post('/api/users').send({user:user});
+            const res = await chai.request(app).post('/api/users').send({user:user});
             
             res.should.have.status(422);
             res.body.should.be.a('object');
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('firstname');
             res.body.errors.firstname.should.be.eql('isrequired');
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            expect(sendVerificationEmailSpy.called).to.be.false;
         });
 
         it('it should not POST a new user when password field is missing', async () => {
@@ -116,16 +119,16 @@ describe('Users', () => {
                 firstname: "paul",
                 email: "paul.t@mail.com"
             };
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
-            let res = await chai.request(app).post('/api/users').send({user:user})
+            const res = await chai.request(app).post('/api/users').send({user:user})
             
             res.should.have.status(422);
             res.body.should.be.a('object');
             res.body.should.have.property('errors');
             res.body.errors.should.have.property('password');
             res.body.errors.password.should.be.eql('isrequired');
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            expect(sendVerificationEmailSpy.called).to.be.false;
         });
 
         it('it should not POST a new user when email field is missing', async () => {
@@ -135,7 +138,7 @@ describe('Users', () => {
                 password: "test",
             };
 
-            let res = await chai.request(app).post('/api/users').send({user:user})
+            const res = await chai.request(app).post('/api/users').send({user:user})
             
             res.should.have.status(422);
             res.body.should.be.a('object');
@@ -145,15 +148,18 @@ describe('Users', () => {
         });
 
         it('it should not POST a new user when an email is duplicated', async () => {
-            let jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com" };
-            let user = new Users(jsonUser);
+            // Arrange
+            const jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com" };
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            jsonUser.password = "test";
-
-            let res = await chai.request(app).post('/api/users').send({user:jsonUser})
+            const jsonUserToSend = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
+            
+            // Act
+            const res = await chai.request(app).post('/api/users').send({user:jsonUserToSend})
                 
+            // Assert
             res.should.have.status(422);
             res.body.should.be.a('object');
             res.body.should.have.property('errors');
@@ -164,18 +170,18 @@ describe('Users', () => {
 
     describe('/POST login', () => {
         it('it should login because the password is correct and the email is verified', async () => {
-            let jsonuser = {
+            const jsonUser = {
                 name: "t",
                 firstname: "paul",
                 email: "paul.t@mail.com",
                 isVerified: true
             };
 
-            let user = new Users(jsonuser);
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            let res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"test"}});
+            const res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"test"}});
             
             res.should.have.status(200);
             res.body.should.be.a('object');
@@ -190,18 +196,18 @@ describe('Users', () => {
         });
 
         it('it should not login because the password is correct and the email is not verified', async () => {
-            let jsonuser = {
+            let jsonUser = {
                 name: "t",
                 firstname: "paul",
                 email: "paul.t@mail.com",
                 isVerified: false
             };
 
-            let user = new Users(jsonuser);
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            let res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"test"}});
+            const res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"test"}});
             
             res.should.have.status(400);
             res.body.should.be.a('object');
@@ -211,18 +217,18 @@ describe('Users', () => {
         });
 
         it('it should not login because the password is incorrect', async () => {
-            let jsonuser = {
+            let jsonUser = {
                 name: "t",
                 firstname: "paul",
                 email: "paul.t@mail.com",
                 isVerified: true
             };
 
-            let user = new Users(jsonuser);
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            let res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"t"}})
+            const res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"t"}})
                
             res.should.have.status(400);
             res.body.should.be.a('object');
@@ -232,17 +238,17 @@ describe('Users', () => {
         });
 
         it('it should not login because the email is unknown', async () => {
-            let jsonuser = {
+            let jsonUser = {
                 name: "t",
                 firstname: "paul",
                 email: "paul.t@mail.com"
             };
 
-            let user = new Users(jsonuser);
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
                 
-            let res = await chai.request(app).post('/api/users/login').send({user:{ email:"p.t@mail.com", password:"t"}})
+            const res = await chai.request(app).post('/api/users/login').send({user:{ email:"p.t@mail.com", password:"t"}})
                 
             res.should.have.status(400);
             res.body.should.be.a('object');
@@ -252,17 +258,17 @@ describe('Users', () => {
         });
 
         it('it should not login because the email is missing', async () => {
-            let jsonuser = {
+            let jsonUser = {
                 name: "t",
                 firstname: "paul",
                 email: "paul.t@mail.com"
             };
 
-            let user = new Users(jsonuser);
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            let res = await chai.request(app).post('/api/users/login').send({user:{ password:"t"}})
+            const res = await chai.request(app).post('/api/users/login').send({user:{ password:"t"}})
                 
             res.should.have.status(422);
             res.body.should.be.a('object');
@@ -272,18 +278,17 @@ describe('Users', () => {
         });
 
         it('it should not login because the password is missing', async () => {
-            let jsonuser = {
+            let jsonUser = {
                 name: "t",
                 firstname: "paul",
                 email: "paul.t@mail.com"
             };
 
-            let user = new Users(jsonuser);
+            const user = new Users(jsonUser);
             user.setPassword("test");
+            await user.save();
 
-            user = await user.save();
-
-            let res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com" }})
+            const res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com" }})
                 
             res.should.have.status(422);
             res.body.should.be.a('object');
@@ -296,84 +301,88 @@ describe('Users', () => {
     describe('/POST verificationemail', () => {
         it('Should called the function sendVerificationEmail because the user asked it', async() =>{
             // Arrange
-            const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com" };
-            let user = new Users(jsonUser);
+            const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com", verificationToken:"my special token" };
+            const user = new Users(jsonUser);
             user.setPassword("test");
-            user = await user.save();
+            await user.save();
 
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
 
             // Assert
+            const newUser = await Users.findOne({email: "r@gmail.com"});
+            expect(newUser).to.not.be.null;
+            expect(newUser.verificationToken).to.not.be.eql(jsonUser.verificationToken);
+
             res.should.have.status(200);
-            expect(sendGridEmailHelper.sendVerificationEmail.calledOnceWith(jsonUser.email)).to.be.true;
+            expect(sendVerificationEmailSpy.calledOnceWith(jsonUser.email, newUser.verificationToken)).to.be.true;
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link for an email that does not exist', async() =>{
             // Arrange
             const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com" };
 
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
 
             // Assert
             res.should.have.status(400);
             res.body.should.have.property("errors");
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isinvalid");
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            expect(sendVerificationEmailSpy.called).to.be.false;
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link for an email that does not exist', async() =>{
             // Arrange
             const jsonUser = { name: "r", firstname: "p", email: "r@gmail.com" };
 
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
 
             // Assert
             res.should.have.status(400);
             res.body.should.have.property("errors");
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isinvalid");
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            expect(sendVerificationEmailSpy.called).to.be.false;
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link but some the user is not sent', async() =>{
             // Arrange
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/verificationemail').send({ });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ });
 
             // Assert
             res.should.have.status(422);
             res.body.should.have.property("errors");
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isrequired");
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            expect(sendVerificationEmailSpy.called).to.be.false;
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link but the email is undefined', async() =>{
             // Arrange
             const jsonUser = { name: "r" };
-            sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
+            const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/verificationemail').send({ user: jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ user: jsonUser });
 
             // Assert
             res.should.have.status(422);
             res.body.should.have.property("errors");
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isrequired");
-            expect(sendGridEmailHelper.sendVerificationEmail.called).to.be.false;
+            sendVerificationEmailSpy.called.should.be.false;
         });
 
     });
@@ -383,34 +392,36 @@ describe('Users', () => {
             // Arrange
             const jsonReset = { email: "pt@g.com", newPassword: "test" };
 
-            let user = new Users({ name: "r", firstname: "p", email: jsonReset.email });
+            const user = new Users({ name: "r", firstname: "p", email: jsonReset.email });
             user.setPassword("t");
-            user = await user.save();
+            await user.save();
 
-            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+            const sendChangePasswordEmail = sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+            const res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
 
             // Assert
-            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
+            const newNewPasswordDoc = await NewPasswords.findOne({ email: jsonReset.email });
+            newNewPasswordDoc.should.not.be.null;
+
             res.should.have.status(200);
-            nbNewPasswordDoc.should.be.eq(1);
-            expect(sendGridEmailHelper.sendChangePasswordEmail.calledOnceWith(jsonReset.email)).to.be.true;
+            
+            expect(sendChangePasswordEmail.calledOnceWith(jsonReset.email, newNewPasswordDoc.verificationToken)).to.be.true;
         });
 
         it('should not send an email to confirm the change of password because the email passed does not exist', async() => {
             // Arrange
             const jsonReset = { email: "pt@g.com", newPassword: "test" };
 
-            let user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
+            const user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
             user.setPassword("t");
-            user = await user.save();
+            await user.save();
 
-            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+            const sendChangePasswordEmail = sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+            const res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
 
             // Assert
             const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
@@ -418,43 +429,43 @@ describe('Users', () => {
 
             res.should.have.status(400);
             res.body.errors.email.should.be.eq('isinvalid');
-            expect(sendGridEmailHelper.sendChangePasswordEmail.called).to.be.false;
+            expect(sendChangePasswordEmail.called).to.be.false;
         });
 
         it('should not send an email to confirm the change of password because there is no email passed', async() => {
             // Arrange
             const jsonReset = { newPassword: "test" };
 
-            let user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
+            const user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
             user.setPassword("t");
-            user = await user.save();
+            await user.save();
 
-            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+            const sendChangePasswordEmail = sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+            const res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
 
             // Assert
-            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
+            const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: undefined });
             nbNewPasswordDoc.should.be.eq(0);
 
             res.should.have.status(422);
             res.body.errors.email.should.be.eq('isrequired');
-            expect(sendGridEmailHelper.sendChangePasswordEmail.called).to.be.false;
+            expect(sendChangePasswordEmail.called).to.be.false;
         });
 
         it('should not send an email to confirm the change of password because there is no email passed', async() => {
             // Arrange
             const jsonReset = { email: "test" };
 
-            let user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
+            const user = new Users({ name: "r", firstname: "p", email: "pto@g.com" });
             user.setPassword("t");
-            user = await user.save();
+            await user.save();
 
-            sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
+            const sendChangePasswordEmail = sinon.spy(sendGridEmailHelper, 'sendChangePasswordEmail');
 
             // Act
-            let res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
+            const res = await chai.request(app).post('/api/users/resetpassword').send(jsonReset);
 
             // Assert
             const nbNewPasswordDoc = await NewPasswords.countDocuments({ email: jsonReset.email });
@@ -462,7 +473,7 @@ describe('Users', () => {
 
             res.should.have.status(422);
             res.body.errors.password.should.be.eq('isrequired');
-            expect(sendGridEmailHelper.sendChangePasswordEmail.called).to.be.false;
+            expect(sendChangePasswordEmail.called).to.be.false;
         });
     });
 
@@ -475,11 +486,11 @@ describe('Users', () => {
             user = await user.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/verification').query({email: user.email, token: user.verificationToken});
+            const res = await chai.request(app).get('/api/users/verification').query({email: user.email, token: user.verificationToken});
 
             // Assert
             res.status.should.be.eq(200);
-            expect(res).to.redirectTo(config.frontEndUrl);
+            expect(res).to.redirectTo(config.get("frontEndUrl"));
             user = await Users.findById(user._id);
             user.isVerified.should.be.true;
         });
@@ -492,7 +503,7 @@ describe('Users', () => {
             user = await user.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/verification').query({token: user.verificationToken});
+            const res = await chai.request(app).get('/api/users/verification').query({token: user.verificationToken});
 
             // Assert
             res.status.should.be.eq(422);
@@ -509,7 +520,7 @@ describe('Users', () => {
             user = await user.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/verification').query({email: user.email});
+            const res = await chai.request(app).get('/api/users/verification').query({email: user.email});
 
             // Assert
             res.status.should.be.eq(422);
@@ -526,7 +537,7 @@ describe('Users', () => {
             user = await user.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/verification').query({email: "tr@gmail.com", token: user.verificationToken});
+            const res = await chai.request(app).get('/api/users/verification').query({email: "tr@gmail.com", token: user.verificationToken});
 
             // Assert
             res.status.should.be.eq(400);
@@ -544,7 +555,7 @@ describe('Users', () => {
             user = await user.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/verification').query({email: user.email, token: "sdffsdfgsdofhhnogn"});
+            const res = await chai.request(app).get('/api/users/verification').query({email: user.email, token: "sdffsdfgsdofhhnogn"});
 
             // Assert
             res.status.should.be.eq(400);
@@ -567,11 +578,11 @@ describe('Users', () => {
             newPassword = await newPassword.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/changepassword').query({token: newPassword.verificationToken});
+            const res = await chai.request(app).get('/api/users/changepassword').query({token: newPassword.verificationToken});
 
             // Assert
             res.status.should.be.eq(200);
-            expect(res).to.redirectTo(config.frontEndUrl);
+            expect(res).to.redirectTo(config.get("frontEndUrl"));
             user = await Users.findById(user._id);
             user.validatePassword('newpassword').should.be.true;
 
@@ -590,7 +601,7 @@ describe('Users', () => {
             newPassword = await newPassword.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/changepassword');
+            const res = await chai.request(app).get('/api/users/changepassword');
 
             // Assert
             res.status.should.be.eq(422);
@@ -614,7 +625,7 @@ describe('Users', () => {
             newPassword = await newPassword.save();
 
             // Act
-            let res = await chai.request(app).get('/api/users/changepassword').query({token: 'fjbslvbeevbqurrv'});;
+            const res = await chai.request(app).get('/api/users/changepassword').query({token: 'fjbslvbeevbqurrv'});;
 
             // Assert
             res.status.should.be.eq(400);

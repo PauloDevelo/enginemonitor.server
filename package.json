@@ -2,7 +2,7 @@
   "name": "enginemonitor.server",
   "version": "1.0.0",
   "description": "Manage the task done around the engine",
-  "main": "app.js",
+  "main": "dist/app.js",
   "dependencies": {
     "@sendgrid/mail": "^6.3.1",
     "axios": "^0.18.0",
@@ -20,14 +20,37 @@
     "passport-local": "^1.0.0"
   },
   "devDependencies": {
+    "@types/config": "0.0.34",
+    "@types/cors": "^2.8.4",
+    "@types/errorhandler": "0.0.32",
+    "@types/express": "^4.16.1",
+    "@types/express-jwt": "0.0.42",
+    "@types/express-session": "^1.15.12",
+    "@types/jsonwebtoken": "^8.3.2",
+    "@types/mocha": "^5.2.6",
+    "@types/mongoose": "^5.3.24",
+    "@types/morgan": "^1.7.35",
+    "@types/node": "^11.12.0",
+    "@types/passport": "^1.0.0",
+    "@types/passport-local": "^1.0.33",
+    "@types/sinon": "^7.0.10",
     "chai": "^4.2.0",
     "chai-http": "^4.2.0",
     "mocha": "^5.2.0",
-    "sinon": "^7.3.0"
+    "sinon": "^7.3.0",
+    "ts-node": "^8.0.3",
+    "tslint": "^5.14.0",
+    "typescript": "^3.3.4000"
   },
   "scripts": {
-    "test": "mocha --timeout 2000"
+    "prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "node .",
+    "test": "mocha -r ts-node/register tests/**/*.test.ts",
+    "testWithCoverage": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha -r ts-node/register tests/**/*.test.ts && nyc report"
   },
   "author": "Paul Torruella",
-  "license": "ISC"
+  "license": "ISC",
+  "optionalDependencies": {}
 }

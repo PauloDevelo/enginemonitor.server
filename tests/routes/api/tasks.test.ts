@@ -1,27 +1,27 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-const moment = require('moment');
+import moment from 'moment';
 
-const app = require('../../../src/app');
-const mongoose = require('mongoose');
-const chai = require('chai');
-const chaiHttp = require('chai-http');
+import app from '../../../src/app';
 
+const chai = require('chai')
+  , chaiHttp = require('chai-http');
+ 
+chai.use(chaiHttp);
+const expect = chai.expect;
 const should = chai.should();
 
-const Users = mongoose.model('Users');
-const Equipments = mongoose.model('Equipments');
-const Entries = mongoose.model('Entries');
-const Tasks = mongoose.model('Tasks');
-
-chai.use(chaiHttp);
+import Users from '../../../src/models/Users';
+import Equipments from '../../../src/models/Equipments';
+import Entries from '../../../src/models/Entries';
+import Tasks from '../../../src/models/Tasks';
 
 describe('Tasks', () => {
     afterEach(async () => {
-        await Tasks.deleteMany(); 
-        await Equipments.deleteMany();  
-        await Users.deleteMany();  
+        await Tasks.deleteMany({}); 
+        await Equipments.deleteMany({});  
+        await Users.deleteMany({});  
     });
 
     describe('/GET/:equipmentId tasks', () => {
@@ -66,8 +66,7 @@ describe('Tasks', () => {
             // Arrange
             let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
             fakeUser.setPassword("test");
-            let fakeUserId = fakeUser._id;
-            let token = fakeUser.generateJWT();
+            let fakeToken = fakeUser.generateJWT();
 
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -80,11 +79,10 @@ describe('Tasks', () => {
 
             let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange"});
             task.equipmentId = boat._id;
-
             task = await task.save();
 
             // Act
-            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + token);
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + fakeToken);
 
             // Assert
             res.should.have.status(400);
@@ -92,11 +90,10 @@ describe('Tasks', () => {
 
         it('it should GET a 400 http code as a result because the user is not the owner', async () => {
             // Arrange
-            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
-            fakeUser.setPassword("test");
-            let fakeUserId = fakeUser._id;
-            let token = fakeUser.generateJWT();
-            fakeUser = await fakeUser.save();
+            let differentUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            differentUser.setPassword("test");
+            let differentUserToken = differentUser.generateJWT();
+            differentUser = await differentUser.save();
 
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -113,7 +110,7 @@ describe('Tasks', () => {
             task = await task.save();
 
             // Act
-            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + token);
+            let res = await chai.request(app).get('/api/tasks/'+ boat._id.toString()).set("Authorization", "Token " + differentUserToken);
 
             // Assert
             res.should.have.status(401);

@@ -2,5 +2,5 @@
     "uid": "EquipmentMaintenanceServer",
     "append": true,
     "watch": true,
-    "script": "app.js"
+    "script": "./dist/app.js"
 }
