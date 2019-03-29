@@ -3,9 +3,6 @@ import auth from "../auth";
 
 const router = express.Router();
 
-import enginemaintenance from "./enginemaintenance";
-router.use("/enginemaintenance", enginemaintenance);
-
 import users from "./users";
 router  .post("/users",                 auth.optional, users.createUser)
         .post("/users/login",           auth.optional, users.login)
