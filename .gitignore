@@ -9,6 +9,9 @@
 /coverage
 /.nyc_output
 
+#development
+/dist
+
 # production
 /build
 
