@@ -1,8 +1,13 @@
 //the filename has to be either dev, prod, test or ... .json 
 { 
     "DBHost": "//localhost/enginemaintenancedev",
+
     "port": 8000,
     "hostURL": "http://localhost:8000/api/",
+
     "frontEndUrl": "http://localhost:3000/",
-    "SENDGRID_API_KEY": "Send grid API key"
+
+    "SENDGRID_API_KEY": "Send grid API key",
+
+    "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT"
  }

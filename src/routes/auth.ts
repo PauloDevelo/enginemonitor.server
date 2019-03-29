@@ -1,5 +1,6 @@
 import jwt from "express-jwt";
 import { IncomingMessage } from "http";
+import config from "../utils/configUtils";
 
 const getTokenFromHeaders = (req: IncomingMessage): string => {
   const { headers: { authorization } } = req;
@@ -14,12 +15,12 @@ const auth = {
   optional: jwt({
     credentialsRequired: false,
     getToken: getTokenFromHeaders,
-    secret: "secret",
+    secret: config.get("JWT_PrivateKey"),
     userProperty: "payload",
   }),
   required: jwt({
     getToken: getTokenFromHeaders,
-    secret: "secret",
+    secret: config.get("JWT_PrivateKey"),
     userProperty: "payload",
   }),
 };

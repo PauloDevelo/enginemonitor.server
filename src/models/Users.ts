@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import config from "../utils/configUtils";
 
 export const UsersSchema = new mongoose.Schema({
   email: String,
@@ -36,7 +37,7 @@ UsersSchema.methods.generateJWT = function() {
     email: this.email,
     exp: expirationDate.getTime() / 1000,
     id: this._id,
-  }, "secret");
+  }, config.get("JWT_PrivateKey"));
 };
 
 UsersSchema.methods.toAuthJSON = function() {
