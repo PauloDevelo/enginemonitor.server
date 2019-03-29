@@ -9,5 +9,7 @@
 
     "SENDGRID_API_KEY": "Send grid API key",
 
-    "JWT_PrivateKey": "secret"
+    "JWT_PrivateKey": "secret",
+
+    "LogLevel": "debug"
  }

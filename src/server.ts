@@ -4,7 +4,7 @@ import EntriesController from "./controllers/entries.controller";
 import EquipmentsController from "./controllers/equipments.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
-import config, {isDev, isProd} from "./utils/configUtils";
+import config, {isDev} from "./utils/configUtils";
 
 // Configure mongoose's promise to global promise
 mongoose.Promise = global.Promise;

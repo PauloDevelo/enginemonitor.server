@@ -1,12 +1,12 @@
 import { MailData } from "@sendgrid/helpers/classes/mail";
 import sgMail from "@sendgrid/mail";
 import config, { isProd } from "./configUtils";
+import logger from "./logger";
 
 const from = "no-reply@ecogium.fr";
 
 const sendMsg = (msg: MailData) => {
-  // tslint:disable-next-line:no-console
-  console.log(msg);
+  logger.debug("Sending a message", msg);
 
   if (isProd === true) {
     sgMail.setApiKey(config.get("SENDGRID_API_KEY"));

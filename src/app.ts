@@ -1,4 +1,5 @@
-import config, {isDev, isProd} from "./utils/configUtils";
+import {isDev, isProd} from "./utils/configUtils";
+import logger from "./utils/logger";
 
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -25,13 +26,11 @@ class App {
 
     public listen() {
         this.app.listen(this.port, () => {
-            // tslint:disable-next-line:no-console
-            console.log(`Server running on http://localhost:${this.port}/`);
+            logger.log("info", `Server running and listening on port ${this.port}`);
         });
     }
 
     private initializeMiddlewares() {
-        // Configure our app
         this.app.use(cors());
         if (isDev) {
             this.app.use(morgan("dev"));

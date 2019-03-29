@@ -1,5 +1,6 @@
 import passport from "passport";
 import LocalStrategy from "passport-local";
+import logger from "../utils/logger";
 
 import Users from "../models/Users";
 
@@ -21,8 +22,7 @@ const localStrategy = new LocalStrategy.Strategy(
 
       return done(null, user);
     } catch (error) {
-      // tslint:disable-next-line:no-console
-      console.log(error);
+      logger.log("error", "Authentification error", error);
       done(error);
     }
 });
