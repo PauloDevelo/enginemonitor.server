@@ -32,7 +32,7 @@ function checkTaskProperties(task: any) {
     }
 }
 
-async function checkAuth(req: any, res: any, next: any) {
+async function checkAuth(req: any, res: express.Response, next: any) {
     const { payload: { id } } = req;
     const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
 
@@ -53,7 +53,7 @@ async function checkAuth(req: any, res: any, next: any) {
     next();
 }
 
-async function getTasks(req: any, res: any) {
+async function getTasks(req: express.Request, res: express.Response) {
     const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
 
     const query = { equipmentId };
@@ -67,7 +67,7 @@ async function getTasks(req: any, res: any) {
     return res.json({ tasks: jsonTasks });
 }
 
-async function createTask(req: any, res: any) {
+async function createTask(req: express.Request, res: express.Response) {
     try {
         const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
         const { body: { task } } = req;
@@ -97,7 +97,7 @@ async function createTask(req: any, res: any) {
     }
 }
 
-async function changeTask(req: any, res: any) {
+async function changeTask(req: express.Request, res: express.Response) {
     try {
         const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
         const taskId = new mongoose.Types.ObjectId(req.params.taskId);
@@ -133,7 +133,7 @@ async function changeTask(req: any, res: any) {
     }
 }
 
-async function deleteTask(req: any, res: any) {
+async function deleteTask(req: express.Request, res: express.Response) {
     try {
         const taskId = new mongoose.Types.ObjectId(req.params.taskId);
 

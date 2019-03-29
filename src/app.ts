@@ -9,12 +9,6 @@ import mongoose from "mongoose";
 import morgan from "morgan";
 import path from "path";
 
-import Entries from "./models/Entries";
-import Equipments from "./models/Equipments";
-import NewPasswords from "./models/NewPasswords";
-import passport from "./models/passport";
-import Tasks from "./models/Tasks";
-import Users from "./models/Users";
 import routes from "./routes";
 
 // Configure mongoose's promise to global promise

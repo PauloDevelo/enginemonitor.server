@@ -1,3 +1,5 @@
+import * as express from "express";
+
 import passport from "../../models/passport";
 import config from "../../utils/configUtils";
 import sendGridHelper from "../../utils/sendGridEmailHelper";
@@ -7,7 +9,7 @@ import Users from "../../models/Users";
 import { asyncForEach } from "../../utils/asyncUtils";
 
 // POST new user route (optional, everyone has access)
-async function createUser(req: any, res: any) {
+async function createUser(req: express.Request, res: express.Response) {
   try {
     const { body: { user } } = req;
 
@@ -27,8 +29,8 @@ async function createUser(req: any, res: any) {
       return res.status(422).json({ errors: { firstname: "isrequired" } });
     }
 
-    const usertCount = await Users.countDocuments({ email: user.email });
-    if (usertCount > 0) {
+    const userCount = await Users.countDocuments({ email: user.email });
+    if (userCount > 0) {
       return res.status(422).json({ errors: { email: "alreadyexisting" } });
     }
 
@@ -46,7 +48,7 @@ async function createUser(req: any, res: any) {
 }
 
 // GET Verify the user's email
-async function checkEmail(req: any, res: any) {
+async function checkEmail(req: express.Request, res: express.Response) {
   try {
     const { query: { email , token } } = req;
 
@@ -79,7 +81,7 @@ async function checkEmail(req: any, res: any) {
 }
 
 // GET Change the user's password after clicking on the confirmation email
-async function changePassword(req: any, res: any) {
+async function changePassword(req: express.Request, res: express.Response) {
   try {
     const { query: { token } } = req;
 
@@ -111,7 +113,7 @@ async function changePassword(req: any, res: any) {
 }
 
 // POST create a new password and send an email to confirm the change of password
-async function resetPassword(req: any, res: any) {
+async function resetPassword(req: express.Request, res: express.Response) {
   try {
     const { body: { email, newPassword } } = req;
 
@@ -148,7 +150,7 @@ async function resetPassword(req: any, res: any) {
 }
 
 // POST send another verification email
-async function verificationEmail(req: any, res: any) {
+async function verificationEmail(req: express.Request, res: express.Response) {
   try {
     const { body: { user } } = req;
 
@@ -176,7 +178,7 @@ async function verificationEmail(req: any, res: any) {
 }
 
 // POST login route (optional, everyone has access)
-function login(req: any, res: any, next: any) {
+function login(req: express.Request, res: express.Response, next: any) {
   const { body: { user } } = req;
 
   if (!user.email) {
@@ -201,7 +203,7 @@ function login(req: any, res: any, next: any) {
 }
 
 // GET current route (required, only authenticated users have access)
-async function getCurrent(req: any, res: any) {
+async function getCurrent(req: any, res: express.Response) {
   const { payload: { id } } = req;
 
   const user = await Users.findById(id);

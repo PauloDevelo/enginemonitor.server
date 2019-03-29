@@ -36,7 +36,7 @@ router.use(     "/entries/:equipmentId",                 auth.required, entries.
         .post(  "/entries/:equipmentId/:taskId/:entryId", auth.required, entries.changeEntry)
         .delete("/entries/:equipmentId/:taskId/:entryId", auth.required, entries.deleteEntry);
 
-router.use("/", (err: any, req: any, res: any, next: any) => {
+router.use("/", (err: any, req: express.Request, res: express.Response, next: any) => {
     if (err) {
         res.status(err.status || 500).json({
             errors: {

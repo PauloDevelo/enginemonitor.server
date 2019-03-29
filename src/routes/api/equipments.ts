@@ -36,7 +36,7 @@ function checkEquipmentProperties(equipment: any) {
     }
 }
 
-async function checkAuth(req: any, res: any, authSucceed: any) {
+async function checkAuth(req: any, res: express.Response, authSucceed: any) {
     const { payload: { id } } = req;
 
     const user = await Users.findById(id);
@@ -47,7 +47,7 @@ async function checkAuth(req: any, res: any, authSucceed: any) {
     return authSucceed();
 }
 
-async function getEquipments(req: any, res: any) {
+async function getEquipments(req: any, res: express.Response) {
     const userId = new mongoose.Types.ObjectId(req.payload.id);
 
     const query = { ownerId: userId };
@@ -56,7 +56,7 @@ async function getEquipments(req: any, res: any) {
     return res.json({ equipments });
 }
 
-async function addEquipment(req: any, res: any) {
+async function addEquipment(req: any, res: express.Response) {
     try {
         const { body: { equipment } } = req;
         const userId = new mongoose.Types.ObjectId(req.payload.id);
@@ -82,7 +82,7 @@ async function addEquipment(req: any, res: any) {
     }
 }
 
-async function changeEquipment(req: any, res: any) {
+async function changeEquipment(req: any, res: express.Response) {
     try {
         const { body: { equipment } } = req;
 
@@ -104,7 +104,7 @@ async function changeEquipment(req: any, res: any) {
     }
 }
 
-async function deleteEquipment(req: any, res: any) {
+async function deleteEquipment(req: any, res: express.Response) {
     try {
         const existingEquipment = await Equipments.findById(req.params.equipmentId);
         if (!existingEquipment) {
