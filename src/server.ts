@@ -1,10 +1,10 @@
-import config, {isDev, isProd} from "./utils/configUtils";
-import App from './app';
 import mongoose from "mongoose";
-import UsersController from "./controllers/users.controller";
+import App from "./app";
 import EntriesController from "./controllers/entries.controller";
-import TasksController from "./controllers/tasks.controller";
 import EquipmentsController from "./controllers/equipments.controller";
+import TasksController from "./controllers/tasks.controller";
+import UsersController from "./controllers/users.controller";
+import config, {isDev, isProd} from "./utils/configUtils";
 
 // Configure mongoose's promise to global promise
 mongoose.Promise = global.Promise;

@@ -13,7 +13,7 @@ import IController from "./controllers/IController";
 class App {
     public app: express.Application;
     private port: number;
-    private path:string = '/api';
+    private path: string = "/api";
 
     constructor(controllers: IController[], port: number) {
         this.app = express();
@@ -21,6 +21,13 @@ class App {
 
         this.initializeMiddlewares();
         this.initializeControllers(controllers);
+    }
+
+    public listen() {
+        this.app.listen(this.port, () => {
+            // tslint:disable-next-line:no-console
+            console.log(`Server running on http://localhost:${this.port}/`);
+        });
     }
 
     private initializeMiddlewares() {
@@ -53,12 +60,6 @@ class App {
                     },
                 });
             }
-        });
-    }
-
-    public listen() {
-        this.app.listen(this.port, () => {
-            console.log(`Server running on http://localhost:${this.port}/`);
         });
     }
 }

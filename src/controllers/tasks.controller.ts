@@ -1,4 +1,4 @@
-import * as express from 'express';
+import * as express from "express";
 import auth from "../security/auth";
 
 import mongoose from "mongoose";
@@ -7,11 +7,11 @@ import Equipments from "../models/Equipments";
 import Tasks from "../models/Tasks";
 import Users from "../models/Users";
 
-import IController from './IController';
+import IController from "./IController";
 
-class TasksController implements IController{
-    private path:string = '/tasks';
-    private router:express.Router = express.Router();
+class TasksController implements IController {
+    private path: string = "/tasks";
+    private router: express.Router = express.Router();
 
     constructor() {
         this.intializeRoutes();
