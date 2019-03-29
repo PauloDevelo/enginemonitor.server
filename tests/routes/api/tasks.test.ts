@@ -3,7 +3,8 @@ process.env.NODE_ENV = 'test';
 
 import moment from 'moment';
 
-import app from '../../../src/app';
+import server from '../../../src/server';
+const app = server.app;
 
 const chai = require('chai')
   , chaiHttp = require('chai-http');

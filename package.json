@@ -2,7 +2,7 @@
   "name": "enginemonitor.server",
   "version": "1.0.0",
   "description": "Manage the task done around the engine",
-  "main": "dist/app.js",
+  "main": "dist/server.js",
   "dependencies": {
     "@sendgrid/mail": "^6.3.1",
     "axios": "^0.18.0",
@@ -48,7 +48,7 @@
     "lint": "tslint -c tslint.json -p tsconfig.json --fix",
     "tsc": "tsc",
     "build": "npm-run-all clean lint tsc",
-    "ts-start": "ts-node ./src/app.ts",
+    "ts-start": "ts-node ./src/server.ts",
     "dev:start": "npm-run-all build ts-start",
     "start": "node .",
     "testWithCoverage": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha -r ts-node/register tests/**/*.test.ts --exit",

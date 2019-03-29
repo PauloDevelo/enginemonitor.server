@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Debug EquipmentMaintenance server",
-            "program": "${workspaceFolder}/src/app.ts",
+            "program": "${workspaceFolder}/src/server.ts",
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
@@ -20,7 +20,7 @@
             "request": "launch",
             "name": "nodemon",
             "runtimeExecutable": "nodemon",
-            "program": "${workspaceFolder}/dist/app.js",
+            "program": "${workspaceFolder}/dist/server.js",
             "restart": true,
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"

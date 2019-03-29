@@ -4,43 +4,63 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import errorHandler from "errorhandler";
 import express from "express";
-import mongoose from "mongoose";
+
 import morgan from "morgan";
 import path from "path";
 
-import routes from "./routes";
+import IController from "./controllers/IController";
 
-// Configure mongoose's promise to global promise
-mongoose.Promise = global.Promise;
+class App {
+    public app: express.Application;
+    private port: number;
+    private path:string = '/api';
 
-// Initiate our app
-const app = express();
+    constructor(controllers: IController[], port: number) {
+        this.app = express();
+        this.port = port;
 
-// Configure our app
-app.use(cors());
-if (isDev) {
-  app.use(morgan("dev"));
+        this.initializeMiddlewares();
+        this.initializeControllers(controllers);
+    }
+
+    private initializeMiddlewares() {
+        // Configure our app
+        this.app.use(cors());
+        if (isDev) {
+            this.app.use(morgan("dev"));
+        }
+
+        this.app.use(bodyParser.urlencoded({ extended: false }));
+        this.app.use(bodyParser.json());
+        this.app.use(express.static(path.join(__dirname, "public")));
+
+        if (!isProd) {
+            this.app.use(errorHandler());
+        }
+    }
+
+    private initializeControllers(controllers: IController[]) {
+        controllers.forEach((controller) => {
+            this.app.use(this.path, controller.getRouter());
+        });
+
+        this.app.use(this.path, (err: any, req: express.Request, res: express.Response, next: any) => {
+            if (err) {
+                res.status(err.status || 500).json({
+                    errors: {
+                        error: err,
+                        message: err.message,
+                    },
+                });
+            }
+        });
+    }
+
+    public listen() {
+        this.app.listen(this.port, () => {
+            console.log(`Server running on http://localhost:${this.port}/`);
+        });
+    }
 }
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "public")));
-
-if (!isProd) {
-  app.use(errorHandler());
-}
-
-// Configure Mongoose
-mongoose.connect("mongodb:" + config.get("DBHost"), {useNewUrlParser: true});
-if (isDev) {
-  mongoose.set("debug", true);
-}
-
-app.use(routes);
-
-app.listen(config.get("port"), () => {
-  // tslint:disable-next-line:no-console
-  console.log("Server running on http://localhost:" + config.get("port") + "/");
-});
-
-export default app; // for testing
+export default App;

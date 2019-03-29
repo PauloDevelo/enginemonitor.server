@@ -16,12 +16,12 @@ const auth = {
     credentialsRequired: false,
     getToken: getTokenFromHeaders,
     secret: config.get("JWT_PrivateKey"),
-    userProperty: "payload",
+    userProperty: "body.payload",
   }),
   required: jwt({
     getToken: getTokenFromHeaders,
     secret: config.get("JWT_PrivateKey"),
-    userProperty: "payload",
+    userProperty: "body.payload",
   }),
 };
 
