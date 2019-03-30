@@ -56,14 +56,26 @@ class EntriesController implements IController {
     }
 
     private checkAuth = async (req: express.Request, res: express.Response, next: any) => {
-        const { payload: { id } } = req.body;
-        const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
+        const { payload: { id, verificationToken } } = req.body;
+
+        if (verificationToken === undefined) {
+            return res.status(422).json({ errors: { authentication: "error" } });
+        }
+
+        if (id === undefined) {
+            return res.status(422).json({ errors: { id: "isrequired" } });
+        }
 
         const user = await Users.findById(id);
         if (!user) {
-            return res.sendStatus(400);
+            return res.status(400).json({ errors: { authentication: "error" } });
         }
 
+        if (user.verificationToken !== verificationToken) {
+            return res.status(400).json({ errors: { authentication: "error" } });
+        }
+
+        const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
         const existingEquipment = await Equipments.findById(equipmentId);
         if (!existingEquipment) {
             return res.sendStatus(400);

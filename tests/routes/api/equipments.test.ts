@@ -44,8 +44,8 @@ describe('Equipments', () => {
             let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token " + userDeletedToken);
             res.should.have.status(400);
             res.body.should.have.property("errors");
-            res.body.errors.should.have.property("id");
-            res.body.errors.id.should.be.eql("isinvalid");
+            res.body.errors.should.have.property("authentication");
+            res.body.errors.authentication.should.be.eql("error");
         });
 
         it('it should get a 401 http code as a result because the token is expired', async () => {
@@ -106,8 +106,8 @@ describe('Equipments', () => {
             
             res.should.have.status(400);
             res.body.should.have.property("errors");
-            res.body.errors.should.have.property("id");
-            res.body.errors.id.should.be.eql("isinvalid");
+            res.body.errors.should.have.property("authentication");
+            res.body.errors.authentication.should.be.eql("error");
         });
 
         it('it should get a 200 http code as a result because the equipment was successfully created', async () => {

@@ -5,8 +5,8 @@ import passport from "../security/passport";
 import config from "../utils/configUtils";
 import sendGridHelper from "../utils/sendGridEmailHelper";
 
-import NewPasswords, { INewPasswords } from "../models/NewPasswords";
-import Users from "../models/Users";
+import NewPasswords, { INewPassword } from "../models/NewPasswords";
+import Users, { IUser } from "../models/Users";
 
 import { asyncForEach } from "../utils/asyncUtils";
 import IController from "./IController";
@@ -60,7 +60,6 @@ class UsersController implements IController {
             }
 
             let finalUser = new Users(user);
-            finalUser.initUser();
             finalUser.setPassword(user.password);
             finalUser = await finalUser.save();
 
@@ -124,9 +123,7 @@ class UsersController implements IController {
                 return res.status(400).json({ errors: { email: "isinvalid" } });
             }
 
-            user[0].isVerified = true;
-            user[0].salt = newPassword[0].salt;
-            user[0].hash = newPassword[0].hash;
+            user[0].setNewPassword(newPassword[0]);
 
             await user[0].save();
             await newPassword[0].remove();
@@ -156,11 +153,7 @@ class UsersController implements IController {
                 return res.status(400).json({ errors: { email: "isinvalid" } });
             }
 
-            const currentNewPasswords = await NewPasswords.find({ email });
-
-            await asyncForEach(currentNewPasswords, async (password: INewPasswords) => {
-                await password.remove();
-            });
+            await NewPasswords.remove({ email });
 
             let newPasswords = new NewPasswords();
             newPasswords.initNewPassword(email, newPassword);
@@ -190,13 +183,14 @@ class UsersController implements IController {
 
             let userInDb = usersInDb[0];
             if (!userInDb.isVerified) {
-                userInDb.initUser();
+                userInDb.changeVerificationToken();
                 userInDb = await userInDb.save();
 
                 await sendGridHelper.sendVerificationEmail(userInDb.email, userInDb.verificationToken);
+                return res.status(200).json({});
+            } else {
+                return res.status(400).json({ errors: { email: "alreadyverified" } });
             }
-
-            return res.status(200).json({});
         } catch (error) {
             res.send(error);
         }
@@ -214,7 +208,7 @@ class UsersController implements IController {
             return res.status(422).json({ errors: { password: "isrequired" } });
         }
 
-        return passport.authenticate("local", { session: false }, (err, passportUser, info) => {
+        return passport.authenticate("local", { session: false }, (err, passportUser: IUser, info) => {
             if (err) {
                 return next(err);
             }
@@ -229,11 +223,19 @@ class UsersController implements IController {
 
     // GET current route (required, only authenticated users have access)
     private getCurrent = async (req: express.Request, res: express.Response) => {
-        const { payload: { id } } = req.body;
+        const { payload: { id, verificationToken } } = req.body;
+
+        if (verificationToken === undefined) {
+            return res.status(422).json({ errors: { authentication: "error" } });
+        }
 
         const user = await Users.findById(id);
         if (!user) {
             return res.status(400).json({ errors: { id: "isinvalid" } });
+        }
+
+        if (user.verificationToken !== verificationToken) {
+            return res.status(400).json({ errors: { authentication: "error" } });
         }
 
         return res.json({ user: user.toAuthJSON() });

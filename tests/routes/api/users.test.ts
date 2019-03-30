@@ -37,6 +37,34 @@ describe('Users', () => {
             res.body.errors.error.status.should.be.eql(401);
         });
 
+        it('it should GET a 422 http error code as a result because the verification token is not in the authentification token', async () => {
+            const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user.verificationToken = undefined;
+            await user.save();
+
+            const res = await chai.request(app).get('/api/users/current').set("Authorization", "Token " + user.generateJWT());
+            
+            res.should.have.status(422);
+            res.body.errors.authentication.should.be.eql("error");
+        });
+
+        it('it should GET a 400 http error code as a result because the verification token is not correct in the authentification token', async () => {
+            const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            await user.save();
+
+            const oldJWT = user.generateJWT();
+
+            user.setPassword("hello");
+            await user.save();
+
+            const res = await chai.request(app).get('/api/users/current').set("Authorization", "Token " + oldJWT);
+            
+            res.should.have.status(400);
+            res.body.errors.authentication.should.be.eql("error");
+        });
+
         it('it should GET a 200 http code as a result and a user because we set the correct token', async () => {
             const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -181,6 +209,7 @@ describe('Users', () => {
 
             const user = new Users(jsonUser);
             user.setPassword("test");
+            user.isVerified = true;
             await user.save();
 
             const res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"test"}});
@@ -222,12 +251,12 @@ describe('Users', () => {
             let jsonUser = {
                 name: "t",
                 firstname: "paul",
-                email: "paul.t@mail.com",
-                isVerified: true
+                email: "paul.t@mail.com"
             };
 
             const user = new Users(jsonUser);
             user.setPassword("test");
+            user.isVerified = true;
             await user.save();
 
             const res = await chai.request(app).post('/api/users/login').send({user:{ email:"paul.t@mail.com", password:"t"}})
@@ -483,7 +512,6 @@ describe('Users', () => {
         it('should change the flag isVerified', async() => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.initUser();
             user.setPassword("test");
             user = await user.save();
 
@@ -500,7 +528,6 @@ describe('Users', () => {
         it('should send an error code 422 the email is not passed', async() => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.initUser();
             user.setPassword("test");
             user = await user.save();
 
@@ -517,7 +544,6 @@ describe('Users', () => {
         it('should send an error code 422 the token is not passed', async() => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.initUser();
             user.setPassword("test");
             user = await user.save();
 
@@ -534,7 +560,6 @@ describe('Users', () => {
         it('should change the flag isVerified', async() => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.initUser();
             user.setPassword("test");
             user = await user.save();
 
@@ -552,7 +577,6 @@ describe('Users', () => {
         it('should change the flag isVerified', async() => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.initUser();
             user.setPassword("test");
             user = await user.save();
 

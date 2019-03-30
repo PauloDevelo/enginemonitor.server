@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import config from "../utils/configUtils";
 
+import { INewPassword } from "./NewPasswords";
+
 export const UsersSchema = new mongoose.Schema({
   email: String,
   firstname: String,
@@ -13,14 +15,22 @@ export const UsersSchema = new mongoose.Schema({
   verificationToken: String,
 });
 
-UsersSchema.methods.initUser = function() {
-  this.verificationToken = crypto.randomBytes(16).toString("hex");
-  this.isVerified = false;
-};
-
 UsersSchema.methods.setPassword = function(password: string) {
+  this.isVerified = false;
   this.salt = crypto.randomBytes(16).toString("hex");
   this.hash = crypto.pbkdf2Sync(password, this.salt, 10000, 512, "sha512").toString("hex");
+  this.changeVerificationToken();
+};
+
+UsersSchema.methods.setNewPassword = function(newPassword: INewPassword) {
+  this.isVerified = true;
+  this.salt = newPassword.salt;
+  this.hash = newPassword.hash;
+  this.changeVerificationToken();
+};
+
+UsersSchema.methods.changeVerificationToken = function() {
+  this.verificationToken = crypto.randomBytes(16).toString("hex");
 };
 
 UsersSchema.methods.validatePassword = function(password: string) {
@@ -37,6 +47,7 @@ UsersSchema.methods.generateJWT = function() {
     email: this.email,
     exp: expirationDate.getTime() / 1000,
     id: this._id,
+    verificationToken: this.verificationToken,
   }, config.get("JWT_PrivateKey"));
 };
 
@@ -59,9 +70,10 @@ export interface IUser extends mongoose.Document {
   salt: string;
   isVerified: boolean;
 
-  initUser(): void;
   setPassword(password: string): void;
+  setNewPassword(password: INewPassword): void;
   validatePassword(password: string): boolean;
+  changeVerificationToken(): void;
   generateJWT(): string;
   toAuthJSON(): any;
 }

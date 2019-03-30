@@ -21,7 +21,7 @@ NewPasswordsSchema.methods.setPassword = function(password: string) {
   this.hash = crypto.pbkdf2Sync(password, this.salt, 10000, 512, "sha512").toString("hex");
 };
 
-export interface INewPasswords extends mongoose.Document {
+export interface INewPassword extends mongoose.Document {
   email: string;
   hash: string;
   verificationToken: string;
@@ -31,5 +31,5 @@ export interface INewPasswords extends mongoose.Document {
   setPassword(password: string): void;
 }
 
-const NewPasswords = mongoose.model<INewPasswords>("NewPasswords", NewPasswordsSchema);
+const NewPasswords = mongoose.model<INewPassword>("NewPasswords", NewPasswordsSchema);
 export default NewPasswords;

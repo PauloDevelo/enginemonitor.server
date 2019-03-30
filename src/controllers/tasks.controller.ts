@@ -56,12 +56,24 @@ class TasksController implements IController {
     }
 
     private checkAuth = async (req: express.Request, res: express.Response, next: any) => {
-        const { payload: { id } } = req.body;
+        const { payload: { id, verificationToken } } = req.body;
         const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
+
+        if (verificationToken === undefined) {
+            return res.status(422).json({ errors: { authentication: "error" } });
+        }
+
+        if (id === undefined) {
+            return res.status(422).json({ errors: { id: "isrequired" } });
+        }
 
         const user = await Users.findById(id);
         if (!user) {
             return res.sendStatus(400);
+        }
+
+        if (user.verificationToken !== verificationToken) {
+            return res.status(400).json({ errors: { authentication: "error" } });
         }
 
         const existingEquipment = await Equipments.findById(equipmentId);
