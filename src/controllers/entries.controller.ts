@@ -95,6 +95,7 @@ class EntriesController implements IController {
         const query = { equipmentId, taskId };
 
         const entries = await Entries.find(query);
+        entries.sort((entryA, entryB) => entryA.date.getTime() - entryB.date.getTime() );
         const jsonEntries = [];
 
         for (const entry of entries) {

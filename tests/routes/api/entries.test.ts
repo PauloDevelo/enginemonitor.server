@@ -61,6 +61,76 @@ describe('Entries', () => {
             res.body.entries[0].remarks.should.be.eql("RAS");
         });
 
+        it('it should GET entries sorted by date', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            let entryA = new Entries({ name: "My first entry", date: new Date("01/01/2017").toString(), age: 12345, remarks: "RAS" });//
+            entryA.equipmentId = boat._id;
+            entryA.taskId = task._id;
+            entryA = await entryA.save();
+
+            let entryB = new Entries({ name: "My second entry", date: new Date("01/01/2018", ).toString(), age: 12345, remarks: "RAS" });
+            entryB.equipmentId = boat._id;
+            entryB.taskId = task._id;
+            entryB = await entryB.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/entries/' + boat._id.toString() + '/' + task._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            const entry0Date = new Date(res.body.entries[0].date);
+            const entry1Date = new Date(res.body.entries[1].date);
+            entryA.date.should.be.eql(entry0Date);
+            entryB.date.should.be.eql(entry1Date);
+        });
+
+        it('it should GET entries sorted by date', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            let entryB = new Entries({ name: "My second entry", date: new Date("01/01/2018", ).toString(), age: 12345, remarks: "RAS" });
+            entryB.equipmentId = boat._id;
+            entryB.taskId = task._id;
+            entryB = await entryB.save();
+
+            let entryA = new Entries({ name: "My first entry", date: new Date("01/01/2017").toString(), age: 12345, remarks: "RAS" });//
+            entryA.equipmentId = boat._id;
+            entryA.taskId = task._id;
+            entryA = await entryA.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/entries/' + boat._id.toString() + '/' + task._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            const entry0Date = new Date(res.body.entries[0].date);
+            const entry1Date = new Date(res.body.entries[1].date);
+            entryA.date.should.be.eql(entry0Date);
+            entryB.date.should.be.eql(entry1Date);
+        });
+
         it('it should GET a 400 http code as a result because the user does not exist', async () => {
             // Arrange
             let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
