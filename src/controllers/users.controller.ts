@@ -170,13 +170,13 @@ class UsersController implements IController {
     // POST send another verification email
     private verificationEmail = async (req: express.Request, res: express.Response) => {
         try {
-            const { body: { user } } = req;
+            const { body: { email } } = req;
 
-            if (!user || !user.email) {
+            if (!email) {
                 return res.status(422).json({ errors: { email: "isrequired" } });
             }
 
-            const usersInDb = await Users.find({email: user.email});
+            const usersInDb = await Users.find({email});
             if (!usersInDb[0]) {
                 return res.status(400).json({ errors: { email: "isinvalid" } });
             }
