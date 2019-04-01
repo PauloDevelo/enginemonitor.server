@@ -340,7 +340,7 @@ describe('Users', () => {
             const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            const res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ email:jsonUser.email });
 
             // Assert
             const newUser = await Users.findOne({email: "r@gmail.com"});
@@ -358,7 +358,7 @@ describe('Users', () => {
             const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            const res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ email:jsonUser.email });
 
             // Assert
             res.should.have.status(400);
@@ -375,7 +375,7 @@ describe('Users', () => {
             const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            const res = await chai.request(app).post('/api/users/verificationemail').send({ user:jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ email:jsonUser.email });
 
             // Assert
             res.should.have.status(400);
@@ -406,7 +406,7 @@ describe('Users', () => {
             const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
-            const res = await chai.request(app).post('/api/users/verificationemail').send({ user: jsonUser });
+            const res = await chai.request(app).post('/api/users/verificationemail').send({ email: undefined });
 
             // Assert
             res.should.have.status(422);
