@@ -4,6 +4,7 @@
 
     "port": 8000,
     "hostURL": "http://localhost:8000/api/",
+    "ssl":false,
 
     "frontEndUrl": "https://www.google.com/",
 

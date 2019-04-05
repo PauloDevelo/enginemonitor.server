@@ -1,10 +1,13 @@
-import {isDev, isProd} from "./utils/configUtils";
+import config, {isDev, isProd} from "./utils/configUtils";
 import logger from "./utils/logger";
 
 import bodyParser from "body-parser";
 import cors from "cors";
 import errorHandler from "errorhandler";
+import http from "http";
+import https from "https";
 import express from "express";
+import fs from 'fs';
 
 import morgan from "morgan";
 import path from "path";
@@ -13,21 +16,39 @@ import IController from "./controllers/IController";
 
 class App {
     public app: express.Application;
-    private port: number;
-    private path: string = "/api";
+    private readonly port: number;
+    private readonly path: string = "/api";
 
-    constructor(controllers: IController[], port: number) {
+    constructor(controllers: IController[]) {
         this.app = express();
-        this.port = port;
 
         this.initializeMiddlewares();
         this.initializeControllers(controllers);
     }
 
     public listen() {
-        this.app.listen(this.port, () => {
-            logger.log("info", `Server running and listening on port ${this.port}`);
-        });
+        if (config.get("ssl") === true){
+            const privateKey = fs.readFileSync(config.get("privateKey"), 'utf8');
+            const certificate = fs.readFileSync(config.get("certificate"), 'utf8');
+            const ca = fs.readFileSync(config.get("ca"), 'utf8');
+
+            const credentials = {
+                key: privateKey,
+                cert: certificate,
+                ca: ca
+            };
+
+            const httpsServer = https.createServer(credentials, this.app);
+
+            httpsServer.listen(config.get("port"), () => {
+                logger.log("info", `Server running in https and listening on port ${this.port}`);
+            });
+        }
+        else{
+            this.app.listen(config.get("port"), () => {
+                logger.log("info", `Server running and listening on port ${this.port}`);
+            });
+        }
     }
 
     private initializeMiddlewares() {

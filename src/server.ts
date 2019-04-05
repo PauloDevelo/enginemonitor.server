@@ -20,9 +20,7 @@ const server = new App(
     new EntriesController(),
     new TasksController(),
     new EquipmentsController(),
-  ],
-  config.get("port")
-);
+  ]);
 
 server.listen();
 
