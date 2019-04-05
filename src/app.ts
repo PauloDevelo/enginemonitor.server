@@ -4,10 +4,10 @@ import logger from "./utils/logger";
 import bodyParser from "body-parser";
 import cors from "cors";
 import errorHandler from "errorhandler";
+import express from "express";
+import fs from "fs";
 import http from "http";
 import https from "https";
-import express from "express";
-import fs from 'fs';
 
 import morgan from "morgan";
 import path from "path";
@@ -27,15 +27,15 @@ class App {
     }
 
     public listen() {
-        if (config.get("ssl") === true){
-            const privateKey = fs.readFileSync(config.get("privateKey"), 'utf8');
-            const certificate = fs.readFileSync(config.get("certificate"), 'utf8');
-            const ca = fs.readFileSync(config.get("ca"), 'utf8');
+        if (config.get("ssl") === true) {
+            const privateKey = fs.readFileSync(config.get("privateKey"), "utf8");
+            const certificate = fs.readFileSync(config.get("certificate"), "utf8");
+            const ca = fs.readFileSync(config.get("ca"), "utf8");
 
             const credentials = {
-                key: privateKey,
+                ca,
                 cert: certificate,
-                ca: ca
+                key: privateKey,
             };
 
             const httpsServer = https.createServer(credentials, this.app);
@@ -43,8 +43,7 @@ class App {
             httpsServer.listen(config.get("port"), () => {
                 logger.log("info", `Server running in https and listening on port ${this.port}`);
             });
-        }
-        else{
+        } else {
             this.app.listen(config.get("port"), () => {
                 logger.log("info", `Server running and listening on port ${this.port}`);
             });
