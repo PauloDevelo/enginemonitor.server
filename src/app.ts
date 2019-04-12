@@ -16,7 +16,6 @@ import IController from "./controllers/IController";
 
 class App {
     public app: express.Application;
-    private readonly port: number;
     private readonly path: string = "/api";
 
     constructor(controllers: IController[]) {
@@ -41,11 +40,11 @@ class App {
             const httpsServer = https.createServer(credentials, this.app);
 
             httpsServer.listen(config.get("port"), () => {
-                logger.log("info", `Server running in https and listening on port ${this.port}`);
+                logger.log("info", `Server running in https and listening on port ${config.get("port")}`);
             });
         } else {
             this.app.listen(config.get("port"), () => {
-                logger.log("info", `Server running and listening on port ${this.port}`);
+                logger.log("info", `Server running and listening on port ${config.get("port")}`);
             });
         }
     }
