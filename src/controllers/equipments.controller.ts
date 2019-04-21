@@ -3,7 +3,7 @@ import auth from "../security/auth";
 
 import mongoose from "mongoose";
 
-import Equipments from "../models/Equipments";
+import Equipments, { AgeAcquisitionType } from "../models/Equipments";
 import Users from "../models/Users";
 
 import IController from "./IController";
@@ -43,8 +43,8 @@ class EquipmentsController implements IController {
             errors.model = "isrequired";
         }
 
-        if (equipment.age === undefined) {
-            errors.age = "isrequired";
+        if (equipment.ageAcquisitionType === undefined) {
+            errors.ageAcquisitionType = "isrequired";
         }
 
         if (!equipment.installation) {
@@ -87,6 +87,12 @@ class EquipmentsController implements IController {
 
         const query = { ownerId: userId };
         const equipments = await Equipments.find(query);
+        equipments.forEach(equipment => {
+            if(equipment.ageAcquisitionType === undefined){
+                equipment.ageAcquisitionType = AgeAcquisitionType.manualEntry;
+                equipment.ageUrl = '';
+            }
+        });
 
         return res.json({ equipments });
     }
