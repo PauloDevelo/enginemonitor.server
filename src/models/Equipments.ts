@@ -1,20 +1,20 @@
 import mongoose from "mongoose";
 
-export enum AgeAcquisitionType{
+export enum AgeAcquisitionType {
     time = 0,
-    manualEntry=1,
-    tracker=2
+    manualEntry= 1,
+    tracker= 2
 }
 
 export const EquipmentsSchema = new mongoose.Schema({
     age: Number,
+    ageAcquisitionType: Number,
+    ageUrl: String,
     brand: String,
     installation: Date,
     model: String,
     name: String,
-    ownerId: mongoose.Schema.Types.ObjectId,
-    ageAcquisitionType: Number,
-    ageUrl: String
+    ownerId: mongoose.Schema.Types.ObjectId
 });
 
 EquipmentsSchema.methods.updateFromEngineMaintenanceApi = function(engineInfo: any) {
@@ -31,8 +31,8 @@ export interface IEquipments extends mongoose.Document {
     name: string;
     age: number;
     installation: Date;
-    ageAcquisitionType: Number | undefined,
-    ageUrl: String | undefined
+    ageAcquisitionType: number;
+    ageUrl: string;
 
     updateFromEngineMaintenanceApi(engineInfo: any): void;
 }

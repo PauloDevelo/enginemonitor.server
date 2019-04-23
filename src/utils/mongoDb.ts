@@ -1,4 +1,4 @@
-import config, {isDev} from "./configUtils";
+import config, {isDev, isTest} from "./configUtils";
 import logger from "./logger";
 
 const expectedVersion = 0.2;
@@ -24,14 +24,18 @@ const DbMetadatas = mongoose.model<IDbMetada>("DbMetadatas", DbMetadaSchema);
 export default async function CheckDbVersion(callBackOnSuccess: () => void):Promise<void> 
 {
     try{
-        // Works
-        const dbMetadataDoc = await DbMetadatas.findOne();
-        
-        if(dbMetadataDoc.version !== expectedVersion){
-            logger.error(`The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`);
+        if(isTest){
+            callBackOnSuccess();
         }
         else{
-            callBackOnSuccess();
+            const dbMetadataDoc = await DbMetadatas.findOne();
+                    
+            if(dbMetadataDoc.version !== expectedVersion){
+                logger.error(`The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`);
+            }
+            else{
+                callBackOnSuccess();
+            }
         }
     }
     catch(err){

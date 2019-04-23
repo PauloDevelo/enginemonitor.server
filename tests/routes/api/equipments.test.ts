@@ -229,6 +229,23 @@ describe('Equipments', () => {
             res.body.equipment.should.have.property("model");
             res.body.equipment.model.should.be.eql('3.30');
         });
+
+        it('it should get a 200 http code as a result because the equipment age acquisition type was successfully modified', async () => {
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+            
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", ageAcquisitionType:1});
+            boat.ownerId = user._id;
+            boat = await boat.save();
+
+            let res = await chai.request(app).post('/api/equipments/' + boat._id).send({equipment:{ageAcquisitionType:2}}).set("Authorization", "Token " + user.generateJWT());
+            res.should.have.status(200);
+            res.body.should.have.property("equipment");
+            res.body.equipment.should.be.a("object");
+            res.body.equipment.should.have.property("ageAcquisitionType");
+            res.body.equipment.ageAcquisitionType.should.be.eql(2);
+        });
     });
 
     describe('DELETE/:equipmentId equipment', () => {

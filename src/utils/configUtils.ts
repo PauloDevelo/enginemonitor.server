@@ -24,6 +24,7 @@ if (process.env.NODE_ENV !== "prod" &&
 }
 export const isProd = process.env.NODE_ENV === "prod";
 export const isDev = process.env.NODE_ENV === "dev";
+export const isTest = process.env.NODE_ENV === "test";
 
 import config from "config";
 

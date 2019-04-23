@@ -87,12 +87,6 @@ class EquipmentsController implements IController {
 
         const query = { ownerId: userId };
         const equipments = await Equipments.find(query);
-        equipments.forEach(equipment => {
-            if(equipment.ageAcquisitionType === undefined){
-                equipment.ageAcquisitionType = AgeAcquisitionType.manualEntry;
-                equipment.ageUrl = '';
-            }
-        });
 
         return res.json({ equipments });
     }
