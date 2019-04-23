@@ -1,18 +1,10 @@
-import mongoose from "mongoose";
+
 import App from "./app";
 import EntriesController from "./controllers/entries.controller";
 import EquipmentsController from "./controllers/equipments.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
-import config, {isDev} from "./utils/configUtils";
-
-// Configure mongoose's promise to global promise
-mongoose.Promise = global.Promise;
-// Configure Mongoose
-mongoose.connect("mongodb:" + config.get("DBHost"), {useNewUrlParser: true});
-if (isDev) {
-  mongoose.set("debug", true);
-}
+import CheckDbVersion from "./utils/mongoDb";
 
 const server = new App(
   [
@@ -20,8 +12,8 @@ const server = new App(
     new EntriesController(),
     new TasksController(),
     new EquipmentsController(),
-  ]);
-
-server.listen();
+]);
 
 export default server; // for testing
+
+CheckDbVersion(() => { server.listen(); });
