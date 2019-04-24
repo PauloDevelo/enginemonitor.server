@@ -15,12 +15,15 @@ const should = chai.should();
 
 import Users from '../../../src/models/Users';
 import Equipments, { AgeAcquisitionType } from '../../../src/models/Equipments';
-
+import Tasks from '../../../src/models/Tasks';
+import Entries from '../../../src/models/Entries';
 
 describe('Equipments', () => {
     afterEach(async () => {
         await Equipments.deleteMany({});  
-        await Users.deleteMany({});        
+        await Users.deleteMany({});     
+        await Tasks.deleteMany({});
+        await Entries.deleteMany({});
     });
 
     describe('/GET equipments', () => {
@@ -258,7 +261,28 @@ describe('Equipments', () => {
             boat.ownerId = user._id;
             boat = await boat.save();
 
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2" });
+            entry2.equipmentId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3" });
+            entry3.equipmentId = boat._id;
+            entry3 = await entry3.save();
+
+            let nbTasks = await Tasks.countDocuments({});
+            nbTasks.should.be.eql(1);
+
+            let nbEntries = await Entries.countDocuments({});
+            nbEntries.should.be.eql(2);
+
+
             let res = await chai.request(app).delete('/api/equipments/' + boat._id).set("Authorization", "Token " + user.generateJWT());
+
             res.should.have.status(200);
             res.body.should.have.property("equipment");
             res.body.equipment.should.be.a("object");
@@ -268,6 +292,12 @@ describe('Equipments', () => {
             res.body.should.have.property("equipments");
             res.body.equipments.should.be.a("array");
             res.body.equipments.length.should.be.eql(0);
+
+            nbTasks = await Tasks.countDocuments({});
+            nbTasks.should.be.eql(0);
+
+            nbEntries = await Entries.countDocuments({});
+            nbEntries.should.be.eql(0);
         });
 
         it('it should get a 400 http code as a result because the equipment does not exist', async () => {

@@ -5,8 +5,11 @@ import mongoose from "mongoose";
 
 import Equipments, { AgeAcquisitionType } from "../models/Equipments";
 import Users from "../models/Users";
+import Entries from "../models/Entries";
+import Tasks from "../models/Tasks";
 
 import IController from "./IController";
+
 
 class EquipmentsController implements IController {
     private path: string = "/equipments";
@@ -150,6 +153,9 @@ class EquipmentsController implements IController {
             if (existingEquipment.ownerId.toString() !== id) {
                 return res.sendStatus(401);
             }
+
+            await Entries.deleteMany({ equipmentId: req.params.equipmentId});
+            await Tasks.deleteMany({ equipmentId: req.params.equipmentId});
 
             await existingEquipment.remove();
             return res.json({ equipment: existingEquipment });

@@ -20,6 +20,7 @@ import Tasks from '../../../src/models/Tasks';
 
 describe('Tasks', () => {
     afterEach(async () => {
+        await Entries.deleteMany({}); 
         await Tasks.deleteMany({}); 
         await Equipments.deleteMany({});  
         await Users.deleteMany({});  
@@ -763,6 +764,15 @@ describe('Tasks', () => {
             task.equipmentId = boat._id;
             task = await task.save();
 
+            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2" });
+            entry2.equipmentId = boat._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3" });
+            entry3.equipmentId = boat._id;
+            entry3 = await entry3.save();
+
             // Act
             let res = await chai.request(app).delete('/api/tasks/'+ boat._id.toString() + '/' + task._id.toString()).set("Authorization", "Token " + user.generateJWT());
 
@@ -772,6 +782,12 @@ describe('Tasks', () => {
             res.body.task.should.be.a("object");
             res.body.task.should.have.property("_id");
             res.body.task._id.should.be.eql(task._id.toString());
+
+            const nbTask = await Tasks.countDocuments({});
+            nbTask.should.be.eql(0);
+
+            const nbEntries = await Entries.countDocuments({});
+            nbEntries.should.be.eql(1);
         });
 
         it('it should get a 400 http code as a result because the task does not exist', async () => {
