@@ -1,1 +1,1 @@
-mongo --eval "const databaseName = 'enginemaintenancedev'" ./database/createAndUpdateMongoDB.js
+mongo --eval "const databaseName = 'enginemaintenance'" ./database/createAndUpdateMongoDB.js
