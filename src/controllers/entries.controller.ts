@@ -23,6 +23,7 @@ class EntriesController implements IController {
 
     private intializeRoutes() {
         this.router.use(this.path + "/:equipmentId",          auth.required, this.checkAuth)
+        .get(this.path + "/:equipmentId",                     auth.required, this.getAllEntries)
         .get(this.path + "/:equipmentId/:taskId",             auth.required, this.getEntries)
         .post(this.path + "/:equipmentId/:taskId",            auth.required, this.createEntry)
         .post(this.path + "/:equipmentId/:taskId/:entryId",   auth.required, this.changeEntry)
@@ -95,6 +96,21 @@ class EntriesController implements IController {
         const query = { equipmentId, taskId };
 
         const entries = await Entries.find(query);
+        
+        return res.json({ entries: await this.sortAndConvertToJson(entries) });
+    }
+
+    private getAllEntries = async (req: express.Request, res: express.Response) => {
+        const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
+        
+        const query = { equipmentId };
+
+        const entries = await Entries.find(query);
+
+        return res.json({ entries: await this.sortAndConvertToJson(entries) });
+    }
+
+    private sortAndConvertToJson = async(entries: IEntries[]) => {
         entries.sort((entryA, entryB) => entryA.date.getTime() - entryB.date.getTime() );
         const jsonEntries = [];
 
@@ -102,13 +118,13 @@ class EntriesController implements IController {
             jsonEntries.push(await entry.toJSON());
         }
 
-        return res.json({ entries: jsonEntries });
+        return jsonEntries;
     }
 
     private createEntry = async (req: express.Request, res: express.Response) => {
         try {
             const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
-            const taskId = new mongoose.Types.ObjectId(req.params.taskId);
+            const taskId = req.params.taskId !!== '-' ? new mongoose.Types.ObjectId(req.params.taskId) : undefined;
             const { body: { entry } } = req;
 
             const errors = this.checkEntryProperties(entry);
@@ -138,7 +154,7 @@ class EntriesController implements IController {
             }
 
             if (existingEntry.equipmentId.toString() !== req.params.equipmentId ||
-                existingEntry.taskId.toString() !== req.params.taskId) {
+                (req.params.taskId !== '-' && existingEntry.taskId.toString() !== req.params.taskId)) {
                 return res.sendStatus(401);
             }
 
@@ -161,7 +177,7 @@ class EntriesController implements IController {
             }
 
             if (existingEntry.equipmentId.toString() !== req.params.equipmentId ||
-                existingEntry.taskId.toString() !== req.params.taskId) {
+                (req.params.taskId !== '-' && existingEntry.taskId.toString() !== req.params.taskId)) {
                 return res.sendStatus(401);
             }
 

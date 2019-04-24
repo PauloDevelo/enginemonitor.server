@@ -24,6 +24,148 @@ describe('Entries', () => {
         await Users.deleteMany({});  
     });
 
+
+    describe('/GET/:equipmentId entries', () => {
+        it('it should GET a 200 http code as a result because entries were returned successfully', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
+            entry.taskId = task._id;
+            entry = await entry.save();
+
+            let task2 = new Tasks({name:"Vidange2", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task2.equipmentId = boat._id;
+            task2 = await task2.save();
+
+            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2" });
+            entry2.equipmentId = boat._id;
+            entry2.taskId = task2._id;
+            entry2 = await entry2.save();
+
+            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3" });
+            entry3.equipmentId = boat._id;
+            entry3 = await entry3.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/entries/' + boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entries");
+            res.body.entries.should.be.a("array");
+            res.body.entries.length.should.be.eql(3);
+            res.body.entries[0].should.have.property("name");
+            res.body.entries[0].name.should.be.eql("My first entry");
+            res.body.entries[0].should.have.property("date");
+            res.body.entries[0].should.have.property("age");
+            res.body.entries[0].age.should.be.eql(12345);
+            res.body.entries[0].should.have.property("remarks");
+            res.body.entries[0].remarks.should.be.eql("RAS");
+
+            res.body.entries[1].should.have.property("name");
+            res.body.entries[1].name.should.be.eql("My second entry");
+            res.body.entries[1].should.have.property("date");
+            res.body.entries[1].should.have.property("age");
+            res.body.entries[1].age.should.be.eql(12346);
+            res.body.entries[1].should.have.property("remarks");
+            res.body.entries[1].remarks.should.be.eql("RAS2");
+
+            res.body.entries[2].should.have.property("name");
+            res.body.entries[2].name.should.be.eql("My third entry");
+            res.body.entries[2].should.have.property("date");
+            res.body.entries[2].should.have.property("age");
+            res.body.entries[2].age.should.be.eql(12347);
+            res.body.entries[2].should.have.property("remarks");
+            res.body.entries[2].remarks.should.be.eql("RAS3");
+        });
+
+        it('it should GET a 400 http code as a result because the user does not exist', async () => {
+            // Arrange
+            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            fakeUser.setPassword("test");
+
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
+            entry.taskId = task._id;
+            entry = await entry.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/entries/'+ boat._id.toString()).set("Authorization", "Token " + fakeUser.generateJWT());
+
+            // Assert
+            res.should.have.status(400);
+        });
+
+        it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {
+            // Arrange
+            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            fakeUser.setPassword("test");
+            fakeUser = await fakeUser.save();
+
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/entries/'+ boat._id.toString()).set("Authorization", "Token " + fakeUser.generateJWT());
+
+            // Assert
+            res.should.have.status(401);
+        });
+
+        it('it should GET a 400 http code as a result because the boat does not exist', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            // Act
+            let res = await chai.request(app).get('/api/entries/'+ boat._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(400);
+        });
+    });
+
     describe('/GET/:equipmentId/:taskId entries', () => {
         it('it should GET a 200 http code as a result because entries were returned successfully', async () => {
             // Arrange
@@ -244,6 +386,37 @@ describe('Entries', () => {
             res.body.entry.taskId.should.be.eql(task._id.toString());
         });
 
+        it('it should GET a 200 http code as a result because the orphan entry was return successfully', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS" }
+
+            // Act
+            let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/-').send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entry");
+            res.body.entry.should.be.a("object");
+            res.body.entry.should.have.property("equipmentId");
+            res.body.entry.should.have.property("name");
+            res.body.entry.should.have.property("date");
+            res.body.entry.should.have.property("age");
+            res.body.entry.should.have.property("remarks");
+
+            res.body.entry.name.should.be.eql("My first vidange",);
+            res.body.entry.age.should.be.eql(12345);
+            res.body.entry.remarks.should.be.eql("RAS");
+            res.body.entry.equipmentId.should.be.eql(boat._id.toString());
+        });
+
         it('it should GET a 422 http code as a result because the entry name was missing', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
@@ -354,7 +527,40 @@ describe('Entries', () => {
     });
 
     describe('/POST/:equipmentId/:taskId/:entryId change an entry', () => {
-        it('it should get a 200 http code as a result because the entry changed successfully', async () => {
+        it('it should get a 200 http code as a result because the orphan entry name changed successfully', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
+            entry = await entry.save();
+
+            let jsonEntry = {name:"Vidange d'huile"};
+            
+            // Act
+            let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/-/' + entry._id.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entry");
+            res.body.entry.should.be.a("object");
+            res.body.entry.should.have.property("name");
+            res.body.entry.should.have.property("date");
+            res.body.entry.should.have.property("age");
+            res.body.entry.should.have.property("remarks");
+
+            res.body.entry.name.should.be.eql("Vidange d'huile");
+            res.body.entry.age.should.be.eql(12345);
+            res.body.entry.remarks.should.be.eql("RAS");
+        });
+
+        it('it should get a 200 http code as a result because the entry name changed successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -392,7 +598,7 @@ describe('Entries', () => {
             res.body.entry.remarks.should.be.eql("RAS");
         });
 
-        it('it should get a 200 http code as a result because the entry changed successfully', async () => {
+        it('it should get a 200 http code as a result because the entry date changed successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -431,7 +637,7 @@ describe('Entries', () => {
             res.body.entry.remarks.should.be.eql("RAS");
         });
 
-        it('it should get a 200 http code as a result because the entry changed successfully', async () => {
+        it('it should get a 200 http code as a result because the entry age changed successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -469,7 +675,7 @@ describe('Entries', () => {
             res.body.entry.remarks.should.be.eql("RAS");
         });
 
-        it('it should get a 200 http code as a result because the entry changed successfully', async () => {
+        it('it should get a 200 http code as a result because the entry remarks changed successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -569,6 +775,31 @@ describe('Entries', () => {
     });
 
     describe('/DELETE/:equipmentId/:taskId/:entryId delete entry', () => {
+        it('it should get a 200 http code as a result because the orphan entry was deleted successfully', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS" });
+            entry.equipmentId = boat._id;
+            entry = await entry.save();
+
+            // Act
+            let res = await chai.request(app).delete('/api/entries/'+ boat._id.toString() + '/-/' + entry._id.toString()).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entry");
+            res.body.entry.should.be.a("object");
+            res.body.entry.should.have.property("_id");
+            res.body.entry._id.should.be.eql(entry._id.toString());
+        });
+
         it('it should get a 200 http code as a result because the entry was deleted successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });

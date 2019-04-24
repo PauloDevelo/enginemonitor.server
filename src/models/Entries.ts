@@ -30,7 +30,7 @@ EntriesSchema.methods.updateFromEngineMaintenanceApi = function(entry: any) {
 
 export interface IEntries extends mongoose.Document {
     equipmentId: mongoose.Types.ObjectId;
-    taskId: mongoose.Types.ObjectId;
+    taskId: mongoose.Types.ObjectId | undefined;
     name: string;
     date: Date;
     age: number;
