@@ -21,26 +21,22 @@ interface IDbMetada extends mongoose.Document {
 
 const DbMetadatas = mongoose.model<IDbMetada>("DbMetadatas", DbMetadaSchema);
 
-export default async function CheckDbVersion(callBackOnSuccess: () => void):Promise<void> 
-{
-    try{
-        if(isTest){
+export default async function CheckDbVersion(callBackOnSuccess: () => void): Promise<void> {
+    try {
+        if (isTest) {
             callBackOnSuccess();
-        }
-        else{
+        } else {
             const dbMetadataDoc = await DbMetadatas.findOne();
-                    
-            if(dbMetadataDoc.version !== expectedVersion){
+
+            if (dbMetadataDoc.version !== expectedVersion) {
+                // tslint:disable-next-line:max-line-length
                 logger.error(`The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`);
-            }
-            else{
+            } else {
                 callBackOnSuccess();
             }
         }
-    }
-    catch(err){
+    } catch (err) {
         logger.error("Error when getting the version of the database", err);
     }
-    
-    
+
 }
