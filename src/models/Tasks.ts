@@ -2,7 +2,7 @@ import moment from "moment";
 import mongoose from "mongoose";
 
 import Entries, { IEntries } from "./Entries";
-import Equipments from "./Equipments";
+import Equipments, { AgeAcquisitionType } from "./Equipments";
 
 export const TasksSchema = new mongoose.Schema({
     description: String,
@@ -73,7 +73,9 @@ TasksSchema.methods.getLevel = async function(): Promise<number> {
     const now = new Date();
     const delayInMillisecond = nextDueDate.getTime() - now.getTime();
 
-    if (this.usagePeriodInHour !== -1) {
+    const equipment = await Equipments.findById(this.equipmentId);
+
+    if (equipment.ageAcquisitionType !== AgeAcquisitionType.time && this.usagePeriodInHour !== -1) {
         const usageHourLeft = await this.getTimeInHourLeft();
 
         if (usageHourLeft <= 0 || nextDueDate <= now) {
