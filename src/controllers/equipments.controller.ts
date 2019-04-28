@@ -3,13 +3,12 @@ import auth from "../security/auth";
 
 import mongoose from "mongoose";
 
-import Equipments, { AgeAcquisitionType } from "../models/Equipments";
-import Users from "../models/Users";
 import Entries from "../models/Entries";
+import Equipments, { AgeAcquisitionType } from "../models/Equipments";
 import Tasks from "../models/Tasks";
+import Users from "../models/Users";
 
 import IController from "./IController";
-
 
 class EquipmentsController implements IController {
     private path: string = "/equipments";

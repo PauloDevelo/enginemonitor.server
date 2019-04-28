@@ -8,7 +8,6 @@ import sendGridHelper from "../utils/sendGridEmailHelper";
 import NewPasswords, { INewPassword } from "../models/NewPasswords";
 import Users, { IUser } from "../models/Users";
 
-import { asyncForEach } from "../utils/asyncUtils";
 import IController from "./IController";
 
 class UsersController implements IController {

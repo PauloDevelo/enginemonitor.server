@@ -96,13 +96,13 @@ class EntriesController implements IController {
         const query = { equipmentId, taskId };
 
         const entries = await Entries.find(query);
-        
+
         return res.json({ entries: await this.sortAndConvertToJson(entries) });
     }
 
     private getAllEntries = async (req: express.Request, res: express.Response) => {
         const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
-        
+
         const query = { equipmentId };
 
         const entries = await Entries.find(query);
@@ -110,7 +110,7 @@ class EntriesController implements IController {
         return res.json({ entries: await this.sortAndConvertToJson(entries) });
     }
 
-    private sortAndConvertToJson = async(entries: IEntries[]) => {
+    private sortAndConvertToJson = async (entries: IEntries[]) => {
         entries.sort((entryA, entryB) => entryA.date.getTime() - entryB.date.getTime() );
         const jsonEntries = [];
 
@@ -124,7 +124,7 @@ class EntriesController implements IController {
     private createEntry = async (req: express.Request, res: express.Response) => {
         try {
             const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
-            const taskId = req.params.taskId !!== '-' ? new mongoose.Types.ObjectId(req.params.taskId) : undefined;
+            const taskId = req.params.taskId ! !== "-" ? new mongoose.Types.ObjectId(req.params.taskId) : undefined;
             const { body: { entry } } = req;
 
             const errors = this.checkEntryProperties(entry);
@@ -154,7 +154,7 @@ class EntriesController implements IController {
             }
 
             if (existingEntry.equipmentId.toString() !== req.params.equipmentId ||
-                (req.params.taskId !== '-' && existingEntry.taskId.toString() !== req.params.taskId)) {
+                (req.params.taskId !== "-" && existingEntry.taskId.toString() !== req.params.taskId)) {
                 return res.sendStatus(401);
             }
 
@@ -177,7 +177,7 @@ class EntriesController implements IController {
             }
 
             if (existingEntry.equipmentId.toString() !== req.params.equipmentId ||
-                (req.params.taskId !== '-' && existingEntry.taskId.toString() !== req.params.taskId)) {
+                (req.params.taskId !== "-" && existingEntry.taskId.toString() !== req.params.taskId)) {
                 return res.sendStatus(401);
             }
 

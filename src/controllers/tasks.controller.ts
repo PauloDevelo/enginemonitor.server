@@ -3,10 +3,10 @@ import auth from "../security/auth";
 
 import mongoose from "mongoose";
 
+import Entries from "../models/Entries";
 import Equipments from "../models/Equipments";
 import Tasks from "../models/Tasks";
 import Users from "../models/Users";
-import Entries from "../models/Entries";
 
 import IController from "./IController";
 
@@ -182,9 +182,9 @@ class TasksController implements IController {
                 return res.sendStatus(401);
             }
 
-            const entriesReq = { taskId }
+            const entriesReq = { taskId };
             await Entries.deleteMany(entriesReq);
-            
+
             await existingTask.remove();
 
             return res.json({ task: await existingTask.toJSON() });
