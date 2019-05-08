@@ -21,13 +21,6 @@ EntriesSchema.methods.toJSON = async function() {
     };
 };
 
-EntriesSchema.methods.updateFromEngineMaintenanceApi = function(entry: any) {
-    this.name = entry.name;
-    this.date = new Date(entry.UTCDate);
-    this.age = entry.age;
-    this.remarks = entry.remarks;
-};
-
 export interface IEntries extends mongoose.Document {
     equipmentId: mongoose.Types.ObjectId;
     taskId: mongoose.Types.ObjectId | undefined;
@@ -37,7 +30,6 @@ export interface IEntries extends mongoose.Document {
     remarks: string;
 
     toJSON(): any;
-    updateFromEngineMaintenanceApi(entry: any): void;
 }
 
 const Entries = mongoose.model<IEntries>("Entries", EntriesSchema);

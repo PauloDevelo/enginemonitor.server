@@ -114,13 +114,6 @@ TasksSchema.methods.toJSON = async function(): Promise<any> {
     };
 };
 
-TasksSchema.methods.updateFromEngineMaintenanceApi = function(task: any) {
-    this.name = task.name;
-    this.usagePeriodInHour = task.engineHours;
-    this.periodInMonth = task.month;
-    this.description = task.description;
-};
-
 export interface ITasks extends mongoose.Document {
     equipmentId: mongoose.Types.ObjectId;
     name: string;
@@ -135,7 +128,6 @@ export interface ITasks extends mongoose.Document {
     getNextDueDate(): Promise<Date>;
     getLevel(): Promise<number>;
     toJSON(): Promise<any>;
-    updateFromEngineMaintenanceApi(task: any): void;
 }
 
 const Tasks = mongoose.model<ITasks>("Tasks", TasksSchema);

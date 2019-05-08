@@ -17,15 +17,6 @@ export const EquipmentsSchema = new mongoose.Schema({
     ownerId: mongoose.Schema.Types.ObjectId
 });
 
-EquipmentsSchema.methods.updateFromEngineMaintenanceApi = function(engineInfo: any) {
-    this.brand = engineInfo.brand;
-    this.model = engineInfo.model;
-    this.age = engineInfo.age;
-    this.installation = new Date(engineInfo.installation);
-    this.ageAcquisitionType = AgeAcquisitionType.manualEntry;
-    this.ageUrl = "";
-};
-
 export interface IEquipments extends mongoose.Document {
     ownerId: mongoose.Types.ObjectId;
     name: string;
@@ -33,8 +24,6 @@ export interface IEquipments extends mongoose.Document {
     installation: Date;
     ageAcquisitionType: number;
     ageUrl: string;
-
-    updateFromEngineMaintenanceApi(engineInfo: any): void;
 }
 
 const Equipments = mongoose.model<IEquipments>("Equipments", EquipmentsSchema);
