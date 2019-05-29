@@ -13,6 +13,7 @@ export const UsersSchema = new mongoose.Schema({
   name: String,
   salt: String,
   verificationToken: String,
+  _uiId: String
 });
 
 UsersSchema.methods.setPassword = function(password: string) {
@@ -57,6 +58,7 @@ UsersSchema.methods.toAuthJSON = function() {
     firstname: this.firstname,
     name: this.name,
     token: this.generateJWT(),
+    _uiId: this._uiId
   };
 };
 

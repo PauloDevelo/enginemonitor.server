@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export const EntriesSchema = new mongoose.Schema({
+    _uiId: String,
     age: Number,
     date: Date,
     equipmentId: mongoose.Schema.Types.ObjectId,
@@ -12,6 +13,7 @@ export const EntriesSchema = new mongoose.Schema({
 EntriesSchema.methods.toJSON = async function() {
     return {
         _id: this._id,
+        _uiId: this._uiId,
         age: this.age,
         date: this.date,
         equipmentId: this.equipmentId,

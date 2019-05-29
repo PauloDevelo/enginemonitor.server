@@ -10,6 +10,7 @@ export const TasksSchema = new mongoose.Schema({
     name: String,
     periodInMonth: Number,
     usagePeriodInHour: Number,
+    _uiId: String
 });
 
 TasksSchema.methods.getLastEntry = async function(): Promise<IEntries> {
@@ -104,6 +105,7 @@ TasksSchema.methods.toJSON = async function(): Promise<any> {
 
     return {
         _id: this._id,
+        _uiId: this._uiId,
         description: this.description,
         level,
         name: this.name,

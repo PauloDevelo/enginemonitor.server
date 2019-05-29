@@ -1,7 +1,7 @@
 import config, {isDev, isTest} from "./configUtils";
 import logger from "./logger";
 
-const expectedVersion = 0.2;
+const expectedVersion = 0.4;
 
 import mongoose, { Schema } from "mongoose";
 

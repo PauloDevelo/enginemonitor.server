@@ -7,6 +7,7 @@ export enum AgeAcquisitionType {
 }
 
 export const EquipmentsSchema = new mongoose.Schema({
+    _uiId: String,
     age: Number,
     ageAcquisitionType: Number,
     ageUrl: String,
