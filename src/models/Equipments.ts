@@ -19,6 +19,8 @@ export const EquipmentsSchema = new mongoose.Schema({
 });
 
 export interface IEquipments extends mongoose.Document {
+    _uiId: string;
+    brand: string;
     ownerId: mongoose.Types.ObjectId;
     name: string;
     age: number;

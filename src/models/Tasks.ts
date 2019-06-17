@@ -5,12 +5,12 @@ import Entries, { IEntries } from "./Entries";
 import Equipments, { AgeAcquisitionType } from "./Equipments";
 
 export const TasksSchema = new mongoose.Schema({
+    _uiId: String,
     description: String,
     equipmentId: mongoose.Schema.Types.ObjectId,
     name: String,
     periodInMonth: Number,
     usagePeriodInHour: Number,
-    _uiId: String
 });
 
 TasksSchema.methods.getLastEntry = async function(): Promise<IEntries> {
@@ -117,6 +117,7 @@ TasksSchema.methods.toJSON = async function(): Promise<any> {
 };
 
 export interface ITasks extends mongoose.Document {
+    _uiId: string;
     equipmentId: mongoose.Types.ObjectId;
     name: string;
     usagePeriodInHour: number;

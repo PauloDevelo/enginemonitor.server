@@ -363,7 +363,7 @@ describe('Entries', () => {
             task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS" }
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: '12345' }
 
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/' + task._id.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
@@ -378,12 +378,14 @@ describe('Entries', () => {
             res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
+            res.body.entry.should.have.property("_uiId");
 
             res.body.entry.name.should.be.eql("My first vidange",);
             res.body.entry.age.should.be.eql(12345);
             res.body.entry.remarks.should.be.eql("RAS");
             res.body.entry.equipmentId.should.be.eql(boat._id.toString());
             res.body.entry.taskId.should.be.eql(task._id.toString());
+            res.body.entry._uiId.should.be.eql('12345');
         });
 
         it('it should GET a 200 http code as a result because the orphan entry was return successfully', async () => {
@@ -396,7 +398,7 @@ describe('Entries', () => {
             boat.ownerId = user._id;
             boat = await  boat.save();
 
-            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS" }
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId:"12345" }
 
             // Act
             let res = await chai.request(app).post('/api/entries/'+ boat._id.toString() + '/-').send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
@@ -410,11 +412,13 @@ describe('Entries', () => {
             res.body.entry.should.have.property("date");
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
+            res.body.entry.should.have.property("_uiId");
 
             res.body.entry.name.should.be.eql("My first vidange",);
             res.body.entry.age.should.be.eql(12345);
             res.body.entry.remarks.should.be.eql("RAS");
             res.body.entry.equipmentId.should.be.eql(boat._id.toString());
+            res.body.entry._uiId.should.be.eql("12345");
         });
 
         it('it should GET a 422 http code as a result because the entry name was missing', async () => {

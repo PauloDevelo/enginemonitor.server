@@ -33,6 +33,10 @@ class EntriesController implements IController {
     private checkEntryProperties = (entry: IEntries) => {
         const errors: any = {};
 
+        if (!entry._uiId) {
+            errors._uiId = "isrequired";
+        }
+
         if (!entry.name) {
             errors.name = "isrequired";
         }

@@ -4,7 +4,7 @@ import auth from "../security/auth";
 import mongoose from "mongoose";
 
 import Entries from "../models/Entries";
-import Equipments, { AgeAcquisitionType } from "../models/Equipments";
+import Equipments, { AgeAcquisitionType, IEquipments } from "../models/Equipments";
 import Tasks from "../models/Tasks";
 import Users from "../models/Users";
 
@@ -30,8 +30,12 @@ class EquipmentsController implements IController {
         .delete(this.path + "/:equipmentId",    auth.required, this.deleteEquipment);
     }
 
-    private checkEquipmentProperties = (equipment: any) => {
+    private checkEquipmentProperties = (equipment: IEquipments) => {
         const errors: any = {};
+
+        if (!equipment._uiId) {
+            errors._uiId = "isrequired";
+        }
 
         if (!equipment.name) {
             errors.name = "isrequired";

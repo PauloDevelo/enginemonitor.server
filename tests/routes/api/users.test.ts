@@ -87,7 +87,7 @@ describe('Users', () => {
     describe('/POST createUser', () => {
         it('it should POST a user because all the fields exist', async () => {
             // Arrange
-            const jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
+            const jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test", _uiId: "dasddninwfb" };
             const sendVerificationEmailSpy = sinon.spy(sendGridEmailHelper, 'sendVerificationEmail');
 
             // Act
@@ -179,12 +179,12 @@ describe('Users', () => {
 
         it('it should not POST a new user when an email is duplicated', async () => {
             // Arrange
-            const jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com" };
+            const jsonUser = { name: "t", firstname: "paul", email: "paul.t@mail.com", _uiId:"äsdvassdvasdvbo"  };
             const user = new Users(jsonUser);
             user.setPassword("test");
             await user.save();
 
-            const jsonUserToSend = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test" };
+            const jsonUserToSend = { name: "t", firstname: "paul", email: "paul.t@mail.com", password: "test", _uiId:"dfggnen" };
             
             // Act
             const res = await chai.request(app).post('/api/users').send({user:jsonUserToSend})

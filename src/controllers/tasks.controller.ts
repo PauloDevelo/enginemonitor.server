@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 
 import Entries from "../models/Entries";
 import Equipments from "../models/Equipments";
-import Tasks from "../models/Tasks";
+import Tasks, { ITasks } from "../models/Tasks";
 import Users from "../models/Users";
 
 import IController from "./IController";
@@ -30,18 +30,22 @@ class TasksController implements IController {
         .delete(this.path + "/:equipmentId/:taskId", auth.required, this.deleteTask);
     }
 
-    private checkTaskProperties = (task: any) => {
+    private checkTaskProperties = (task: ITasks) => {
         const errors: any = {};
+
+        if (!task._uiId) {
+            errors._uiId = "isrequired";
+        }
 
         if (!task.name) {
             errors.name = "isrequired";
         }
 
-        if (task.usagePeriodInHour === undefined) {
+        if (!task.usagePeriodInHour) {
             errors.usagePeriodInHour = "isrequired";
         }
 
-        if (task.periodInMonth === undefined) {
+        if (!task.periodInMonth) {
             errors.periodInMonth = "isrequired";
         }
 

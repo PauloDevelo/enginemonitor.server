@@ -118,7 +118,7 @@ describe('Equipments', () => {
             user.setPassword("test");
 
             user = await user.save();
-            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z", ageAcquisitionType:AgeAcquisitionType.manualEntry, ageUrl:'' };
+            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z", ageAcquisitionType:AgeAcquisitionType.manualEntry, ageUrl:'', _uiId:'123456' };
 
             let res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + user.generateJWT());
             
@@ -133,6 +133,7 @@ describe('Equipments', () => {
             res.body.equipment.should.have.property("ownerId");
             res.body.equipment.should.have.property("ageAcquisitionType");
             res.body.equipment.should.have.property("ageUrl");
+            res.body.equipment.should.have.property("_uiId");
 
             res.body.equipment.name.should.be.eql("Arbutus");
             res.body.equipment.brand.should.be.eql("Nanni");
@@ -141,7 +142,8 @@ describe('Equipments', () => {
             res.body.equipment.installation.should.be.eql("2018-01-09T23:00:00.000Z");
             res.body.equipment.ownerId.should.be.eql(user._id.toString());  
             res.body.equipment.ageAcquisitionType.should.be.eql(AgeAcquisitionType.manualEntry);  
-            res.body.equipment.ageUrl.should.be.eql('');  
+            res.body.equipment.ageUrl.should.be.eql('');
+            res.body.equipment._uiId.should.be.eql('123456');
         });
 
         it('it should get a 422 http error code because there is already an equipment with the same name', async () => {
@@ -149,7 +151,7 @@ describe('Equipments', () => {
             user.setPassword("test");
 
             user = await user.save();
-            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z", ageAcquisitionType:AgeAcquisitionType.manualEntry, ageUrl:''  };
+            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z", ageAcquisitionType:AgeAcquisitionType.manualEntry, ageUrl:'', _uiId:'fvvaqrtkmint' };
 
             let res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + user.generateJWT());
             res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + user.generateJWT());

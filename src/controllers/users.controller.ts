@@ -32,25 +32,44 @@ class UsersController implements IController {
         .get(this.path + "/current",            auth.required, this.getCurrent);
     }
 
+    private checkUserProperties = (user: any) => {
+        const errors: any = {};
+
+        if (!user.email) {
+            errors.email = "isrequired";
+        }
+
+        if (!user._uiId) {
+            errors._uiId = "isrequired";
+        }
+
+        if (!user.password) {
+            errors.password = "isrequired";
+        }
+
+        if (!user.name) {
+            errors.name = "isrequired";
+        }
+
+        if (!user.firstname) {
+            errors.firstname = "isrequired";
+        }
+
+        if (Object.keys(errors).length === 0) {
+            return undefined;
+        } else {
+            return { errors };
+        }
+    }
+
     // POST new user route (optional, everyone has access)
     private createUser = async (req: express.Request, res: express.Response) => {
         try {
             const { body: { user } } = req;
 
-            if (!user.email) {
-                return res.status(422).json({ errors: { email: "isrequired" } });
-            }
-
-            if (!user.password) {
-                return res.status(422).json({ errors: { password: "isrequired" } });
-            }
-
-            if (!user.name) {
-                return res.status(422).json({ errors: { name: "isrequired" } });
-            }
-
-            if (!user.firstname) {
-                return res.status(422).json({ errors: { firstname: "isrequired" } });
+            const errors = this.checkUserProperties(user);
+            if (errors) {
+                return res.status(422).json(errors);
             }
 
             const userCount = await Users.countDocuments({ email: user.email });

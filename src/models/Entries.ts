@@ -24,6 +24,7 @@ EntriesSchema.methods.toJSON = async function() {
 };
 
 export interface IEntries extends mongoose.Document {
+    _uiId: string;
     equipmentId: mongoose.Types.ObjectId;
     taskId: mongoose.Types.ObjectId | undefined;
     name: string;

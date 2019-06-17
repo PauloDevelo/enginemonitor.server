@@ -354,18 +354,18 @@ describe('Tasks', () => {
     describe('/POST/:equipmentId new task', () => {
         it('it should GET a 200 http code as a result because the task was return successfully', async () => {
             // Arrange
-            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com", _uiId: "sadvasdvoqeeb" });
             user.setPassword("test");
             let userId = user._id;
             let token = user.generateJWT();
 
             user = await user.save();
 
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:'dfvnsdffnsdnfb'});
             boat.ownerId = userId;
             boat = await  boat.save();
 
-            let task = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange"};
+            let task = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId: "asdggg"};
 
             // Act
             let res = await chai.request(app).post('/api/tasks/'+ boat._id.toString()).send({task: task}).set("Authorization", "Token " + token);
@@ -378,10 +378,13 @@ describe('Tasks', () => {
             res.body.task.should.have.property("usagePeriodInHour");
             res.body.task.should.have.property("periodInMonth");
             res.body.task.should.have.property("description");
+            res.body.task.should.have.property("_uiId");
+
             res.body.task.name.should.be.eql("Vidange");
             res.body.task.usagePeriodInHour.should.be.eql(200);
             res.body.task.periodInMonth.should.be.eql(12);
             res.body.task.description.should.be.eql("Faire la vidange");
+            res.body.task._uiId.should.be.eql("asdggg");
         });
 
         it('it should GET a 422 http code as a result because the task name was missing', async () => {
@@ -496,11 +499,11 @@ describe('Tasks', () => {
             let token = user.generateJWT();
             user = await user.save();
 
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"jinbwlblbddv"});
             boat.ownerId = userId;
             boat = await  boat.save();
 
-            let jsonTask = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange"};
+            let jsonTask = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId:'daadf ewtnghmyioluktuk'};
             let task = new Tasks(jsonTask);
             task.equipmentId = boat._id;
             task = await task.save();

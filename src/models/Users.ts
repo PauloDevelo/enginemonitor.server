@@ -6,14 +6,14 @@ import config from "../utils/configUtils";
 import { INewPassword } from "./NewPasswords";
 
 export const UsersSchema = new mongoose.Schema({
+  _uiId: String,
   email: String,
   firstname: String,
   hash: String,
   isVerified: Boolean,
   name: String,
   salt: String,
-  verificationToken: String,
-  _uiId: String
+  verificationToken: String
 });
 
 UsersSchema.methods.setPassword = function(password: string) {
@@ -54,15 +54,16 @@ UsersSchema.methods.generateJWT = function() {
 
 UsersSchema.methods.toAuthJSON = function() {
   return {
+    _uiId: this._uiId,
     email: this.email,
     firstname: this.firstname,
     name: this.name,
-    token: this.generateJWT(),
-    _uiId: this._uiId
+    token: this.generateJWT()
   };
 };
 
 export interface IUser extends mongoose.Document {
+  _uiId: string;
   name: string;
   firstname: string;
   email: string;
