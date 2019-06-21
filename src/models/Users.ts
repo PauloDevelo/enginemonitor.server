@@ -63,6 +63,7 @@ UsersSchema.methods.toAuthJSON = function() {
 };
 
 export interface IUser extends mongoose.Document {
+  _id: mongoose.Types.ObjectId;
   _uiId: string;
   name: string;
   firstname: string;

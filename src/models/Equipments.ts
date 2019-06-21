@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import {getUser} from "../utils/requestContext";
 
 export enum AgeAcquisitionType {
     time = 0,
@@ -28,6 +29,17 @@ export interface IEquipments extends mongoose.Document {
     ageAcquisitionType: number;
     ageUrl: string;
 }
+
+export const getEquipment =  async (equipmentId: mongoose.Types.ObjectId): Promise<IEquipments> => {
+    return await Equipments.findById(equipmentId);
+};
+
+export const getEquipmentByUiId = async (equipmentUiId: string): Promise<IEquipments> => {
+    const user = getUser();
+
+    const query = { ownerId: user._id, _uiId: equipmentUiId };
+    return await Equipments.findOne(query);
+};
 
 const Equipments = mongoose.model<IEquipments>("Equipments", EquipmentsSchema);
 export default Equipments;

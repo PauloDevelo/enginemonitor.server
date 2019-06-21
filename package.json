@@ -5,7 +5,9 @@
   "main": "dist/server.js",
   "dependencies": {
     "@sendgrid/mail": "^6.3.1",
+    "@types/cls-hooked": "^4.3.0",
     "axios": "^0.18.0",
+    "cls-hooked": "^4.2.2",
     "config": "^3.0.1",
     "cors": "^2.8.5",
     "errorhandler": "^1.5.0",

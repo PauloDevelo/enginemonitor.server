@@ -133,5 +133,10 @@ export interface ITasks extends mongoose.Document {
     toJSON(): Promise<any>;
 }
 
+export const getTaskByUiId = async (equipmentId: mongoose.Types.ObjectId, taskUiId: string): Promise<ITasks> => {
+    const query = { equipmentId, _uiId: taskUiId };
+    return await Tasks.findOne(query);
+};
+
 const Tasks = mongoose.model<ITasks>("Tasks", TasksSchema);
 export default Tasks;

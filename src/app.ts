@@ -6,7 +6,6 @@ import cors from "cors";
 import errorHandler from "errorhandler";
 import express from "express";
 import fs from "fs";
-import http from "http";
 import https from "https";
 
 import morgan from "morgan";

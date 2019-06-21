@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { getEquipment } from "./Equipments";
 
 export const EntriesSchema = new mongoose.Schema({
     _uiId: String,
@@ -12,14 +13,12 @@ export const EntriesSchema = new mongoose.Schema({
 
 EntriesSchema.methods.toJSON = async function() {
     return {
-        _id: this._id,
         _uiId: this._uiId,
         age: this.age,
         date: this.date,
-        equipmentId: this.equipmentId,
+        equipmentUiId: (await getEquipment(this.equipmentId))._uiId,
         name: this.name,
         remarks: this.remarks,
-        taskId: this.taskId,
     };
 };
 
@@ -34,6 +33,11 @@ export interface IEntries extends mongoose.Document {
 
     toJSON(): any;
 }
+
+export const getEntryByUiId = async (equipmentId: mongoose.Types.ObjectId, entryUiId: string): Promise<IEntries> => {
+    const query = { equipmentId, _uiId: entryUiId };
+    return await Entries.findOne(query);
+};
 
 const Entries = mongoose.model<IEntries>("Entries", EntriesSchema);
 export default Entries;
