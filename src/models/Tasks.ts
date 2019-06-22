@@ -104,7 +104,6 @@ TasksSchema.methods.toJSON = async function(): Promise<any> {
     const usageInHourLeft = await this.getTimeInHourLeft();
 
     return {
-        _id: this._id,
         _uiId: this._uiId,
         description: this.description,
         level,

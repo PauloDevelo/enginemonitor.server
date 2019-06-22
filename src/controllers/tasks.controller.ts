@@ -1,11 +1,13 @@
 import * as express from "express";
 import auth from "../security/auth";
 
+import {getUser} from "../utils/requestContext";
+
 import mongoose from "mongoose";
 
 import Entries from "../models/Entries";
-import Equipments from "../models/Equipments";
-import Tasks, { ITasks } from "../models/Tasks";
+import Equipments, { getEquipmentByUiId } from "../models/Equipments";
+import Tasks, { getTaskByUiId, ITasks } from "../models/Tasks";
 import Users from "../models/Users";
 
 import IController from "./IController";
@@ -23,11 +25,11 @@ class TasksController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path + "/:equipmentId", auth.required, this.checkAuth)
-        .get(this.path + "/:equipmentId",            auth.required, this.getTasks)
-        .post(this.path + "/:equipmentId",           auth.required, this.createTask)
-        .post(this.path + "/:equipmentId/:taskId",   auth.required, this.changeTask)
-        .delete(this.path + "/:equipmentId/:taskId", auth.required, this.deleteTask);
+        this.router.use(this.path + "/:equipmentUiId", auth.required, this.checkAuthAndOwnership)
+        .get(this.path + "/:equipmentUiId",            auth.required, this.getTasks)
+        .post(this.path + "/:equipmentUiId",           auth.required, this.createTask)
+        .post(this.path + "/:equipmentUiId/:taskUiId",   auth.required, this.changeTask)
+        .delete(this.path + "/:equipmentUiId/:taskUiId", auth.required, this.deleteTask);
     }
 
     private checkTaskProperties = (task: ITasks) => {
@@ -60,33 +62,19 @@ class TasksController implements IController {
         }
     }
 
-    private checkAuth = async (req: express.Request, res: express.Response, next: any) => {
-        const { payload: { id, verificationToken } } = req.body;
-        const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
+    private checkAuthAndOwnership = async (req: express.Request, res: express.Response, next: any) => {
+        const user = getUser();
 
-        if (verificationToken === undefined) {
-            return res.status(422).json({ errors: { authentication: "error" } });
-        }
-
-        if (id === undefined) {
-            return res.status(422).json({ errors: { id: "isrequired" } });
-        }
-
-        const user = await Users.findById(id);
         if (!user) {
-            return res.sendStatus(400);
-        }
-
-        if (user.verificationToken !== verificationToken) {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
-        const existingEquipment = await Equipments.findById(equipmentId);
+        const existingEquipment = (await getEquipmentByUiId(req.params.equipmentUiId));
         if (!existingEquipment) {
             return res.sendStatus(400);
         }
 
-        if (existingEquipment.ownerId.toString() !== id) {
+        if (existingEquipment.ownerId.toString() !== user._id.toString()) {
             return res.sendStatus(401);
         }
 
@@ -94,7 +82,7 @@ class TasksController implements IController {
     }
 
     private getTasks = async (req: express.Request, res: express.Response) => {
-        const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
+        const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
 
         const query = { equipmentId };
         const tasks = await Tasks.find(query);
@@ -109,7 +97,7 @@ class TasksController implements IController {
 
     private createTask = async (req: express.Request, res: express.Response) => {
         try {
-            const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
+            const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
             const { body: { task } } = req;
 
             const errors = this.checkTaskProperties(task);
@@ -139,23 +127,18 @@ class TasksController implements IController {
 
     private changeTask = async (req: express.Request, res: express.Response) => {
         try {
-            const equipmentId = new mongoose.Types.ObjectId(req.params.equipmentId);
-            const taskId = new mongoose.Types.ObjectId(req.params.taskId);
+            const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
             const { body: { task } } = req;
 
-            let existingTask = await Tasks.findById(taskId);
+            let existingTask = (await getTaskByUiId(equipmentId, req.params.taskUiId));
             if (!existingTask) {
                 return res.sendStatus(400);
-            }
-
-            if (existingTask.equipmentId.toString() !== req.params.equipmentId) {
-                return res.sendStatus(401);
             }
 
             if (task.name) {
                 const query = { name: task.name, equipmentId };
                 const tasks = await Tasks.find(query);
-                const taskWithSameNameIndex = tasks.findIndex((t) => t._id.toString() !== req.params.taskId);
+                const taskWithSameNameIndex = tasks.findIndex((t) => t._uiId !== req.params.taskUiId);
                 if (taskWithSameNameIndex !== -1) {
                     return res.status(422).json({
                         errors: {
@@ -175,18 +158,14 @@ class TasksController implements IController {
 
     private deleteTask = async (req: express.Request, res: express.Response) => {
         try {
-            const taskId = new mongoose.Types.ObjectId(req.params.taskId);
+            const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
+            const existingTask = await getTaskByUiId(equipmentId, req.params.taskUiId);
 
-            const existingTask = await Tasks.findById(taskId);
             if (!existingTask) {
                 return res.sendStatus(400);
             }
 
-            if (existingTask.equipmentId.toString() !== req.params.equipmentId) {
-                return res.sendStatus(401);
-            }
-
-            const entriesReq = { taskId };
+            const entriesReq = { taskId: existingTask._id };
             await Entries.deleteMany(entriesReq);
 
             await existingTask.remove();
