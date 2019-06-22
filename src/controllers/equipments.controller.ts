@@ -4,9 +4,10 @@ import auth from "../security/auth";
 import mongoose from "mongoose";
 
 import Entries from "../models/Entries";
-import Equipments, { AgeAcquisitionType, IEquipments } from "../models/Equipments";
+import Equipments, { AgeAcquisitionType, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks from "../models/Tasks";
-import Users from "../models/Users";
+
+import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
 
@@ -26,8 +27,8 @@ class EquipmentsController implements IController {
         this.router.use(this.path,              auth.required, this.checkAuth)
         .get(   this.path,                      auth.required, this.getEquipments)
         .post(  this.path,                      auth.required, this.addEquipment)
-        .post(  this.path + "/:equipmentId",    auth.required, this.changeEquipment)
-        .delete(this.path + "/:equipmentId",    auth.required, this.deleteEquipment);
+        .post(  this.path + "/:equipmentUiId",    auth.required, this.changeEquipment)
+        .delete(this.path + "/:equipmentUiId",    auth.required, this.deleteEquipment);
     }
 
     private checkEquipmentProperties = (equipment: IEquipments) => {
@@ -65,22 +66,8 @@ class EquipmentsController implements IController {
     }
 
     private checkAuth = async (req: express.Request, res: express.Response, authSucceed: any) => {
-        const { payload: { id, verificationToken } } = req.body;
-
-        if (verificationToken === undefined) {
-            return res.status(422).json({ errors: { authentication: "error" } });
-        }
-
-        if (id === undefined) {
-            return res.status(422).json({ errors: { id: "isrequired" } });
-        }
-
-        const user = await Users.findById(id);
+        const user = getUser();
         if (!user) {
-            return res.status(400).json({ errors: { authentication: "error" } });
-        }
-
-        if (user.verificationToken !== verificationToken) {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
@@ -88,19 +75,23 @@ class EquipmentsController implements IController {
     }
 
     private getEquipments = async (req: express.Request, res: express.Response) => {
-        const {payload: { id }} = req.body;
-        const userId = new mongoose.Types.ObjectId(id);
+        const userId = getUser()._id;
 
         const query = { ownerId: userId };
         const equipments = await Equipments.find(query);
 
-        return res.json({ equipments });
+        const jsonEquipments: any[] = [];
+        for (const equipment of equipments) {
+            jsonEquipments.push(await equipment.toJSON());
+        }
+
+        return res.json({ equipments: jsonEquipments });
     }
 
     private addEquipment = async (req: express.Request, res: express.Response) => {
         try {
-            const { body: { equipment, payload: { id } } } = req;
-            const userId = new mongoose.Types.ObjectId(id);
+            const { body: { equipment } } = req;
+            const userId = getUser()._id;
 
             const errors = this.checkEquipmentProperties(equipment);
             if (errors) {
@@ -117,7 +108,7 @@ class EquipmentsController implements IController {
             newEquipment.ownerId = userId;
 
             newEquipment = await newEquipment.save();
-            res.json({ equipment: newEquipment });
+            res.json({ equipment: await newEquipment.toJSON() });
         } catch (err) {
             res.send(err);
         }
@@ -125,21 +116,17 @@ class EquipmentsController implements IController {
 
     private changeEquipment = async (req: express.Request, res: express.Response) => {
         try {
-            const { body: { equipment, payload: { id } } } = req;
+            const { body: { equipment } } = req;
 
-            let existingEquipment = await Equipments.findById(req.params.equipmentId);
+            let existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
             if (!existingEquipment) {
                 return res.sendStatus(400);
-            }
-
-            if (existingEquipment.ownerId.toString() !== id) {
-                return res.sendStatus(401);
             }
 
             existingEquipment = Object.assign(existingEquipment, equipment);
             existingEquipment = await existingEquipment.save();
 
-            return res.json({ equipment: existingEquipment });
+            return res.json({ equipment: await existingEquipment.toJSON() });
         } catch (err) {
             res.send(err);
         }
@@ -147,21 +134,16 @@ class EquipmentsController implements IController {
 
     private deleteEquipment = async (req: express.Request, res: express.Response) => {
         try {
-            const { payload: { id } } = req.body;
-            const existingEquipment = await Equipments.findById(req.params.equipmentId);
+            const existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
             if (!existingEquipment) {
                 return res.sendStatus(400);
             }
 
-            if (existingEquipment.ownerId.toString() !== id) {
-                return res.sendStatus(401);
-            }
-
-            await Entries.deleteMany({ equipmentId: req.params.equipmentId});
-            await Tasks.deleteMany({ equipmentId: req.params.equipmentId});
+            await Entries.deleteMany({ equipmentId: existingEquipment._id});
+            await Tasks.deleteMany({ equipmentId: existingEquipment._id});
 
             await existingEquipment.remove();
-            return res.json({ equipment: existingEquipment });
+            return res.json({ equipment: await existingEquipment.toJSON() });
         } catch (err) {
             res.send(err);
         }

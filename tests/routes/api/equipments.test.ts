@@ -54,9 +54,6 @@ describe('Equipments', () => {
         it('it should get a 401 http code as a result because the token is expired', async () => {
             let res = await chai.request(app).get('/api/equipments').set("Authorization", "Token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InBhdWwudG9ycnVlbGxhQGdtYWlsLmNvbSIsImlkIjoiNWMyNWJmYmY1NDE4ZTM0ZGJjN2I5ZTkzIiwiZXhwIjoxNTUxMTYxNzkxLCJpYXQiOjE1NDU5Nzc3OTF9.uBge-2VvmJiweF-jCPOcLonn0ewBlNjy9wm6mFdSVQo");
             res.should.have.status(401);
-            res.body.should.have.property("errors");
-            res.body.errors.error.should.have.property("message");
-            res.body.errors.error.message.should.be.eql("jwt expired");
         });
 
         it('it should GET a 200 http code as a result and a equipment because we set the correct token', async () => {
@@ -64,7 +61,7 @@ describe('Equipments', () => {
             user.setPassword("test");
             user = await user.save();
 
-            let equipment = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let equipment = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01" });
             equipment.ownerId = user._id;
 
             equipment = await equipment.save();
@@ -74,14 +71,21 @@ describe('Equipments', () => {
             res.body.should.have.property("equipments");
             res.body.equipments.should.be.a("array");
             res.body.equipments.length.should.be.eql(1);
+
             res.body.equipments[0].should.have.property("name");
             res.body.equipments[0].name.should.be.eql("Arbutus");
+
             res.body.equipments[0].should.have.property("brand");
             res.body.equipments[0].brand.should.be.eql("Nanni");
+            
             res.body.equipments[0].should.have.property("model");
             res.body.equipments[0].model.should.be.eql("N3.30");
+
             res.body.equipments[0].should.have.property("age");
             res.body.equipments[0].age.should.be.eql(1234);
+
+            res.body.equipments[0].should.have.property("_uiId");
+            res.body.equipments[0]._uiId.should.be.eql("boat_01");
         });
     });
 
@@ -103,7 +107,7 @@ describe('Equipments', () => {
             const deletedUserToken = user.generateJWT();
             await user.remove();
                 
-            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z" };
+            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z", _uiId:"boat_01" };
 
             let res = await chai.request(app).post('/api/equipments').send({equipment:equipment}).set("Authorization", "Token " + deletedUserToken);
             
@@ -129,8 +133,8 @@ describe('Equipments', () => {
             res.body.equipment.should.have.property("model");
             res.body.equipment.should.have.property("age");
             res.body.equipment.should.have.property("installation");
-            res.body.equipment.should.have.property("_id");
-            res.body.equipment.should.have.property("ownerId");
+            res.body.equipment.should.not.have.property("_id");
+            res.body.equipment.should.not.have.property("ownerId");
             res.body.equipment.should.have.property("ageAcquisitionType");
             res.body.equipment.should.have.property("ageUrl");
             res.body.equipment.should.have.property("_uiId");
@@ -140,7 +144,6 @@ describe('Equipments', () => {
             res.body.equipment.model.should.be.eql("N3.30");
             res.body.equipment.age.should.be.eql(1234);
             res.body.equipment.installation.should.be.eql("2018-01-09T23:00:00.000Z");
-            res.body.equipment.ownerId.should.be.eql(user._id.toString());  
             res.body.equipment.ageAcquisitionType.should.be.eql(AgeAcquisitionType.manualEntry);  
             res.body.equipment.ageUrl.should.be.eql('');
             res.body.equipment._uiId.should.be.eql('123456');
@@ -169,10 +172,10 @@ describe('Equipments', () => {
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
             boat.ownerId = user._id;
             boat = await boat.save();
-            let res = await chai.request(app).post('/api/equipments/' + boat._id).send({equipment:{age:1235}}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/equipments/' + boat._uiId).send({equipment:{age:1235}}).set("Authorization", "Token " + user.generateJWT());
             
             res.should.have.status(200);
             res.body.should.have.property("equipment");
@@ -188,10 +191,10 @@ describe('Equipments', () => {
             let userId = user._id;
             let token = user.generateJWT();
 
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
             boat.ownerId = userId;
             boat = await boat.save();
-            let res = await chai.request(app).post('/api/equipments/' + boat._id).send({equipment:{name:'Arbatros'}}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/equipments/' + boat._uiId).send({equipment:{name:'Arbatros'}}).set("Authorization", "Token " + token);
             
             res.should.have.status(200);
             res.body.should.have.property("equipment");
@@ -205,11 +208,11 @@ describe('Equipments', () => {
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
             boat.ownerId = user._id;
             boat = await boat.save();
 
-            let res = await chai.request(app).post('/api/equipments/' + boat._id).send({equipment:{brand:'Nanni Diesel'}}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/equipments/' + boat._uiId).send({equipment:{brand:'Nanni Diesel'}}).set("Authorization", "Token " + user.generateJWT());
             
             res.should.have.status(200);
             res.body.should.have.property("equipment");
@@ -223,11 +226,11 @@ describe('Equipments', () => {
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
             boat.ownerId = user._id;
             boat = await boat.save();
 
-            let res = await chai.request(app).post('/api/equipments/' + boat._id).send({equipment:{model:'3.30'}}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/equipments/' + boat._uiId).send({equipment:{model:'3.30'}}).set("Authorization", "Token " + user.generateJWT());
             res.should.have.status(200);
             res.body.should.have.property("equipment");
             res.body.equipment.should.be.a("object");
@@ -240,11 +243,11 @@ describe('Equipments', () => {
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", ageAcquisitionType:1});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", ageAcquisitionType:1, _uiId: "boat_01"});
             boat.ownerId = user._id;
             boat = await boat.save();
 
-            let res = await chai.request(app).post('/api/equipments/' + boat._id).send({equipment:{ageAcquisitionType:2}}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/equipments/' + boat._uiId).send({equipment:{ageAcquisitionType:2}}).set("Authorization", "Token " + user.generateJWT());
             res.should.have.status(200);
             res.body.should.have.property("equipment");
             res.body.equipment.should.be.a("object");
@@ -255,24 +258,25 @@ describe('Equipments', () => {
 
     describe('DELETE/:equipmentId equipment', () => {
         it('it should get a 200 http code as a result because the equipment was successfully deleted', async () => {
+            // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
             
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
             boat.ownerId = user._id;
             boat = await boat.save();
 
-            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange"});
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId: "task_01"});
             task.equipmentId = boat._id;
             task = await task.save();
 
-            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2" });
+            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2", _uiId: "entry_01" });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
 
-            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3" });
+            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3", _uiId: "entry-02" });
             entry3.equipmentId = boat._id;
             entry3 = await entry3.save();
 
@@ -282,9 +286,10 @@ describe('Equipments', () => {
             let nbEntries = await Entries.countDocuments({});
             nbEntries.should.be.eql(2);
 
+            // Act
+            let res = await chai.request(app).delete('/api/equipments/' + boat._uiId).set("Authorization", "Token " + user.generateJWT());
 
-            let res = await chai.request(app).delete('/api/equipments/' + boat._id).set("Authorization", "Token " + user.generateJWT());
-
+            // Assert
             res.should.have.status(200);
             res.body.should.have.property("equipment");
             res.body.equipment.should.be.a("object");
@@ -311,17 +316,17 @@ describe('Equipments', () => {
             res.should.have.status(400);
         });
 
-        it('it should get a 401 http code as a result because the equipment requested is not own by the user', async () => {
+        it('it should get a 400 http code as a result because the equipment requested is not own by the user', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
 
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20"});
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
             boat.ownerId = new mongoose.Types.ObjectId("5c27912a9bc7e61fdcd2e82c");
             boat = await boat.save();
 
-            let res = await chai.request(app).delete('/api/equipments/' + boat._id).set("Authorization", "Token " + user.generateJWT());
-            res.should.have.status(401);
+            let res = await chai.request(app).delete('/api/equipments/' + boat._uiId).set("Authorization", "Token " + user.generateJWT());
+            res.should.have.status(400);
         });
     });
 });

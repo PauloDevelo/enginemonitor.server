@@ -19,6 +19,19 @@ export const EquipmentsSchema = new mongoose.Schema({
     ownerId: mongoose.Schema.Types.ObjectId
 });
 
+EquipmentsSchema.methods.toJSON = async function() {
+    return {
+        _uiId: this._uiId,
+        age: this.age,
+        ageAcquisitionType: this.ageAcquisitionType,
+        ageUrl: this.ageUrl,
+        brand: this.brand,
+        installation: this.installation,
+        model: this.model,
+        name: this.name,
+    };
+};
+
 export interface IEquipments extends mongoose.Document {
     _uiId: string;
     brand: string;
@@ -28,6 +41,8 @@ export interface IEquipments extends mongoose.Document {
     installation: Date;
     ageAcquisitionType: number;
     ageUrl: string;
+
+    toJSON(): any;
 }
 
 export const getEquipment =  async (equipmentId: mongoose.Types.ObjectId): Promise<IEquipments> => {
