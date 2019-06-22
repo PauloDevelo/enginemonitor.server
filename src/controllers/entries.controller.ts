@@ -5,7 +5,7 @@ import Entries, { getEntryByUiId, IEntries } from "../models/Entries";
 import { getEquipmentByUiId } from "../models/Equipments";
 import { getTaskByUiId } from "../models/Tasks";
 
-import {getUser, requestContextBinder} from "../utils/requestContext";
+import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
 
@@ -22,7 +22,7 @@ class EntriesController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path + "/:equipmentUiId", auth.required, requestContextBinder(this.checkAuthAndOwnership))
+        this.router.use(this.path + "/:equipmentUiId", auth.required, this.checkAuthAndOwnership)
         .get(this.path + "/:equipmentUiId", auth.required, this.getAllEntries)
         .get(this.path + "/:equipmentUiId/:taskUiId",             auth.required, this.getEntries)
         .post(this.path + "/:equipmentUiId/:taskUiId",            auth.required, this.createEntry)

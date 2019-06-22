@@ -1,5 +1,8 @@
 import config, {isDev, isProd} from "./utils/configUtils";
 import logger from "./utils/logger";
+import {requestContextBinder} from "./utils/requestContext";
+
+import auth from "./security/auth";
 
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -57,6 +60,8 @@ class App {
         this.app.use(bodyParser.urlencoded({ extended: false }));
         this.app.use(bodyParser.json());
         this.app.use(express.static(path.join(__dirname, "public")));
+
+        this.app.use(auth.optional, requestContextBinder());
 
         if (!isProd) {
             this.app.use(errorHandler());

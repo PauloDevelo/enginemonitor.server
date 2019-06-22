@@ -3,7 +3,27 @@ import Users, { IUser } from "../models/Users";
 import { createNamespace, getNamespace, Namespace } from "cls-hooked";
 
 const namespaceName = "requestcontext";
+
 const ns: Namespace = createNamespace(namespaceName);
+
+export const getUser = (): IUser => {
+    const session = getRequestContext();
+    return session.get("user");
+};
+
+export const requestContextBinder = (): (req, res, next) => void => {
+    if (!ns) { throw new Error("CLS namespace required"); }
+
+    return function requestContextMiddleware(req, res, next) {
+        ns.bindEmitter(req);
+        ns.bindEmitter(res);
+
+        ns.run(async () => {
+            await setUserContext(req);
+            next();
+        });
+    };
+};
 
 const setUser = (user: IUser) => {
     const session = getRequestContext();
@@ -18,25 +38,6 @@ const getRequestContext = (): Namespace => {
     }
 
     return session;
-};
-
-export const getUser = (): IUser => {
-    const session = getRequestContext();
-    return session.get("user");
-};
-
-export const requestContextBinder = (check: (req, res, next) => void): (req, res, next) => void => {
-    if (!ns) { throw new Error("CLS namespace required"); }
-
-    return function requestContextMiddleware(req, res, next) {
-        ns.bindEmitter(req);
-        ns.bindEmitter(res);
-
-        ns.run(async () => {
-            await setUserContext(req);
-            check(req, res, next);
-        });
-    };
 };
 
 const setUserContext = async (req: any) => {
