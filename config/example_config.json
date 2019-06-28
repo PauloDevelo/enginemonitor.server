@@ -9,7 +9,7 @@
     "certificate ": "/etc/letsencrypt/live/www.ecogium.fr/cert.pem",
     "ca": "/etc/letsencrypt/live/www.ecogium.fr/chain.pem",
 
-    "frontEndUrl": "http://localhost:3000/",
+    "frontEndUrl": "http://localhost:8080/",
 
     "SENDGRID_API_KEY": "Send grid API key",
 
