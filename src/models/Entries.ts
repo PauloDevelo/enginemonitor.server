@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { getEquipment } from "./Equipments";
+import { getTask } from "./Tasks";
 
 export const EntriesSchema = new mongoose.Schema({
     _uiId: String,
@@ -19,6 +20,7 @@ EntriesSchema.methods.toJSON = async function() {
         equipmentUiId: (await getEquipment(this.equipmentId))._uiId,
         name: this.name,
         remarks: this.remarks,
+        taskUiId: this.taskId ? (await getTask(this.taskId))._uiId : undefined,
     };
 };
 

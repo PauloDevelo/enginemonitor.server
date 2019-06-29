@@ -392,7 +392,7 @@ describe('Entries', () => {
         });
     });
 
-    describe('/POST/:equipmentUiId/:taskUiId new entry', () => {
+    describe('/POST/:equipmentUiId/:taskUiId/:newEntryUiId new entry', () => {
         it('it should GET a 200 http code as a result because the entry was return successfully', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
@@ -410,7 +410,7 @@ describe('Entries', () => {
             let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: '123456' }
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/' + boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(200);
@@ -446,7 +446,7 @@ describe('Entries', () => {
             let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId:"123456" }
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/-').send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/-' + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(200);
@@ -484,7 +484,7 @@ describe('Entries', () => {
             let entry = { date: new Date().toString(), age: 12345, remarks: "RAS" }
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + 'any-ui-id').send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(422);
@@ -511,7 +511,7 @@ describe('Entries', () => {
             let entry = { date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" }
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(422);
@@ -538,7 +538,7 @@ describe('Entries', () => {
             let entry = { name: "My first vidange", age: 12345, remarks: "RAS", _uiId: "entry_01" };
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(422);
@@ -565,7 +565,7 @@ describe('Entries', () => {
             let entry = { name: "My first vidange", date: new Date().toString(), remarks: "RAS", _uiId: "entry_01" };
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(422);
@@ -592,7 +592,7 @@ describe('Entries', () => {
             let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, _uiId: "entry_01" };
 
             // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
             res.should.have.status(422);
@@ -790,7 +790,7 @@ describe('Entries', () => {
             res.body.entry.remarks.should.be.eql("remarks");
         });
 
-        it('it should get a 401 http code as a result because the entry does not belong to the boat of the request', async () => {
+        it('it should get a 400 http code as a result because the entry does not belong to the boat of the request', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -821,34 +821,6 @@ describe('Entries', () => {
             // Assert
             res.should.have.status(400);
         });
-
-        it('it should get a 400 http code as a result because the entry does not exist', async () => {
-            // Arrange
-            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.setPassword("test");
-            user = await user.save();
-            
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-            boat.ownerId =  user._id;
-            boat = await  boat.save();
-
-            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-            task.equipmentId = boat._id;
-            task = await task.save();
-
-            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-            entry.equipmentId = boat._id;
-            entry.taskId = task._id;
-            
-            let jsonEntry = {name:"Vidange d'huile"};
-            
-            // Act
-            let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).send({ entry: jsonEntry }).set("Authorization", "Token " + user.generateJWT());
-
-            // Assert
-            res.should.have.status(400);
-        });
-
     });
 
     describe('/DELETE/:equipmentId/:taskId/:entryId delete entry', () => {
