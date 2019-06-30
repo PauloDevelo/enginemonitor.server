@@ -171,7 +171,7 @@ class UsersController implements IController {
                 return res.status(400).json({ errors: { email: "isinvalid" } });
             }
 
-            await NewPasswords.remove({ email });
+            await NewPasswords.deleteMany({ email });
 
             let newPasswords = new NewPasswords();
             newPasswords.initNewPassword(email, newPassword);
