@@ -1,10 +1,8 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import mongoose from "mongoose";
-
 import Entries from "../models/Entries";
-import Equipments, { AgeAcquisitionType, getEquipmentByUiId, IEquipments } from "../models/Equipments";
+import Equipments, { getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks from "../models/Tasks";
 
 import {getUser} from "../utils/requestContext";
@@ -26,8 +24,7 @@ class EquipmentsController implements IController {
     private intializeRoutes() {
         this.router.use(this.path,              auth.required, this.checkAuth)
         .get(   this.path,                      auth.required, this.getEquipments)
-        .post(  this.path,                      auth.required, this.addEquipment)
-        .post(  this.path + "/:equipmentUiId",    auth.required, this.changeEquipment)
+        .post(  this.path + "/:equipmentUiId",    auth.required, this.changeOrAddEquipment)
         .delete(this.path + "/:equipmentUiId",    auth.required, this.deleteEquipment);
     }
 
@@ -114,19 +111,20 @@ class EquipmentsController implements IController {
         }
     }
 
-    private changeEquipment = async (req: express.Request, res: express.Response) => {
+    private changeOrAddEquipment = async (req: express.Request, res: express.Response) => {
         try {
             const { body: { equipment } } = req;
 
             let existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
             if (!existingEquipment) {
-                return res.sendStatus(400);
+                this.addEquipment(req, res);
+                return;
+            } else {
+                existingEquipment = Object.assign(existingEquipment, equipment);
+                existingEquipment = await existingEquipment.save();
+
+                return res.json({ equipment: await existingEquipment.toJSON() });
             }
-
-            existingEquipment = Object.assign(existingEquipment, equipment);
-            existingEquipment = await existingEquipment.save();
-
-            return res.json({ equipment: await existingEquipment.toJSON() });
         } catch (err) {
             res.send(err);
         }
