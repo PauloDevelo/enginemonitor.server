@@ -372,7 +372,7 @@ describe('Tasks', () => {
             let task = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId: "asdggg"};
 
             // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: task}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
             res.should.have.status(200);
@@ -408,7 +408,7 @@ describe('Tasks', () => {
             let task = { usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId:"task_01" };
 
             // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: task}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
             res.should.have.status(422);
@@ -434,7 +434,7 @@ describe('Tasks', () => {
             let task = { name:"Vidange", periodInMonth:12, description:"Faire la vidange", _uiId:"task_01" };
 
             // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: task}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
             res.should.have.status(422);
@@ -460,7 +460,7 @@ describe('Tasks', () => {
             let task = { name:"Vidange", usagePeriodInHour:200, description:"Faire la vidange", _uiId:"task_01" };
 
             // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: task}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
             res.should.have.status(422);
@@ -483,10 +483,10 @@ describe('Tasks', () => {
             boat.ownerId = userId;
             boat = await  boat.save();
 
-            let task = { name:"Vidange", usagePeriodInHour:200, periodInMonth:12};
+            let task = { name:"Vidange", usagePeriodInHour:200, periodInMonth:12, _uiId: "task_01"};
 
             // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: task}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
             res.should.have.status(422);
@@ -512,7 +512,7 @@ describe('Tasks', () => {
             let task = { name:"Vidange", usagePeriodInHour:200, periodInMonth:12};
 
             // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: task}).set("Authorization", "Token " + token);
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/task-01').send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
             res.should.have.status(422);
@@ -520,34 +520,6 @@ describe('Tasks', () => {
             res.body.errors.should.be.a("object");
             res.body.errors.should.have.property("_uiId");
             res.body.errors.description.should.be.eql("isrequired");
-        });
-
-        it('it should GET a 422 http code as a result because the task already exist', async () => {
-            // Arrange
-            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.setPassword("test");
-            let userId = user._id;
-            let token = user.generateJWT();
-            user = await user.save();
-
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"jinbwlblbddv"});
-            boat.ownerId = userId;
-            boat = await  boat.save();
-
-            let jsonTask = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId:'daadf ewtnghmyioluktuk'};
-            let task = new Tasks(jsonTask);
-            task.equipmentId = boat._id;
-            task = await task.save();
-
-            // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString()).send({task: jsonTask}).set("Authorization", "Token " + token);
-
-            // Assert
-            res.should.have.status(422);
-            res.body.should.have.property("errors");
-            res.body.errors.should.be.a("object");
-            res.body.errors.should.have.property("name");
-            res.body.errors.name.should.be.eql("alreadyexisting");
         });
     });
 
@@ -694,59 +666,6 @@ describe('Tasks', () => {
             res.body.task.usagePeriodInHour.should.be.eql(200);
             res.body.task.periodInMonth.should.be.eql(12);
             res.body.task.description.should.be.eql("Bien Faire la vidange");
-        });
-
-        it('it should get a 400 http code as a result because the task does not belong to the boat of the request', async () => {
-            // Arrange
-            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.setPassword("test");
-            user = await user.save();
-            let userId = user._id;
-            let token = user.generateJWT();
-
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
-            boat.ownerId = userId;
-            boat = await  boat.save();
-
-            let boat2 = new Equipments({name: "Albatros", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_02"});
-            boat2.ownerId = userId;
-            boat2 = await  boat2.save();
-
-            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId:"task_01"});
-            task.equipmentId = boat2._id;
-            task = await task.save();
-
-            let jsonTask = {name:"Vidange d'huile"};
-            
-            // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({task: jsonTask}).set("Authorization", "Token " + token);
-
-            // Assert
-            res.should.have.status(400);
-        });
-
-        it('it should get a 400 http code as a result because the task does not exist', async () => {
-            // Arrange
-            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-            user.setPassword("test");
-            user = await user.save();
-            let userId = user._id;
-            let token = user.generateJWT();
-
-            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
-            boat.ownerId = userId;
-            boat = await  boat.save();
-
-            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId:"task_01"});
-            task.equipmentId = boat._id;
-
-            let jsonTask = {name:"Vidange d'huile"};
-            
-            // Act
-            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId.toString()).send({task: jsonTask}).set("Authorization", "Token " + token);
-
-            // Assert
-            res.should.have.status(400);
         });
 
         it('it should get a 422 http code as a result because the task already exist', async () => {

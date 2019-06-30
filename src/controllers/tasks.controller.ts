@@ -1,16 +1,16 @@
 import * as express from "express";
+import mongoose from "mongoose";
+
 import auth from "../security/auth";
 
 import {getUser} from "../utils/requestContext";
 
-import mongoose from "mongoose";
-
 import Entries from "../models/Entries";
-import Equipments, { getEquipmentByUiId } from "../models/Equipments";
+import { getEquipmentByUiId } from "../models/Equipments";
 import Tasks, { getTaskByUiId, ITasks } from "../models/Tasks";
-import Users from "../models/Users";
 
 import IController from "./IController";
+import { ServerResponse } from "http";
 
 class TasksController implements IController {
     private path: string = "/tasks";
@@ -27,8 +27,7 @@ class TasksController implements IController {
     private intializeRoutes() {
         this.router.use(this.path + "/:equipmentUiId", auth.required, this.checkAuthAndOwnership)
         .get(this.path + "/:equipmentUiId",            auth.required, this.getTasks)
-        .post(this.path + "/:equipmentUiId",           auth.required, this.createTask)
-        .post(this.path + "/:equipmentUiId/:taskUiId",   auth.required, this.changeTask)
+        .post(this.path + "/:equipmentUiId/:taskUiId",   auth.required, this.changeOrCreateTask)
         .delete(this.path + "/:equipmentUiId/:taskUiId", auth.required, this.deleteTask);
     }
 
@@ -82,87 +81,88 @@ class TasksController implements IController {
     }
 
     private getTasks = async (req: express.Request, res: express.Response) => {
-        const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
+        try{
+            const equipmentId = await this.getEquipmentId(req, res);
 
-        const query = { equipmentId };
-        const tasks = await Tasks.find(query);
-
-        const jsonTasks: any[] = [];
-        for (const task of tasks) {
-            jsonTasks.push(await task.toJSON());
+            const query = { equipmentId };
+            const tasks = await Tasks.find(query);
+    
+            const jsonTasks: any[] = [];
+            for (const task of tasks) {
+                jsonTasks.push(await task.toJSON());
+            }
+    
+            return res.json({ tasks: jsonTasks });
         }
-
-        return res.json({ tasks: jsonTasks });
-    }
-
-    private createTask = async (req: express.Request, res: express.Response) => {
-        try {
-            const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
-            const { body: { task } } = req;
-
-            const errors = this.checkTaskProperties(task);
-            if (errors) {
-                return res.status(422).json(errors);
-            }
-
-            const query = { name: task.name, equipmentId };
-            const taskCounter = await Tasks.countDocuments(query);
-            if (taskCounter > 0) {
-                return res.status(422).json({
-                    errors: {
-                        name: "alreadyexisting",
-                    },
-                });
-            } else {
-                let newTask = new Tasks(task);
-                newTask.equipmentId = equipmentId;
-
-                newTask = await newTask.save();
-                return res.json({ task: await newTask.toJSON() });
-            }
-        } catch (error) {
-            res.send(error);
+        catch(error){
+            this.handleCaughtError(req, res, error);
         }
     }
 
-    private changeTask = async (req: express.Request, res: express.Response) => {
+    private createTask = async (equipmentId: mongoose.Types.ObjectId, req: express.Request, res: express.Response) => {
+        const { body: { task } } = req;
+
+        const errors = this.checkTaskProperties(task);
+        if (errors) {
+            throw res.status(422).json(errors);
+        }
+
+        const query = { name: task.name, equipmentId };
+        const taskCounter = await Tasks.countDocuments(query);
+        if (taskCounter > 0) {
+            throw res.status(422).json({
+                errors: {
+                    name: "alreadyexisting",
+                },
+            });
+        } else {
+            let newTask = new Tasks(task);
+            newTask.equipmentId = equipmentId;
+
+            newTask = await newTask.save();
+            return res.json({ task: await newTask.toJSON() });
+        }
+    }
+
+    private changeOrCreateTask = async (req: express.Request, res: express.Response) => {
         try {
-            const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
-            const { body: { task } } = req;
+            const equipmentId = await this.getEquipmentId(req, res);
 
             let existingTask = (await getTaskByUiId(equipmentId, req.params.taskUiId));
             if (!existingTask) {
-                return res.sendStatus(400);
-            }
+                return await this.createTask(equipmentId, req, res);
+            } else {
+                const { body: { task } } = req;
 
-            if (task.name) {
-                const query = { name: task.name, equipmentId };
-                const tasks = await Tasks.find(query);
-                const taskWithSameNameIndex = tasks.findIndex((t) => t._uiId !== req.params.taskUiId);
-                if (taskWithSameNameIndex !== -1) {
-                    return res.status(422).json({
-                        errors: {
-                            name: "alreadyexisting",
-                        },
-                    });
+                if (task.name) {
+                    const query = { name: task.name, equipmentId };
+                    const tasks = await Tasks.find(query);
+                    const taskWithSameNameIndex = tasks.findIndex((t) => t._uiId !== req.params.taskUiId);
+                    if (taskWithSameNameIndex !== -1) {
+                        throw res.status(422).json({
+                            errors: {
+                                name: "alreadyexisting",
+                            },
+                        });
+                    }
                 }
-            }
 
-            existingTask = Object.assign(existingTask, task);
-            existingTask = await existingTask.save();
-            return res.json({ task: await existingTask.toJSON() });
+                existingTask = Object.assign(existingTask, task);
+                existingTask = await existingTask.save();
+                return res.json({ task: await existingTask.toJSON() });
+            }
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
         }
     }
 
     private deleteTask = async (req: express.Request, res: express.Response) => {
         try {
-            const equipmentId = (await getEquipmentByUiId(req.params.equipmentUiId))._id;
+            const equipmentId = await this.getEquipmentId(req, res);
             const existingTask = await getTaskByUiId(equipmentId, req.params.taskUiId);
 
             if (!existingTask) {
-                return res.sendStatus(400);
+                throw res.sendStatus(400);
             }
 
             const entriesReq = { taskId: existingTask._id };
@@ -172,7 +172,27 @@ class TasksController implements IController {
 
             return res.json({ task: await existingTask.toJSON() });
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
+        }
+    }
+
+    private getEquipmentId = async (req: express.Request, res: express.Response):Promise<mongoose.Types.ObjectId> =>{
+        const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
+
+        if (equipment){
+            return equipment._id;
+        }
+        else{
+            throw res.status(400).json("inexistingequipment");
+        }
+    }
+    
+    private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
+        if (err instanceof ServerResponse){
+            return;
+        }
+        else{
+            res.send(err);
         }
     }
 }

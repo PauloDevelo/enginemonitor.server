@@ -137,5 +137,9 @@ export const getTaskByUiId = async (equipmentId: mongoose.Types.ObjectId, taskUi
     return await Tasks.findOne(query);
 };
 
+export const getTask = async (taskId: mongoose.Types.ObjectId): Promise<ITasks> => {
+    return await Tasks.findById(taskId);
+};
+
 const Tasks = mongoose.model<ITasks>("Tasks", TasksSchema);
 export default Tasks;
