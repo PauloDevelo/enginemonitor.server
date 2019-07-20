@@ -9,8 +9,8 @@ import { getTaskByUiId } from "../models/Tasks";
 
 import {getUser} from "../utils/requestContext";
 
-import IController from "./IController";
 import { ServerResponse } from "http";
+import IController from "./IController";
 
 class EntriesController implements IController {
     private path: string = "/entries";
@@ -82,28 +82,26 @@ class EntriesController implements IController {
     }
 
     private getEntries = async (req: express.Request, res: express.Response) => {
-        try{
+        try {
             const equipmentId = (await this.getEquipmentId(req, res));
             const taskId = (await this.getTaskId(equipmentId, req, res));
 
             const query = { equipmentId, taskId };
             const entries = await Entries.find(query);
             return res.json({ entries: await this.sortAndConvertToJson(entries) });
-        }
-        catch(err){
+        } catch (err) {
             this.handleCaughtError(req, res, err);
         }
     }
 
     private getAllEntries = async (req: express.Request, res: express.Response) => {
-        try{
+        try {
             const equipmentId = await this.getEquipmentId(req, res);
 
             const query = { equipmentId };
             const entries = await Entries.find(query);
             return res.json({ entries: await this.sortAndConvertToJson(entries) });
-        }
-        catch(err){
+        } catch (err) {
             this.handleCaughtError(req, res, err);
         }
     }
@@ -119,6 +117,7 @@ class EntriesController implements IController {
         return jsonEntries;
     }
 
+    // tslint:disable-next-line:max-line-length
     private createEntry = async (equipmentId: mongoose.Types.ObjectId, taskId: mongoose.Types.ObjectId, req: express.Request, res: express.Response) => {
         const { body: { entry } } = req;
 
@@ -154,12 +153,10 @@ class EntriesController implements IController {
 
                 existingEntry = await existingEntry.save();
                 return res.json({ entry: await existingEntry.toJSON() });
-            }
-            else{
+            } else {
                 return await this.createEntry(equipmentId, taskId, req, res);
             }
-        } 
-        catch (error) {
+        } catch (error) {
             this.handleCaughtError(req, res, error);
         }
     }
@@ -183,43 +180,40 @@ class EntriesController implements IController {
 
             await existingEntry.remove();
             return res.json({ entry: await existingEntry.toJSON() });
-        } 
-        catch (error) {
+        } catch (error) {
             this.handleCaughtError(req, res, error);
         }
     }
 
-    private getEquipmentId = async (req: express.Request, res: express.Response):Promise<mongoose.Types.ObjectId> =>{
+    private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {
         const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
 
-        if (equipment){
+        if (equipment) {
             return equipment._id;
-        }
-        else{
+        } else {
             throw res.status(400).json("inexistingequipment");
         }
     }
 
-    private getTaskId = async (equipmentId: mongoose.Types.ObjectId, req: express.Request, res: express.Response):Promise<mongoose.Types.ObjectId | undefined> =>{
-        if (req.params.taskUiId === "-")
-        {
+    // tslint:disable-next-line:max-line-length
+    private getTaskId = async (equipmentId: mongoose.Types.ObjectId, req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId | undefined> => {
+        if (req.params.taskUiId === "-") {
             return undefined;
         }
 
         const task = (await getTaskByUiId(equipmentId, req.params.taskUiId));
-        if (task){
+        if (task) {
             return task._id;
-            
+
         }
 
         throw res.status(400).json("inexistingtask");
     }
 
     private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
-        if (err instanceof ServerResponse){
+        if (err instanceof ServerResponse) {
             return;
-        }
-        else{
+        } else {
             res.send(err);
         }
     }

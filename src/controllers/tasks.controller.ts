@@ -9,8 +9,8 @@ import Entries from "../models/Entries";
 import { getEquipmentByUiId } from "../models/Equipments";
 import Tasks, { getTaskByUiId, ITasks } from "../models/Tasks";
 
-import IController from "./IController";
 import { ServerResponse } from "http";
+import IController from "./IController";
 
 class TasksController implements IController {
     private path: string = "/tasks";
@@ -81,20 +81,19 @@ class TasksController implements IController {
     }
 
     private getTasks = async (req: express.Request, res: express.Response) => {
-        try{
+        try {
             const equipmentId = await this.getEquipmentId(req, res);
 
             const query = { equipmentId };
             const tasks = await Tasks.find(query);
-    
+
             const jsonTasks: any[] = [];
             for (const task of tasks) {
                 jsonTasks.push(await task.toJSON());
             }
-    
+
             return res.json({ tasks: jsonTasks });
-        }
-        catch(error){
+        } catch (error) {
             this.handleCaughtError(req, res, error);
         }
     }
@@ -176,22 +175,20 @@ class TasksController implements IController {
         }
     }
 
-    private getEquipmentId = async (req: express.Request, res: express.Response):Promise<mongoose.Types.ObjectId> =>{
+    private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {
         const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
 
-        if (equipment){
+        if (equipment) {
             return equipment._id;
-        }
-        else{
+        } else {
             throw res.status(400).json("inexistingequipment");
         }
     }
-    
+
     private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
-        if (err instanceof ServerResponse){
+        if (err instanceof ServerResponse) {
             return;
-        }
-        else{
+        } else {
             res.send(err);
         }
     }
