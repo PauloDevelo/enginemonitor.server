@@ -2,5 +2,8 @@
     "uid": "EquipmentMaintenanceServer",
     "append": true,
     "watch": true,
-    "script": "./dist/server.js"
+    "script": "./dist/server.js",
+    "logFile": "./logs/equipmentMaintenanceLog.log",
+    "outFile": "./logs/equipmentMaintenanceOut.log",
+    "errFile": "./logs/equipmentMaintenanceError.log"
 }
