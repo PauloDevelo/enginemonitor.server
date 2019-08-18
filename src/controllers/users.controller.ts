@@ -1,6 +1,8 @@
 import * as express from "express";
 import auth from "../security/auth";
 
+import { ServerResponse } from "http";
+
 import passport from "../security/passport";
 import config from "../utils/configUtils";
 import sendGridHelper from "../utils/sendGridEmailHelper";
@@ -9,6 +11,8 @@ import NewPasswords, { INewPassword } from "../models/NewPasswords";
 import Users, { IUser } from "../models/Users";
 
 import IController from "./IController";
+
+import logger from "../utils/logger";
 
 class UsersController implements IController {
     private path: string = "/users";
@@ -85,7 +89,7 @@ class UsersController implements IController {
 
             res.status(200).json({});
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
         }
     }
 
@@ -118,7 +122,7 @@ class UsersController implements IController {
 
             res.redirect(config.get("frontEndUrl"));
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
         }
     }
 
@@ -148,7 +152,7 @@ class UsersController implements IController {
 
             res.redirect(config.get("frontEndUrl"));
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
         }
     }
 
@@ -181,7 +185,7 @@ class UsersController implements IController {
 
             return res.status(200).json({});
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
         }
     }
 
@@ -210,53 +214,70 @@ class UsersController implements IController {
                 return res.status(400).json({ errors: { email: "alreadyverified" } });
             }
         } catch (error) {
-            res.send(error);
+            this.handleCaughtError(req, res, error);
         }
     }
 
     // POST login route (optional, everyone has access)
     private login = (req: express.Request, res: express.Response, next: any) => {
-        const { body: { user } } = req;
+        try {
+            const { body: { user } } = req;
 
-        if (!user.email) {
-            return res.status(422).json({ errors: { email: "isrequired" } });
-        }
-
-        if (!user.password) {
-            return res.status(422).json({ errors: { password: "isrequired" } });
-        }
-
-        return passport.authenticate("local", { session: false }, (err, passportUser: IUser, info) => {
-            if (err) {
-                return next(err);
+            if (!user.email) {
+                return res.status(422).json({ errors: { email: "isrequired" } });
             }
 
-            if (passportUser) {
-                return res.json({ user: passportUser.toAuthJSON() });
+            if (!user.password) {
+                return res.status(422).json({ errors: { password: "isrequired" } });
             }
 
-            return res.status(400).json(info);
-        })(req, res, next);
+            return passport.authenticate("local", { session: false }, (err, passportUser: IUser, info) => {
+                if (err) {
+                    return next(err);
+                }
+
+                if (passportUser) {
+                    return res.json({ user: passportUser.toAuthJSON() });
+                }
+
+                return res.status(400).json(info);
+            })(req, res, next);
+        } catch (error) {
+            this.handleCaughtError(req, res, error);
+        }
     }
 
     // GET current route (required, only authenticated users have access)
     private getCurrent = async (req: express.Request, res: express.Response) => {
-        const { payload: { id, verificationToken } } = req.body;
+        try {
+            const { payload: { id, verificationToken } } = req.body;
 
-        if (verificationToken === undefined) {
-            return res.status(422).json({ errors: { authentication: "error" } });
+            if (verificationToken === undefined) {
+                return res.status(422).json({ errors: { authentication: "error" } });
+            }
+
+            const user = await Users.findById(id);
+            if (!user) {
+                return res.status(400).json({ errors: { id: "isinvalid" } });
+            }
+
+            if (user.verificationToken !== verificationToken) {
+                return res.status(400).json({ errors: { authentication: "error" } });
+            }
+
+            return res.json({ user: user.toAuthJSON() });
+        } catch (error) {
+            this.handleCaughtError(req, res, error);
         }
+    }
 
-        const user = await Users.findById(id);
-        if (!user) {
-            return res.status(400).json({ errors: { id: "isinvalid" } });
+    private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
+        if (err instanceof ServerResponse) {
+            return;
+        } else {
+            logger.error(err);
+            res.sendStatus(500);
         }
-
-        if (user.verificationToken !== verificationToken) {
-            return res.status(400).json({ errors: { authentication: "error" } });
-        }
-
-        return res.json({ user: user.toAuthJSON() });
     }
 }
 

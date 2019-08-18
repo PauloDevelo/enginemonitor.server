@@ -1,6 +1,8 @@
 import * as express from "express";
 import auth from "../security/auth";
 
+import { ServerResponse } from "http";
+
 import Entries from "../models/Entries";
 import Equipments, { getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks from "../models/Tasks";
@@ -8,6 +10,8 @@ import Tasks from "../models/Tasks";
 import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
+
+import logger from "../utils/logger";
 
 class EquipmentsController implements IController {
     private path: string = "/equipments";
@@ -72,17 +76,21 @@ class EquipmentsController implements IController {
     }
 
     private getEquipments = async (req: express.Request, res: express.Response) => {
-        const userId = getUser()._id;
+        try {
+            const userId = getUser()._id;
 
-        const query = { ownerId: userId };
-        const equipments = await Equipments.find(query);
+            const query = { ownerId: userId };
+            const equipments = await Equipments.find(query);
 
-        const jsonEquipments: any[] = [];
-        for (const equipment of equipments) {
-            jsonEquipments.push(await equipment.toJSON());
+            const jsonEquipments: any[] = [];
+            for (const equipment of equipments) {
+                jsonEquipments.push(await equipment.toJSON());
+            }
+
+            return res.json({ equipments: jsonEquipments });
+        } catch (error) {
+            this.handleCaughtError(req, res, error);
         }
-
-        return res.json({ equipments: jsonEquipments });
     }
 
     private addEquipment = async (req: express.Request, res: express.Response) => {
@@ -106,8 +114,8 @@ class EquipmentsController implements IController {
 
             newEquipment = await newEquipment.save();
             res.json({ equipment: await newEquipment.toJSON() });
-        } catch (err) {
-            res.send(err);
+        } catch (error) {
+            this.handleCaughtError(req, res, error);
         }
     }
 
@@ -125,8 +133,8 @@ class EquipmentsController implements IController {
 
                 return res.json({ equipment: await existingEquipment.toJSON() });
             }
-        } catch (err) {
-            res.send(err);
+        } catch (error) {
+            this.handleCaughtError(req, res, error);
         }
     }
 
@@ -142,8 +150,17 @@ class EquipmentsController implements IController {
 
             await existingEquipment.remove();
             return res.json({ equipment: await existingEquipment.toJSON() });
-        } catch (err) {
-            res.send(err);
+        } catch (error) {
+            this.handleCaughtError(req, res, error);
+        }
+    }
+
+    private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
+        if (err instanceof ServerResponse) {
+            return;
+        } else {
+            logger.error(err);
+            res.sendStatus(500);
         }
     }
 }

@@ -12,6 +12,8 @@ import {getUser} from "../utils/requestContext";
 import { ServerResponse } from "http";
 import IController from "./IController";
 
+import logger from "../utils/logger";
+
 class EntriesController implements IController {
     private path: string = "/entries";
     private router: express.Router = express.Router();
@@ -144,7 +146,7 @@ class EntriesController implements IController {
                 const { body: { entry } } = req;
 
                 if ((!(existingEntry.taskId)  && taskId) ||
-                    (existingEntry.taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
+                    (existingEntry.taskId && taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
                     return res.sendStatus(401);
                 }
 
@@ -173,7 +175,7 @@ class EntriesController implements IController {
 
             if ((!(existingEntry.taskId)  && taskId) ||
                 (existingEntry.taskId  && !taskId) ||
-                (existingEntry.taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
+                (existingEntry.taskId && taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
                 return res.sendStatus(401);
             }
 
@@ -213,7 +215,8 @@ class EntriesController implements IController {
         if (err instanceof ServerResponse) {
             return;
         } else {
-            res.send(err);
+            logger.error(err);
+            res.sendStatus(500);
         }
     }
 }

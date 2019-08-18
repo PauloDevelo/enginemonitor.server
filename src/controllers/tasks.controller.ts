@@ -12,6 +12,8 @@ import Tasks, { getTaskByUiId, ITasks } from "../models/Tasks";
 import { ServerResponse } from "http";
 import IController from "./IController";
 
+import logger from "../utils/logger";
+
 class TasksController implements IController {
     private path: string = "/tasks";
     private router: express.Router = express.Router();
@@ -189,7 +191,8 @@ class TasksController implements IController {
         if (err instanceof ServerResponse) {
             return;
         } else {
-            res.send(err);
+            logger.error(err);
+            res.sendStatus(500);
         }
     }
 }
