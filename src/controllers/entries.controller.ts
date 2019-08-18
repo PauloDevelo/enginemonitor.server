@@ -144,7 +144,6 @@ class EntriesController implements IController {
                 const { body: { entry } } = req;
 
                 if ((!(existingEntry.taskId)  && taskId) ||
-                    (existingEntry.taskId  && !taskId) ||
                     (existingEntry.taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
                     return res.sendStatus(401);
                 }
