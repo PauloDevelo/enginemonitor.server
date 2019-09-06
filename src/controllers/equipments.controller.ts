@@ -6,6 +6,7 @@ import { ServerResponse } from "http";
 import Entries from "../models/Entries";
 import Equipments, { getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks from "../models/Tasks";
+import {deleteExistingImages} from "../models/Images";
 
 import {getUser} from "../utils/requestContext";
 
@@ -144,6 +145,8 @@ class EquipmentsController implements IController {
             if (!existingEquipment) {
                 return res.sendStatus(400);
             }
+
+            await deleteExistingImages(existingEquipment._uiId);
 
             await Entries.deleteMany({ equipmentId: existingEquipment._id});
             await Tasks.deleteMany({ equipmentId: existingEquipment._id});

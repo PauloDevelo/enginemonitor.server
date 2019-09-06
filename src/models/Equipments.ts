@@ -34,13 +34,13 @@ EquipmentsSchema.methods.toJSON = async function() {
 
 export interface IEquipments extends mongoose.Document {
     _uiId: string;
-    brand: string;
-    ownerId: mongoose.Types.ObjectId;
-    name: string;
     age: number;
-    installation: Date;
     ageAcquisitionType: number;
     ageUrl: string;
+    brand: string;
+    installation: Date;
+    ownerId: mongoose.Types.ObjectId;
+    name: string;
 
     toJSON(): any;
 }
