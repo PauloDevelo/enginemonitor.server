@@ -167,7 +167,7 @@ class ImagesController implements IController {
             return parentEquipment.ownerId.toString() === userId.toString();
         }
 
-        return false;
+        return true;
     }
 
     private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
