@@ -19,6 +19,7 @@ import { Types } from "mongoose";
 class ImagesController implements IController {
     private path: string = "/images";
     private router: express.Router = express.Router();
+    private cpUpload = upload.fields([{ name: 'imageData', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }]);
 
     constructor() {
         this.initializeRoutes();
@@ -32,12 +33,12 @@ class ImagesController implements IController {
         this.router
         .use(   this.path + "/:parentUiId", auth.required, this.checkOwnershipFromParams)
         .get(   this.path + "/:parentUiId", this.getImages)
-        .post(  this.path + "/:parentUiId", upload.single("imageData"), this.addImage)
+        .post(  this.path + "/:parentUiId", this.cpUpload, this.addImage)
         .post(  this.path + "/:parentUiId/:imageUiId", this.checkImageProperties, this.updateImage)
-        .delete(this.path + "/:parentUiId/", this.checkImageProperties, this.deleteImage);
+        .delete(this.path + "/:parentUiId/:imageUiId", this.deleteImage);
     }
 
-    private checkImageProperties = (req: express.Request, res: express.Response, success: any) => {
+    private checkImageProperties = (req: express.Request, res: express.Response, next: express.NextFunction):void => {
         const { body: { image } } = req;
         
         const errors: any = {};
@@ -55,24 +56,24 @@ class ImagesController implements IController {
         }
 
         if (Object.keys(errors).length === 0) {
-            success();
+            next();
         } else {
             throw res.status(422).json(errors);
         }
     }
 
-    private checkOwnershipFromParams = async (req: express.Request, res: express.Response, authSucceed: any) => {
+    private checkOwnershipFromParams = async (req: express.Request, res: express.Response, next: express.NextFunction):Promise<void> => {
         const user = getUser();
         if (!user) {
-            return res.status(400).json({ errors: { authentication: "error" } });
+            res.status(400).json({ errors: { authentication: "error" } });
         }
 
         const userId = user._id;
         if(await this.checkOwnership(userId, req.params.parentUiId) === true){
-            return authSucceed();
+            next();
         }
         else{
-            return res.status(400).json({ errors: { authentication: "error" } });
+            res.status(400).json({ errors: { authentication: "error" } });
         }
     }
 
@@ -91,7 +92,7 @@ class ImagesController implements IController {
         }
     }
 
-    private addImage = async (req: any, res: express.Response) => {
+    private addImage = async (req: any, res: express.Response):Promise<void> => {
         try{
             const { body: { _uiId, name, parentUiId } } = req;
             const userId = getUser()._id;
@@ -101,11 +102,12 @@ class ImagesController implements IController {
                     _uiId,
                     name,
                     parentUiId,
-                    path: req.file.path
+                    path: req.files['imageData'][0].path,
+                    thumbnailPath: req.files['thumbnail'][0].path
                 });
     
                 const result = await newImage.save();
-                return res.json({ image: await result.toJSON() });
+                res.json({ image: await result.toJSON() });
             }
             else{
                 res.status(400).json({ errors: { authentication: "error" } });
@@ -127,17 +129,15 @@ class ImagesController implements IController {
         res.json({ image: await existingImage.toJSON() });
     }
 
-    private deleteImage = async (req: express.Request, res: express.Response) => {
+    private deleteImage = async (req: express.Request, res: express.Response):Promise<void> => {
         try {
-            const { body: { image } } = req;
-
-            const existingImage = await getImageByUiId(image._uiId);
+            const existingImage = await getImageByUiId(req.params.imageUiId);
             if (!existingImage) {
-                return res.sendStatus(400);
+                res.sendStatus(400);
             }
 
             await existingImage.remove();
-            return res.json({ image: await existingImage.toJSON() });
+            res.json({ image: await existingImage.toJSON() });
         } catch (error) {
             this.handleCaughtError(req, res, error);
         }
