@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 import {getUser} from "../utils/requestContext";
 
+import {deleteTasks} from "./Tasks";
+import {deleteExistingImages} from "./Images";
+import { deleteEntriesFromParent } from './Entries'
+
 export enum AgeAcquisitionType {
     time = 0,
     manualEntry= 1,
@@ -55,6 +59,18 @@ export const getEquipmentByUiId = async (equipmentUiId: string): Promise<IEquipm
     const query = { ownerId: user._id, _uiId: equipmentUiId };
     return await Equipments.findOne(query);
 };
+
+export const deleteEquipmentModel = async(equipment:IEquipments):Promise<void> => {
+    const promises = [];
+
+    promises.push(deleteExistingImages(equipment._uiId));
+    promises.push(deleteTasks(equipment._id));
+    promises.push(deleteEntriesFromParent({eq}))
+
+    await Entries.deleteMany({ equipmentId: existingEquipment._id});
+    
+    await existingEquipment.remove();
+}
 
 const Equipments = mongoose.model<IEquipments>("Equipments", EquipmentsSchema);
 export default Equipments;
