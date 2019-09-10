@@ -6,6 +6,7 @@ import config = require("config");
 export const ImagesSchema = new mongoose.Schema({
     _uiId: String,
     path: String,
+    thumbnailPath: String,
     name: String,
     parentUiId: String
 });
@@ -15,13 +16,15 @@ ImagesSchema.methods.toJSON = async function() {
         _uiId: this._uiId,
         name: this.name,
         parentUiId: this.parentUiId,
-        url: buildURL(config.get("hostURL"), this.path)
+        url: buildURL(config.get("hostURL"), this.path),
+        thumbnailUrl: buildURL(config.get("hostURL"), this.thumbnailPath),
     };
 };
 
 export interface IImages extends mongoose.Document {
     _uiId: string;
     path: string;
+    thumbnailPath: string;
     name: string;
     parentUiId: string;
 
@@ -51,6 +54,7 @@ export const getImageByUiId = async(uiId: string):Promise<IImages> => {
 export const deleteImage = async (image: IImages): Promise<void> => {
     try {
         fs.unlinkSync(image.path);
+        fs.unlinkSync(image.thumbnailPath);
     } catch (err) {
         logger.error(err);
     } finally {
