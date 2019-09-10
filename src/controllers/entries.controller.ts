@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 
 import auth from "../security/auth";
 
-import Entries, { getEntryByUiId, IEntries } from "../models/Entries";
-import { getEquipmentByUiId, IEquipments } from "../models/Equipments";
+import Entries, { getEntryByUiId, IEntries, deleteEntry } from "../models/Entries";
+import { getEquipmentByUiId } from "../models/Equipments";
 import { getTaskByUiId } from "../models/Tasks";
 
 import {getUser} from "../utils/requestContext";
@@ -179,7 +179,8 @@ class EntriesController implements IController {
                 return res.sendStatus(401);
             }
 
-            await existingEntry.remove();
+            await deleteEntry(existingEntry);
+            
             return res.json({ entry: await existingEntry.toJSON() });
         } catch (error) {
             this.handleCaughtError(req, res, error);

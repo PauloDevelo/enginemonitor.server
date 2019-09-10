@@ -3,7 +3,7 @@ import auth from "../security/auth";
 
 import { ServerResponse } from "http";
 
-import Images, {getImagesByParentUiId, getImageByUiId} from "../models/Images";
+import Images, {getImagesByParentUiId, getImageByUiId, deleteImage} from "../models/Images";
 import Equipments from '../models/Equipments';
 import Tasks from '../models/Tasks';
 import Entries from '../models/Entries';
@@ -136,7 +136,8 @@ class ImagesController implements IController {
                 res.sendStatus(400);
             }
 
-            await existingImage.remove();
+            deleteImage(existingImage);
+
             res.json({ image: await existingImage.toJSON() });
         } catch (error) {
             this.handleCaughtError(req, res, error);

@@ -3,10 +3,8 @@ import auth from "../security/auth";
 
 import { ServerResponse } from "http";
 
-import Entries from "../models/Entries";
-import Equipments, { getEquipmentByUiId, IEquipments } from "../models/Equipments";
-import Tasks from "../models/Tasks";
-import {deleteExistingImages} from "../models/Images";
+import Equipments, { getEquipmentByUiId, IEquipments, deleteEquipmentModel } from "../models/Equipments";
+
 
 import {getUser} from "../utils/requestContext";
 
@@ -146,12 +144,8 @@ class EquipmentsController implements IController {
                 return res.sendStatus(400);
             }
 
-            await deleteExistingImages(existingEquipment._uiId);
+            deleteEquipmentModel(existingEquipment);
 
-            await Entries.deleteMany({ equipmentId: existingEquipment._id});
-            await Tasks.deleteMany({ equipmentId: existingEquipment._id});
-
-            await existingEquipment.remove();
             return res.json({ equipment: await existingEquipment.toJSON() });
         } catch (error) {
             this.handleCaughtError(req, res, error);

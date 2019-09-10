@@ -65,11 +65,10 @@ export const deleteEquipmentModel = async(equipment:IEquipments):Promise<void> =
 
     promises.push(deleteExistingImages(equipment._uiId));
     promises.push(deleteTasks(equipment._id));
-    promises.push(deleteEntriesFromParent({eq}))
-
-    await Entries.deleteMany({ equipmentId: existingEquipment._id});
+    promises.push(deleteEntriesFromParent({equipmentId:equipment._id, taskId: undefined}))
+    promises.push(equipment.remove());
     
-    await existingEquipment.remove();
+    await Promise.all(promises);
 }
 
 const Equipments = mongoose.model<IEquipments>("Equipments", EquipmentsSchema);

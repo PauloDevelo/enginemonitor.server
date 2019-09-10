@@ -1,8 +1,9 @@
 import moment from "moment";
 import mongoose from "mongoose";
 
-import Entries, { IEntries } from "./Entries";
+import Entries, { IEntries, deleteEntriesFromParent } from "./Entries";
 import Equipments, { AgeAcquisitionType } from "./Equipments";
+import {deleteExistingImages} from './Images';
 
 export const TasksSchema = new mongoose.Schema({
     _uiId: String,
@@ -140,6 +141,24 @@ export const getTaskByUiId = async (equipmentId: mongoose.Types.ObjectId, taskUi
 export const getTask = async (taskId: mongoose.Types.ObjectId): Promise<ITasks> => {
     return await Tasks.findById(taskId);
 };
+
+export const deleteTasks = async (equipmentId: mongoose.Types.ObjectId):Promise<void> => {
+    const tasks = await Tasks.find({ equipmentId });
+    const promises = tasks.map(task => {
+        return deleteTask(task);
+    });
+
+    await Promise.all(promises);
+}
+
+export const deleteTask = async (task: ITasks):Promise<void> => {
+    const promises = [];
+    promises.push(deleteExistingImages(task._uiId));
+    promises.push(deleteEntriesFromParent({taskId: task._id}));
+    promises.push(task.remove());
+
+    await Promise.all(promises);
+}
 
 const Tasks = mongoose.model<ITasks>("Tasks", TasksSchema);
 export default Tasks;

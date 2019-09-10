@@ -5,9 +5,8 @@ import auth from "../security/auth";
 
 import {getUser} from "../utils/requestContext";
 
-import Entries from "../models/Entries";
 import { getEquipmentByUiId } from "../models/Equipments";
-import Tasks, { getTaskByUiId, ITasks } from "../models/Tasks";
+import Tasks, { getTaskByUiId, ITasks, deleteTask } from "../models/Tasks";
 
 import { ServerResponse } from "http";
 import IController from "./IController";
@@ -166,10 +165,7 @@ class TasksController implements IController {
                 throw res.sendStatus(400);
             }
 
-            const entriesReq = { taskId: existingTask._id };
-            await Entries.deleteMany(entriesReq);
-
-            await existingTask.remove();
+            await deleteTask(existingTask);
 
             return res.json({ task: await existingTask.toJSON() });
         } catch (error) {
