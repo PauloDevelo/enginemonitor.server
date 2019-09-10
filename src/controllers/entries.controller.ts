@@ -138,8 +138,8 @@ class EntriesController implements IController {
 
     private changeOrCreateEntry = async (req: express.Request, res: express.Response) => {
         try {
-            const equipmentId = await this.getEquipmentId(req, res);
-            const taskId = await this.getTaskId(equipmentId, req, res);
+            const equipmentId = (await this.getEquipmentId(req, res));
+            const taskId = (await this.getTaskId(equipmentId, req, res));
             let existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
 
             if (existingEntry) {
