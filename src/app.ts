@@ -15,6 +15,7 @@ import morgan from "morgan";
 import path from "path";
 
 import IController from "./controllers/IController";
+import { ServerResponse } from "http";
 
 class App {
     public app: express.Application;
@@ -25,6 +26,7 @@ class App {
 
         this.initializeMiddlewares();
         this.initializeControllers(controllers);
+        this.initializeErrorHandlers();
     }
 
     public listen() {
@@ -64,27 +66,42 @@ class App {
         this.app.use("/api/uploads", express.static("uploads"));
 
         this.app.use(auth.optional, requestContextBinder());
-
-        if (!isProd) {
-            this.app.use(errorHandler());
-        }
     }
 
     private initializeControllers(controllers: IController[]) {
         controllers.forEach((controller) => {
             this.app.use(this.path, controller.getRouter());
         });
+    }
 
-        this.app.use(this.path, (err: any, req: express.Request, res: express.Response, next: any) => {
-            if (err) {
-                res.status(err.status || 500).json({
-                    errors: {
-                        error: err,
-                        message: err.message,
-                    },
-                });
-            }
-        });
+    private initializeErrorHandlers() {
+        this.app.use(this.logErrors);
+        this.app.use(this.clientErrorHandler);
+        this.app.use(this.errorHandler);
+    }
+
+    private logErrors(err: any, req: express.Request, res: express.Response, next: any){
+        logger.error(err);
+        next(err);
+    }
+
+    private clientErrorHandler(err, req, res, next) {
+        if (req.xhr) {
+          res.status(500).send({ error: 'Something failed!' });
+        } else {
+          next(err);
+        }
+      }
+
+    private errorHandler(err: any, req: express.Request, res: express.Response, next: any) {
+        if (!(err instanceof ServerResponse)) {
+            res.status(err.status || 500).json({
+                errors: {
+                    error: err,
+                    message: err.message,
+                },
+            });
+        }
     }
 }
 

@@ -1,8 +1,6 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import { ServerResponse } from "http";
-
 import Images, {getImagesByParentUiId, getImageByUiId, deleteImage} from "../models/Images";
 import Equipments from '../models/Equipments';
 import Tasks from '../models/Tasks';
@@ -12,8 +10,8 @@ import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
 
-import logger from "../utils/logger";
 import upload from "../utils/uploadMulter";
+import wrapAsync from "../utils/expressHelpers";
 import { Types } from "mongoose";
 
 class ImagesController implements IController {
@@ -31,11 +29,11 @@ class ImagesController implements IController {
 
     private initializeRoutes() {
         this.router
-        .use(   this.path + "/:parentUiId", auth.required, this.checkOwnershipFromParams)
-        .get(   this.path + "/:parentUiId", this.getImages)
-        .post(  this.path + "/:parentUiId", this.cpUpload, this.addImage)
-        .post(  this.path + "/:parentUiId/:imageUiId", this.checkImageProperties, this.updateImage)
-        .delete(this.path + "/:parentUiId/:imageUiId", this.deleteImage);
+        .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
+        .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
+        .post(  this.path + "/:parentUiId", this.cpUpload, wrapAsync(this.addImage))
+        .post(  this.path + "/:parentUiId/:imageUiId", wrapAsync(this.checkImageProperties), wrapAsync(this.updateImage))
+        .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
     }
 
     private checkImageProperties = (req: express.Request, res: express.Response, next: express.NextFunction):void => {
@@ -78,43 +76,34 @@ class ImagesController implements IController {
     }
 
     private getImages = async (req: express.Request, res: express.Response) => {
-        try {
-            const images = await getImagesByParentUiId(req.params.parentUiId);
+        const images = await getImagesByParentUiId(req.params.parentUiId);
 
-            const jsonImages: any[] = [];
-            for (const image of images) {
-                jsonImages.push(await image.toJSON());
-            }
-
-            res.json({ images: jsonImages }); 
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+        const jsonImages: any[] = [];
+        for (const image of images) {
+            jsonImages.push(await image.toJSON());
         }
+
+        res.json({ images: jsonImages }); 
     }
 
     private addImage = async (req: any, res: express.Response):Promise<void> => {
-        try{
-            const { body: { _uiId, name, parentUiId } } = req;
-            const userId = getUser()._id;
-    
-            if(await this.checkOwnership(userId, parentUiId) === true){
-                const newImage = new Images({
-                    _uiId,
-                    name,
-                    parentUiId,
-                    path: req.files['imageData'][0].path,
-                    thumbnailPath: req.files['thumbnail'][0].path
-                });
-    
-                const result = await newImage.save();
-                res.json({ image: await result.toJSON() });
-            }
-            else{
-                res.status(400).json({ errors: { authentication: "error" } });
-            }
+        const { body: { _uiId, name, parentUiId } } = req;
+        const userId = getUser()._id;
+
+        if(await this.checkOwnership(userId, parentUiId) === true){
+            const newImage = new Images({
+                _uiId,
+                name,
+                parentUiId,
+                path: req.files['imageData'][0].path,
+                thumbnailPath: req.files['thumbnail'][0].path
+            });
+
+            const result = await newImage.save();
+            res.json({ image: await result.toJSON() });
         }
-        catch(error){
-            this.handleCaughtError(req, res, error);
+        else{
+            res.status(400).json({ errors: { authentication: "error" } });
         }
     }
 
@@ -130,18 +119,14 @@ class ImagesController implements IController {
     }
 
     private deleteImage = async (req: express.Request, res: express.Response):Promise<void> => {
-        try {
-            const existingImage = await getImageByUiId(req.params.imageUiId);
-            if (!existingImage) {
-                res.sendStatus(400);
-            }
-
-            deleteImage(existingImage);
-
-            res.json({ image: await existingImage.toJSON() });
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+        const existingImage = await getImageByUiId(req.params.imageUiId);
+        if (!existingImage) {
+            res.sendStatus(400);
         }
+
+        deleteImage(existingImage);
+
+        res.json({ image: await existingImage.toJSON() });
     }
 
     private checkOwnership = async (userId: Types.ObjectId, parentUiId: string):Promise<boolean> => {
@@ -169,15 +154,6 @@ class ImagesController implements IController {
         }
 
         return true;
-    }
-
-    private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
-        if (err instanceof ServerResponse) {
-            return;
-        } else {
-            logger.error(err);
-            res.sendStatus(500);
-        }
     }
 }
 

@@ -8,11 +8,9 @@ import { getEquipmentByUiId } from "../models/Equipments";
 import { getTaskByUiId } from "../models/Tasks";
 
 import {getUser} from "../utils/requestContext";
+import wrapAsync from "../utils/expressHelpers";
 
-import { ServerResponse } from "http";
 import IController from "./IController";
-
-import logger from "../utils/logger";
 
 class EntriesController implements IController {
     private path: string = "/entries";
@@ -27,11 +25,11 @@ class EntriesController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path + "/:equipmentUiId", auth.required, this.checkAuthAndOwnership)
-        .get(this.path + "/:equipmentUiId", auth.required, this.getAllEntries)
-        .get(this.path + "/:equipmentUiId/:taskUiId",             auth.required, this.getEntries)
-        .post(this.path + "/:equipmentUiId/:taskUiId/:entryUiId",   auth.required, this.changeOrCreateEntry)
-        .delete(this.path + "/:equipmentUiId/:taskUiId/:entryUiId", auth.required, this.deleteEntry);
+        this.router.use(this.path + "/:equipmentUiId", auth.required, wrapAsync(this.checkAuthAndOwnership))
+        .get(this.path + "/:equipmentUiId", auth.required, wrapAsync(this.getAllEntries))
+        .get(this.path + "/:equipmentUiId/:taskUiId",             auth.required, wrapAsync(this.getEntries))
+        .post(this.path + "/:equipmentUiId/:taskUiId/:entryUiId",   auth.required, wrapAsync(this.changeOrCreateEntry))
+        .delete(this.path + "/:equipmentUiId/:taskUiId/:entryUiId", auth.required, wrapAsync(this.deleteEntry));
     }
 
     private checkEntryProperties = (entry: IEntries) => {
@@ -84,28 +82,20 @@ class EntriesController implements IController {
     }
 
     private getEntries = async (req: express.Request, res: express.Response) => {
-        try {
-            const equipmentId = (await this.getEquipmentId(req, res));
-            const taskId = (await this.getTaskId(equipmentId, req, res));
+        const equipmentId = (await this.getEquipmentId(req, res));
+        const taskId = (await this.getTaskId(equipmentId, req, res));
 
-            const query = { equipmentId, taskId };
-            const entries = await Entries.find(query);
-            return res.json({ entries: await this.sortAndConvertToJson(entries) });
-        } catch (err) {
-            this.handleCaughtError(req, res, err);
-        }
+        const query = { equipmentId, taskId };
+        const entries = await Entries.find(query);
+        return res.json({ entries: await this.sortAndConvertToJson(entries) });
     }
 
     private getAllEntries = async (req: express.Request, res: express.Response) => {
-        try {
-            const equipmentId = await this.getEquipmentId(req, res);
+        const equipmentId = await this.getEquipmentId(req, res);
 
-            const query = { equipmentId };
-            const entries = await Entries.find(query);
-            return res.json({ entries: await this.sortAndConvertToJson(entries) });
-        } catch (err) {
-            this.handleCaughtError(req, res, err);
-        }
+        const query = { equipmentId };
+        const entries = await Entries.find(query);
+        return res.json({ entries: await this.sortAndConvertToJson(entries) });
     }
 
     private sortAndConvertToJson = async (entries: IEntries[]) => {
@@ -137,54 +127,46 @@ class EntriesController implements IController {
     }
 
     private changeOrCreateEntry = async (req: express.Request, res: express.Response) => {
-        try {
-            const equipmentId = (await this.getEquipmentId(req, res));
-            const taskId = (await this.getTaskId(equipmentId, req, res));
-            let existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
+        const equipmentId = (await this.getEquipmentId(req, res));
+        const taskId = (await this.getTaskId(equipmentId, req, res));
+        let existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
 
-            if (existingEntry) {
-                const { body: { entry } } = req;
-
-                if ((!(existingEntry.taskId)  && taskId) ||
-                    (existingEntry.taskId && taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
-                    return res.sendStatus(401);
-                }
-
-                existingEntry = Object.assign(existingEntry, entry);
-
-                existingEntry = await existingEntry.save();
-                return res.json({ entry: await existingEntry.toJSON() });
-            } else {
-                return await this.createEntry(equipmentId, taskId, req, res);
-            }
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
-        }
-    }
-
-    private deleteEntry = async (req: express.Request, res: express.Response) => {
-        try {
-            const equipmentId = await this.getEquipmentId(req, res);
-            const taskId = await this.getTaskId(equipmentId, req, res);
-
-            const existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
-
-            if (!existingEntry) {
-                return res.sendStatus(400);
-            }
+        if (existingEntry) {
+            const { body: { entry } } = req;
 
             if ((!(existingEntry.taskId)  && taskId) ||
-                (existingEntry.taskId  && !taskId) ||
                 (existingEntry.taskId && taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
                 return res.sendStatus(401);
             }
 
-            await deleteEntry(existingEntry);
-            
+            existingEntry = Object.assign(existingEntry, entry);
+
+            existingEntry = await existingEntry.save();
             return res.json({ entry: await existingEntry.toJSON() });
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+        } else {
+            return await this.createEntry(equipmentId, taskId, req, res);
         }
+    }
+
+    private deleteEntry = async (req: express.Request, res: express.Response) => {
+        const equipmentId = await this.getEquipmentId(req, res);
+        const taskId = await this.getTaskId(equipmentId, req, res);
+
+        const existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
+
+        if (!existingEntry) {
+            return res.sendStatus(400);
+        }
+
+        if ((!(existingEntry.taskId)  && taskId) ||
+            (existingEntry.taskId  && !taskId) ||
+            (existingEntry.taskId && taskId && existingEntry.taskId.toHexString() !== taskId.toHexString())) {
+            return res.sendStatus(401);
+        }
+
+        await deleteEntry(existingEntry);
+
+        return res.json({ entry: await existingEntry.toJSON() });
     }
 
     private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {
@@ -210,15 +192,6 @@ class EntriesController implements IController {
         }
 
         throw res.status(400).json("inexistingtask");
-    }
-
-    private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
-        if (err instanceof ServerResponse) {
-            return;
-        } else {
-            logger.error(err);
-            res.sendStatus(500);
-        }
     }
 }
 
