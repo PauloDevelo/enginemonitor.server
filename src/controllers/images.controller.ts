@@ -32,7 +32,7 @@ class ImagesController implements IController {
         .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
         .post(  this.path + "/:parentUiId", this.cpUpload, wrapAsync(this.addImage))
-        .post(  this.path + "/:parentUiId/:imageUiId", wrapAsync(this.checkImageProperties), wrapAsync(this.updateImage))
+        .post(  this.path + "/:parentUiId/:imageUiId", this.checkImageProperties, wrapAsync(this.updateImage))
         .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
     }
 
