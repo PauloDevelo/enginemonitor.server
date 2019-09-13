@@ -8,7 +8,9 @@ export const ImagesSchema = new mongoose.Schema({
     path: String,
     thumbnailPath: String,
     name: String,
-    parentUiId: String
+    parentUiId: String,
+    title: String,
+    description: String
 });
 
 ImagesSchema.methods.toJSON = async function() {
@@ -18,15 +20,14 @@ ImagesSchema.methods.toJSON = async function() {
         parentUiId: this.parentUiId,
         url: buildURL(config.get("hostURL"), this.path),
         thumbnailUrl: buildURL(config.get("hostURL"), this.thumbnailPath),
+        title: this.title,
+        description: this.description
     };
 };
 
 export interface IImages extends mongoose.Document {
-    _uiId: string;
     path: string;
     thumbnailPath: string;
-    name: string;
-    parentUiId: string;
 
     toJSON(): any;
 }
