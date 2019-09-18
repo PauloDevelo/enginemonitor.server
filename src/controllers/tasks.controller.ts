@@ -3,11 +3,11 @@ import mongoose from "mongoose";
 
 import auth from "../security/auth";
 
-import {getUser} from "../utils/requestContext";
 import wrapAsync from "../utils/expressHelpers";
+import {getUser} from "../utils/requestContext";
 
 import { getEquipmentByUiId } from "../models/Equipments";
-import Tasks, { getTaskByUiId, ITasks, deleteTask } from "../models/Tasks";
+import Tasks, { deleteTask, getTaskByUiId, ITasks } from "../models/Tasks";
 
 import IController from "./IController";
 

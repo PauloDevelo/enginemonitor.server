@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { getEquipment } from "./Equipments";
+import { deleteExistingImages } from "./Images";
 import { getTask } from "./Tasks";
-import { deleteExistingImages } from './Images'
 
 export const EntriesSchema = new mongoose.Schema({
     _uiId: String,
@@ -42,19 +42,19 @@ export const getEntryByUiId = async (equipmentId: mongoose.Types.ObjectId, entry
     return await Entries.findOne(query);
 };
 
-export const deleteEntriesFromParent = async(conditions: any):Promise<void> => {
+export const deleteEntriesFromParent = async (conditions: any): Promise<void> => {
     const entries = await Entries.find(conditions);
-    const promises = entries.map(entry => deleteEntry(entry));
+    const promises = entries.map((entry) => deleteEntry(entry));
     Promise.all(promises);
-}
+};
 
-export const deleteEntry = async(entry:IEntries):Promise<void> => {
+export const deleteEntry = async (entry: IEntries): Promise<void> => {
     const promises = [];
     promises.push(deleteExistingImages(entry._uiId));
     promises.push(entry.remove());
 
     await Promise.all(promises);
-}
+};
 
 const Entries = mongoose.model<IEntries>("Entries", EntriesSchema);
 export default Entries;

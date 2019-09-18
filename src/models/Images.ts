@@ -1,7 +1,7 @@
+import config = require("config");
 import fs from "fs";
 import mongoose from "mongoose";
 import logger from "../utils/logger";
-import config = require("config");
 
 export const ImagesSchema = new mongoose.Schema({
     _uiId: String,
@@ -48,16 +48,16 @@ export const getImagesByParentUiId = async (parentUiId: string): Promise<IImages
     return await Images.find(query);
 };
 
-export const getImageByUiId = async(uiId: string):Promise<IImages> => {
+export const getImageByUiId = async (uiId: string): Promise<IImages> => {
     return await Images.findOne({_uiId: uiId});
-}
+};
 
 export const deleteImage = async (image: IImages): Promise<void> => {
     try {
         fs.unlinkSync(image.path);
         fs.unlinkSync(image.thumbnailPath);
 
-        await image.remove()
+        await image.remove();
     } catch (err) {
         logger.error(err);
     } finally {
@@ -66,9 +66,9 @@ export const deleteImage = async (image: IImages): Promise<void> => {
 };
 
 const buildURL = (url: string, path: string): string => {
-    const newPath = path.replace("\\","/");
+    const newPath = path.replace("\\", "/");
     return config.get("hostURL") + newPath;
-}
+};
 
 const Images = mongoose.model<IImages>("Images", ImagesSchema);
 export default Images;

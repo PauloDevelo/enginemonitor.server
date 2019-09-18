@@ -1,10 +1,10 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import Equipments, { getEquipmentByUiId, IEquipments, deleteEquipmentModel } from "../models/Equipments";
+import Equipments, { deleteEquipmentModel, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 
-import {getUser} from "../utils/requestContext";
 import wrapAsync from "../utils/expressHelpers";
+import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
 

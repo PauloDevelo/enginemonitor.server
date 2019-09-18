@@ -14,8 +14,8 @@ import https from "https";
 import morgan from "morgan";
 import path from "path";
 
-import IController from "./controllers/IController";
 import { ServerResponse } from "http";
+import IController from "./controllers/IController";
 
 class App {
     public app: express.Application;
@@ -80,14 +80,14 @@ class App {
         this.app.use(this.errorHandler);
     }
 
-    private logErrors(err: any, req: express.Request, res: express.Response, next: any){
+    private logErrors(err: any, req: express.Request, res: express.Response, next: any) {
         logger.error(err);
         next(err);
     }
 
     private clientErrorHandler(err, req, res, next) {
         if (req.xhr) {
-          res.status(500).send({ error: 'Something failed!' });
+          res.status(500).send({ error: "Something failed!" });
         } else {
           next(err);
         }

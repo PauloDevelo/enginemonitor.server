@@ -2,10 +2,10 @@
 import App from "./app";
 import EntriesController from "./controllers/entries.controller";
 import EquipmentsController from "./controllers/equipments.controller";
+import ImagesController from "./controllers/images.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
 import CheckDbVersion from "./utils/mongoDb";
-import ImagesController from "./controllers/images.controller";
 
 const server = new App(
   [

@@ -5,8 +5,8 @@ import { ServerResponse } from "http";
 
 import passport from "../security/passport";
 import config from "../utils/configUtils";
-import sendGridHelper from "../utils/sendGridEmailHelper";
 import wrapAsync from "../utils/expressHelpers";
+import sendGridHelper from "../utils/sendGridEmailHelper";
 
 import NewPasswords, { INewPassword } from "../models/NewPasswords";
 import Users, { IUser } from "../models/Users";
