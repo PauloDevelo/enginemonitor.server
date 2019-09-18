@@ -12,5 +12,8 @@
 
     "JWT_PrivateKey": "secret",
 
-    "LogLevel": "debug"
+    "LogLevel": "debug",
+
+    // Size limit of the image folder for one user
+    "userImageFolderLimitInByte": 20971520 
  }
