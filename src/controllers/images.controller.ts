@@ -60,6 +60,7 @@ class ImagesController implements IController {
         }
     }
 
+    // tslint:disable-next-line:max-line-length
     private checkOwnershipFromParams = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
         const user = getUser();
         if (!user) {

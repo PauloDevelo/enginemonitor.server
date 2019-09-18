@@ -5,23 +5,23 @@ import logger from "../utils/logger";
 
 export const ImagesSchema = new mongoose.Schema({
     _uiId: String,
-    path: String,
-    thumbnailPath: String,
+    description: String,
     name: String,
     parentUiId: String,
+    path: String,
+    thumbnailPath: String,
     title: String,
-    description: String
 });
 
 ImagesSchema.methods.toJSON = async function() {
     return {
         _uiId: this._uiId,
+        description: this.description,
         name: this.name,
         parentUiId: this.parentUiId,
-        url: buildURL(config.get("hostURL"), this.path),
         thumbnailUrl: buildURL(config.get("hostURL"), this.thumbnailPath),
         title: this.title,
-        description: this.description
+        url: buildURL(config.get("hostURL"), this.path),
     };
 };
 
