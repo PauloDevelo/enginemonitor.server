@@ -1,7 +1,9 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+
 import config from "../utils/configUtils";
+import getFolderSize from "../utils/fileHelpers";
 
 import { INewPassword } from "./NewPasswords";
 
@@ -52,15 +54,36 @@ UsersSchema.methods.generateJWT = function() {
   }, config.get("JWT_PrivateKey"));
 };
 
-UsersSchema.methods.toAuthJSON = function() {
+UsersSchema.methods.toAuthJSON = async function() {
   return {
     _uiId: this._uiId,
     email: this.email,
     firstname: this.firstname,
+    imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
+    imageFolderSizeLimitInByte: this.getUserImageFolderSizeLimitInByte(),
     name: this.name,
-    token: this.generateJWT()
+    token: this.generateJWT(),
   };
 };
+
+UsersSchema.methods.getUserImageFolder = function(): string {
+  return "./uploads/" + this._id;
+};
+
+UsersSchema.methods.getUserImageFolderSizeLimitInByte = function(): number {
+    return config.get("userImageFolderLimitInByte");
+};
+
+const getUserImageFolderSizeInByte = async(user: IUser): Promise<number> => {
+  const imageFolder = user.getUserImageFolder();
+
+  try{
+    return await getFolderSize(imageFolder);
+  }
+  catch(error){
+    return 0;
+  }
+}
 
 export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
@@ -79,6 +102,8 @@ export interface IUser extends mongoose.Document {
   changeVerificationToken(): void;
   generateJWT(): string;
   toAuthJSON(): any;
+  getUserImageFolder(): string;
+  getUserImageFolderSizeLimitInByte(): number;
 }
 
 const Users = mongoose.model<IUser>("Users", UsersSchema);

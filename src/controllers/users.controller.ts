@@ -29,7 +29,7 @@ class UsersController implements IController {
 
     private intializeRoutes() {
         this.router  .post(this.path,           auth.optional, wrapAsync(this.createUser))
-        .post(this.path + "/login",             auth.optional, this.login)
+        .post(this.path + "/login",             auth.optional, wrapAsync(this.login))
         .post(this.path + "/resetpassword",     auth.optional, wrapAsync(this.resetPassword))
         .post(this.path + "/verificationemail", auth.optional, wrapAsync(this.verificationEmail))
         .get(this.path + "/changepassword",     auth.optional, wrapAsync(this.changePassword))
@@ -200,24 +200,26 @@ class UsersController implements IController {
     }
 
     // POST login route (optional, everyone has access)
-    private login = (req: express.Request, res: express.Response, next: any) => {
+    private login = async (req: express.Request, res: express.Response, next: any): Promise<void> => {
         const { body: { user } } = req;
 
         if (!user.email) {
-            return res.status(422).json({ errors: { email: "isrequired" } });
+            res.status(422).json({ errors: { email: "isrequired" } });
+            return;
         }
 
         if (!user.password) {
-            return res.status(422).json({ errors: { password: "isrequired" } });
+            res.status(422).json({ errors: { password: "isrequired" } });
+            return;
         }
 
-        return passport.authenticate("local", { session: false }, (err, passportUser: IUser, info) => {
+        return passport.authenticate("local", { session: false }, async (err, passportUser: IUser, info) => {
             if (err) {
                 return next(err);
             }
 
             if (passportUser) {
-                return res.json({ user: passportUser.toAuthJSON() });
+                return res.json({ user: await passportUser.toAuthJSON() });
             }
 
             return res.status(400).json(info);
@@ -241,7 +243,7 @@ class UsersController implements IController {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
-        return res.json({ user: user.toAuthJSON() });
+        return res.json({ user: await user.toAuthJSON() });
     }
 }
 

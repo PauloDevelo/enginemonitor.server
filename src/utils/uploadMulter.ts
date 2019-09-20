@@ -1,20 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import fs from "fs";
-import getSize from "get-folder-size";
 import multer from "multer";
 
-import config from "./configUtils";
+import getFolderSize from "./fileHelpers";
 
 import {getUser} from "./requestContext";
 
-const getImageDirectory = (): string => {
-    const user = getUser();
-    return "./uploads/" + user._id;
-};
-
 const storage = multer.diskStorage({
     destination(req, file, cb) {
-        const dir = getImageDirectory();
+        const user = getUser();
+        const dir = user.getUserImageFolder();
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
@@ -43,23 +38,11 @@ const upload = multer({
     storage,
 });
 
-const getFolderSize = (myFolder: string): Promise<number> => {
-    return new Promise((resolve, reject) => {
-        getSize(myFolder, (err: any, size: number) => {
-            if (err) {
-                reject(err);
-            }
-
-            resolve(size);
-        });
-    });
-};
-
 export const checkImageQuota = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const dir = getImageDirectory();
-    const folderSize = await getFolderSize(dir);
+    const user = getUser();
 
-    const folderSizeLimit = config.get("userImageFolderLimitInByte");
+    const folderSize = await getFolderSize(user.getUserImageFolder());
+    const folderSizeLimit = user.getUserImageFolderSizeLimitInByte();
 
     if (folderSize > folderSizeLimit) {
         throw new Error("userExceedStorageLimit");
