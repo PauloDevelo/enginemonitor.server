@@ -1,8 +1,8 @@
 import config = require("config");
 import fs from "fs";
 import mongoose from "mongoose";
+import {getFileSizeInBytes} from "../utils/fileHelpers";
 import logger from "../utils/logger";
-import {getFileSizeInBytes} from "../utils/fileHelpers"
 
 export const ImagesSchema = new mongoose.Schema({
     _uiId: String,

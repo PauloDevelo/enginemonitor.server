@@ -70,20 +70,19 @@ UsersSchema.methods.getUserImageFolder = function(): string {
   return "./uploads/" + this._id;
 };
 
-UsersSchema.methods.getUserImageFolderSizeLimitInByte = function(): number {
+UsersSchema.methods.getUserImageFolderSizeLimitInByte = (): number => {
     return config.get("userImageFolderLimitInByte");
 };
 
-const getUserImageFolderSizeInByte = async(user: IUser): Promise<number> => {
+const getUserImageFolderSizeInByte = async (user: IUser): Promise<number> => {
   const imageFolder = user.getUserImageFolder();
 
-  try{
+  try {
     return await getFolderSize(imageFolder);
-  }
-  catch(error){
+  } catch (error) {
     return 0;
   }
-}
+};
 
 export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
