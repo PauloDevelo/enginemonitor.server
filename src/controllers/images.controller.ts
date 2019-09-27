@@ -12,7 +12,7 @@ import IController from "./IController";
 
 import { Types } from "mongoose";
 import wrapAsync from "../utils/expressHelpers";
-import upload from "../utils/uploadMulter";
+import upload, {checkImageQuota} from "../utils/uploadMulter";
 
 class ImagesController implements IController {
     private path: string = "/images";
@@ -31,7 +31,7 @@ class ImagesController implements IController {
         this.router
         .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
-        .post(  this.path + "/:parentUiId", this.cpUpload, wrapAsync(this.addImage))
+        .post(  this.path + "/:parentUiId", this.cpUpload, wrapAsync(checkImageQuota), wrapAsync(this.addImage))
         .post(  this.path + "/:parentUiId/:imageUiId", this.checkImageProperties, wrapAsync(this.updateImage))
         .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
     }
@@ -123,9 +123,11 @@ class ImagesController implements IController {
             res.sendStatus(400);
         }
 
+        const imageJson = await existingImage.toJSON();
+
         deleteImage(existingImage);
 
-        res.json({ image: await existingImage.toJSON() });
+        res.json({ image: imageJson });
     }
 
     private checkOwnership = async (userId: Types.ObjectId, parentUiId: string): Promise<boolean> => {

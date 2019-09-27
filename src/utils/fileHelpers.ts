@@ -1,4 +1,5 @@
 import getSize from "get-folder-size";
+import fs from "fs";
 
 const getFolderSize = (myFolder: string): Promise<number> => {
     return new Promise((resolve, reject) => {
@@ -11,5 +12,11 @@ const getFolderSize = (myFolder: string): Promise<number> => {
         });
     });
 };
+
+export function getFileSizeInBytes(filename: string):number {
+    var stats = fs.statSync(filename)
+    var fileSizeInBytes = stats["size"]
+    return fileSizeInBytes
+}
 
 export default getFolderSize;

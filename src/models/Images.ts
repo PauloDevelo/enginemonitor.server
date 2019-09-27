@@ -2,6 +2,7 @@ import config = require("config");
 import fs from "fs";
 import mongoose from "mongoose";
 import logger from "../utils/logger";
+import {getFileSizeInBytes} from "../utils/fileHelpers"
 
 export const ImagesSchema = new mongoose.Schema({
     _uiId: String,
@@ -19,6 +20,7 @@ ImagesSchema.methods.toJSON = async function() {
         description: this.description,
         name: this.name,
         parentUiId: this.parentUiId,
+        sizeInByte: getFileSizeInBytes(this.path) + getFileSizeInBytes(this.thumbnailPath),
         thumbnailUrl: buildURL(config.get("hostURL"), this.thumbnailPath),
         title: this.title,
         url: buildURL(config.get("hostURL"), this.path),
