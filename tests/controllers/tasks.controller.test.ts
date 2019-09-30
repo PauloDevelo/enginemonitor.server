@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 
 import moment from 'moment';
 
-import server from '../../../src/server';
+import server from '../../src/server';
 const app = server.app;
 
 const chai = require('chai')
@@ -13,10 +13,10 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
 
-import Users from '../../../src/models/Users';
-import Equipments from '../../../src/models/Equipments';
-import Entries from '../../../src/models/Entries';
-import Tasks from '../../../src/models/Tasks';
+import Users from '../../src/models/Users';
+import Equipments from '../../src/models/Equipments';
+import Entries from '../../src/models/Entries';
+import Tasks from '../../src/models/Tasks';
 
 describe('Tasks', () => {
     afterEach(async () => {

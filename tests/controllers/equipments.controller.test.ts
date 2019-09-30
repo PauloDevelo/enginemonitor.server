@@ -1,7 +1,7 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-import server from '../../../src/server';
+import server from '../../src/server';
 const app = server.app;
 
 import mongoose from 'mongoose';
@@ -13,10 +13,10 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
 
-import Users from '../../../src/models/Users';
-import Equipments, { AgeAcquisitionType } from '../../../src/models/Equipments';
-import Tasks from '../../../src/models/Tasks';
-import Entries from '../../../src/models/Entries';
+import Users from '../../src/models/Users';
+import Equipments, { AgeAcquisitionType } from '../../src/models/Equipments';
+import Tasks from '../../src/models/Tasks';
+import Entries from '../../src/models/Entries';
 
 describe('Equipments', () => {
     afterEach(async () => {

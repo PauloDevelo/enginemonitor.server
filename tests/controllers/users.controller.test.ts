@@ -1,11 +1,11 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
-import server from '../../../src/server';
+import server from '../../src/server';
 const app = server.app;
 
-import config from '../../../src/utils/configUtils';
-import sendGridEmailHelper from '../../../src/utils/sendGridEmailHelper';
+import config from '../../src/utils/configUtils';
+import sendGridEmailHelper from '../../src/utils/sendGridEmailHelper';
 
 const chai = require('chai')
   , chaiHttp = require('chai-http');
@@ -16,8 +16,8 @@ const should = chai.should();
 
 import sinon from 'sinon';
 
-import Users from '../../../src/models/Users';
-import NewPasswords from '../../../src/models/NewPasswords';
+import Users from '../../src/models/Users';
+import NewPasswords from '../../src/models/NewPasswords';
 
 describe('Users', () => {
     afterEach(async () => {
