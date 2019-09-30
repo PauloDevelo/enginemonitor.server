@@ -67,7 +67,8 @@ UsersSchema.methods.toAuthJSON = async function() {
 };
 
 UsersSchema.methods.getUserImageFolder = function(): string {
-  return "./uploads/" + this._id;
+  
+  return config.get("ImageFolder") + this._id;
 };
 
 UsersSchema.methods.getUserImageFolderSizeLimitInByte = (): number => {

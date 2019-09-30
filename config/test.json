@@ -15,5 +15,6 @@
     "LogLevel": "debug",
 
     // Size limit of the image folder for one user
-    "userImageFolderLimitInByte": 20971520 
+    "userImageFolderLimitInByte": 20971520,
+    "ImageFolder": "tests/uploads/"
  }

@@ -63,7 +63,7 @@ class App {
         this.app.use(bodyParser.json({limit: "50mb"}));
         this.app.use(express.static(path.join(__dirname, "public")));
 
-        this.app.use("/api/uploads", express.static("uploads"));
+        this.app.use("/api/uploads", express.static(config.get("ImageFolder")));
 
         this.app.use(auth.optional, requestContextBinder());
     }

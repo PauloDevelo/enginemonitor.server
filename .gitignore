@@ -17,6 +17,7 @@
 
 # static images to serve
 /uploads
+/tests/uploads
 
 # misc
 .DS_Store

@@ -21,9 +21,9 @@ ImagesSchema.methods.toJSON = async function() {
         name: this.name,
         parentUiId: this.parentUiId,
         sizeInByte: getFileSizeInBytes(this.path) + getFileSizeInBytes(this.thumbnailPath),
-        thumbnailUrl: buildURL(config.get("hostURL"), this.thumbnailPath),
+        thumbnailUrl: buildURL(this.thumbnailPath),
         title: this.title,
-        url: buildURL(config.get("hostURL"), this.path),
+        url: buildURL(this.path),
     };
 };
 
@@ -67,9 +67,13 @@ export const deleteImage = async (image: IImages): Promise<void> => {
     }
 };
 
-const buildURL = (url: string, path: string): string => {
-    const newPath = path.replace("\\", "/");
-    return config.get("hostURL") + newPath;
+const buildURL = (path: string): string => {
+    let newPath = path.replace(/\\/g, '/');
+    const imageFolder = (config.get("ImageFolder") as string).replace(/\\/g, '/');
+
+    newPath = newPath.replace(imageFolder, "");
+
+    return config.get("hostURL") + "uploads/" + newPath;
 };
 
 const Images = mongoose.model<IImages>("Images", ImagesSchema);
