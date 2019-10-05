@@ -28,6 +28,8 @@ ImagesSchema.methods.toJSON = async function() {
 };
 
 export interface IImages extends mongoose.Document {
+    _uiId: string,
+    parentUiId: string,
     path: string;
     thumbnailPath: string;
 

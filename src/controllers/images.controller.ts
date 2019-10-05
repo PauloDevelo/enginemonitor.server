@@ -31,14 +31,12 @@ class ImagesController implements IController {
         this.router
         .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
-        .post(  this.path + "/:parentUiId", this.cpUpload, wrapAsync(checkImageQuota), wrapAsync(this.addImage))
-        .post(  this.path + "/:parentUiId/:imageUiId", this.checkImageProperties, wrapAsync(this.updateImage))
+        .post(  this.path + "/:parentUiId", wrapAsync(checkImageQuota), this.cpUpload, wrapAsync(this.addImage))
+        .post(  this.path + "/:parentUiId/:imageUiId", wrapAsync(this.checkParentBelongsImage), wrapAsync(this.updateImage))
         .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
     }
 
-    private checkImageProperties = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
-        const { body: { image } } = req;
-
+    private checkImageProperties = (image: any, res: express.Response, next: express.NextFunction): void => {
         const errors: any = {};
 
         if (!image._uiId) {
@@ -56,14 +54,14 @@ class ImagesController implements IController {
         if (Object.keys(errors).length === 0) {
             next();
         } else {
-            throw res.status(422).json(errors);
+            throw res.status(422).json({errors});
         }
     }
 
     // tslint:disable-next-line:max-line-length
     private checkOwnershipFromParams = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
         const user = getUser();
-        if (!user) {
+        if (user === null || user === undefined) {
             res.status(400).json({ errors: { authentication: "error" } });
         }
 
@@ -72,6 +70,20 @@ class ImagesController implements IController {
             next();
         } else {
             res.status(400).json({ errors: { authentication: "error" } });
+        }
+    }
+
+    private checkParentBelongsImage = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+        let existingImage = await getImageByUiId(req.params.imageUiId);
+        if (!existingImage) {
+            throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
+        }
+
+        if(existingImage.parentUiId !== req.params.parentUiId){
+            res.status(400).json({ errors: { operation: "invalid" } });
+        }
+        else{
+            next();
         }
     }
 
@@ -88,9 +100,13 @@ class ImagesController implements IController {
 
     private addImage = async (req: any, res: express.Response): Promise<void> => {
         const { body: { _uiId, name, parentUiId } } = req;
+
         const userId = getUser()._id;
 
-        if (await this.checkOwnership(userId, parentUiId) === true) {
+        if (await this.checkOwnership(userId, parentUiId) === false) {
+            res.status(400).json({ errors: { authentication: "error" } });
+        }
+        else {
             const newImage = new Images({
                 _uiId,
                 name,
@@ -99,17 +115,20 @@ class ImagesController implements IController {
                 thumbnailPath: req.files.thumbnail[0].path
             });
 
-            const result = await newImage.save();
-            res.json({ image: await result.toJSON() });
-        } else {
-            res.status(400).json({ errors: { authentication: "error" } });
+            this.checkImageProperties(newImage, res, async() => {
+                const result = await newImage.save();
+                res.json({ image: await result.toJSON() });
+            })
         }
     }
 
     private updateImage = async (req: express.Request, res: express.Response): Promise<void> => {
         const { body: { image } } = req;
 
-        let existingImage = await getImageByUiId(image._uiId);
+        let existingImage = await getImageByUiId(req.params.imageUiId);
+        if (!existingImage) {
+            throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
+        }
 
         existingImage = Object.assign(existingImage, image);
         existingImage = await existingImage.save();

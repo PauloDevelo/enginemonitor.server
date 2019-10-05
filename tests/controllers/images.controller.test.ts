@@ -2,16 +2,20 @@
 process.env.NODE_ENV = 'test';
 
 import fs from 'fs';
+import rimraf from 'rimraf';
+
 
 import server from '../../src/server';
 const app = server.app;
 
 const chai = require('chai')
   , chaiHttp = require('chai-http')
-  , chaiString = require('chai-string');
+  , chaiString = require('chai-string')
+  , chaiFs = require('chai-fs');
  
 chai.use(chaiHttp);
 chai.use(chaiString);
+chai.use(chaiFs);
 const expect = chai.expect;
 const should = chai.should();
 
@@ -21,15 +25,32 @@ import Equipments from '../../src/models/Equipments';
 import config from '../../src/utils/configUtils';
 
 describe('Images', () => {
-    afterEach(async () => {
+    before(async() => await cleanUp());
+    afterEach(async() => await cleanUp());
+
+    const cleanUp = async () => {
         await Images.deleteMany({}); 
         await Users.deleteMany({});
         await Equipments.deleteMany({});
-    });
+
+        await new Promise((resolve, reject) => {
+            rimraf('./tests/uploads/*', () => { 
+                resolve();
+            });
+        });
+    }
+
 
     describe('/GET/:parentUiId images', () => {
         it('it should GET a 200 http code as a result because images were returned successfully', async () => {
             // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
+            fs.copyFileSync('tests/toUpload/image2.jpeg', config.get("ImageFolder") + 'image2.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail2.jpeg', config.get("ImageFolder") + 'thumbnail2.jpeg');
+            fs.copyFileSync('tests/toUpload/image3.jpeg', config.get("ImageFolder") + 'image3.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail3.jpeg', config.get("ImageFolder") + 'thumbnail3.jpeg');
+
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -180,8 +201,11 @@ describe('Images', () => {
             res.should.have.status(400);
         });
 
-        it('it should GET a 200 http code as a result because it is possible to add an image before the boat was even created', async () => {
+        it('it should GET a 200 http code as a result because it is possible to get an image before the parent was even created', async () => {
             // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', 'tests/uploads/image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', 'tests/uploads/thumbnail1.jpeg');
+
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
             user = await user.save();
@@ -262,445 +286,388 @@ describe('Images', () => {
 
             chai.string.startsWith(res.body.image.url, "http://localhost:8000/api/uploads/" + user._id.toString()).should.be.true;
             chai.string.endsWith(res.body.image.url, boat._uiId + ".jpeg").should.be.true;
+
+            const imageFilename = res.body.image.url.replace("http://localhost:8000/api/uploads/" + user._id.toString() + "/", "");
+            const thumbnailFilename = res.body.image.thumbnailUrl.replace("http://localhost:8000/api/uploads/" + user._id.toString() + "/", "");
+            expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().with.files([imageFilename, thumbnailFilename]);
         });
 
-    //     it('it should GET a 422 http code as a result because the entry _uiId was missing', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
+        it('it should GET a 422 http code as a result because the _uiId was missing', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+ 
+            // Act
+            let res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+            .field('name', 'my first image added')
+            .field('parentUiId', boat._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+            .set("Authorization", "Token " + user.generateJWT());
 
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
+            // Assert
+            res.should.have.status(422);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("_uiId");
+            res.body.errors._uiId.should.be.eql("isrequired");
+        });
 
-    //         let entry = { date: new Date().toString(), age: 12345, remarks: "RAS" }
+        it('it should GET a 422 http code as a result because the name was missing', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + 'any-ui-id').send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         // Assert
-    //         res.should.have.status(422);
-    //         res.body.should.have.property("errors");
-    //         res.body.errors.should.be.a("object");
-    //         res.body.errors.should.have.property("_uiId");
-    //         res.body.errors._uiId.should.be.eql("isrequired");
-    //     });
+            // Act
+            let res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', boat._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+            .set("Authorization", "Token " + user.generateJWT());
 
-    //     it('it should GET a 422 http code as a result because the entry name was missing', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
+            // Assert
+            res.should.have.status(422);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("name");
+            res.body.errors.name.should.be.eql("isrequired");
+        });
 
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
+        it('it should GET a 422 http code as a result because the parentUiId was missing', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         let entry = { date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" }
+            // Act
+            let res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+            .field('_uiId', "image_added_01")
+            .field('name', 'my first image added')
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+            .set("Authorization", "Token " + user.generateJWT());
 
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+            // Assert
+            res.should.have.status(422);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("parentUiId");
+            res.body.errors.parentUiId.should.be.eql("isrequired");
+        });
 
-    //         // Assert
-    //         res.should.have.status(422);
-    //         res.body.should.have.property("errors");
-    //         res.body.errors.should.be.a("object");
-    //         res.body.errors.should.have.property("name");
-    //         res.body.errors.name.should.be.eql("isrequired");
-    //     });
+        it('it should GET a 400 http code as a result because the user does not exist', async () => {
+            // Arrange
+            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            fakeUser.setPassword("test");
 
-    //     it('it should GET a 422 http code as a result because the entry date was missing', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
+            // Act
+            let res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+            .field('name', 'my first image added')
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', boat._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+            .set("Authorization", "Token " + fakeUser.generateJWT());
 
-    //         let entry = { name: "My first vidange", age: 12345, remarks: "RAS", _uiId: "entry_01" };
+            // Assert
+            res.should.have.status(400);
+        });
 
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+        it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {
+            // Arrange
+            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            fakeUser.setPassword("test");
+            fakeUser = await fakeUser.save();
 
-    //         // Assert
-    //         res.should.have.status(422);
-    //         res.body.should.have.property("errors");
-    //         res.body.errors.should.be.a("object");
-    //         res.body.errors.should.have.property("date");
-    //         res.body.errors.date.should.be.eql("isrequired");
-    //     });
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //     it('it should GET a 422 http code as a result because the entry age was missing', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
+            // Act
+            let res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+            .field('name', 'my first image added')
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', boat._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+            .set("Authorization", "Token " + fakeUser.generateJWT());
 
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = { name: "My first vidange", date: new Date().toString(), remarks: "RAS", _uiId: "entry_01" };
-
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
-
-    //         // Assert
-    //         res.should.have.status(422);
-    //         res.body.should.have.property("errors");
-    //         res.body.errors.should.be.a("object");
-    //         res.body.errors.should.have.property("age");
-    //         res.body.errors.age.should.be.eql("isrequired");
-    //     });
-
-    //     it('it should GET a 422 http code as a result because the entry remarks was missing', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, _uiId: "entry_01" };
-
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
-
-    //         // Assert
-    //         res.should.have.status(422);
-    //         res.body.should.have.property("errors");
-    //         res.body.errors.should.be.a("object");
-    //         res.body.errors.should.have.property("remarks");
-    //         res.body.errors.remarks.should.be.eql("isrequired");
-    //     });
+            // Assert
+            res.should.have.status(400);
+        });
     });
 
-    // describe('/POST/:equipmentUiId/:taskUiId/:entryUiId change an entry', () => {
-    //     it('it should get a 200 http code as a result because the orphan entry name changed successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry = await entry.save();
-
-    //         let jsonEntry = {name:"Vidange d'huile"};
+    describe('/POST/:parentUiId/:imageUiId change an image', () => {
+        it('it should get a 200 http code as a result because the image name changed successfully', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
             
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/-/' + entry._uiId.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.have.property("name");
-    //         res.body.entry.should.have.property("date");
-    //         res.body.entry.should.have.property("age");
-    //         res.body.entry.should.have.property("remarks");
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         res.body.entry.name.should.be.eql("Vidange d'huile");
-    //         res.body.entry.age.should.be.eql(12345);
-    //         res.body.entry.remarks.should.be.eql("RAS");
-    //     });
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "boat_01" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+            const jsonImage1 = await image1.toJSON()
 
-    //     it('it should get a 200 http code as a result because the entry name changed successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry.taskId = task._id;
-    //         entry = await entry.save();
-
-    //         let jsonEntry = {name:"Vidange d'huile"};
+            let jsonImage = {name:"image1 modified"};
             
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+            // Act
+            let res = await chai.request(app).post('/api/images/'+ boat._uiId + '/' + jsonImage1._uiId).send({image: jsonImage}).set("Authorization", "Token " + user.generateJWT());
 
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.have.property("name");
-    //         res.body.entry.should.have.property("date");
-    //         res.body.entry.should.have.property("age");
-    //         res.body.entry.should.have.property("remarks");
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("image");
+            res.body.image.should.be.a("object");
+            res.body.image.should.have.property("name");
+            res.body.image.name.should.be.eql("image1 modified");
+        });
 
-    //         res.body.entry.name.should.be.eql("Vidange d'huile");
-    //         res.body.entry.age.should.be.eql(12345);
-    //         res.body.entry.remarks.should.be.eql("RAS");
-    //     });
-
-    //     it('it should get a 200 http code as a result because the entry date changed successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry.taskId = task._id;
-    //         entry = await entry.save();
-
-    //         let jsonEntry = { date: "2018-10-12" };
+        it('it should get a 200 http code as a result because the image description changed successfully', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
             
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
 
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.have.property("name");
-    //         res.body.entry.should.have.property("date");
-    //         res.body.entry.should.have.property("age");
-    //         res.body.entry.should.have.property("remarks");
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         res.body.entry.name.should.be.eql("My first entry");
-    //         res.body.entry.date.should.be.eql( "2018-10-12T00:00:00.000Z");
-    //         res.body.entry.age.should.be.eql(12345);
-    //         res.body.entry.remarks.should.be.eql("RAS");
-    //     });
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "boat_01" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+            const jsonImage1 = await image1.toJSON()
 
-    //     it('it should get a 200 http code as a result because the entry age changed successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry.taskId = task._id;
-    //         entry = await entry.save();
-
-    //         let jsonEntry = { age: 100 };
+            let jsonImage = {description:"image1 description modified"};
             
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+            // Act
+            let res = await chai.request(app).post('/api/images/'+ boat._uiId + '/' + jsonImage1._uiId).send({image: jsonImage}).set("Authorization", "Token " + user.generateJWT());
 
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.have.property("name");
-    //         res.body.entry.should.have.property("date");
-    //         res.body.entry.should.have.property("age");
-    //         res.body.entry.should.have.property("remarks");
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("image");
+            res.body.image.should.be.a("object");
+            res.body.image.should.have.property("description");
+            res.body.image.description.should.be.eql("image1 description modified");
+        });
 
-    //         res.body.entry.name.should.be.eql("My first entry");
-    //         res.body.entry.age.should.be.eql(100);
-    //         res.body.entry.remarks.should.be.eql("RAS");
-    //     });
+        it('it should get a 400 http code as a result because the image does not belong to the boat of the request', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
 
-    //     it('it should get a 200 http code as a result because the entry remarks changed successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry.taskId = task._id;
-    //         entry = await entry.save();
-
-    //         let jsonEntry = { remarks: "remarks" };
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
             
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
 
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.have.property("name");
-    //         res.body.entry.should.have.property("date");
-    //         res.body.entry.should.have.property("age");
-    //         res.body.entry.should.have.property("remarks");
+            let boat2 = new Equipments({name: "Albatros", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_02"});
+            boat2.ownerId = user._id;
+            boat2 = await  boat2.save();
 
-    //         res.body.entry.name.should.be.eql("My first entry");
-    //         res.body.entry.age.should.be.eql(12345);
-    //         res.body.entry.remarks.should.be.eql("remarks");
-    //     });
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "boat_02" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+            const jsonImage1 = await image1.toJSON()
 
-    //     it('it should get a 400 http code as a result because the entry does not belong to the boat of the request', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
+            let jsonImage = {name:"image1 modified"};
             
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
+            // Act
+            let res = await chai.request(app).post('/api/images/'+ boat._uiId + '/' + jsonImage1._uiId).send({image: jsonImage}).set("Authorization", "Token " + user.generateJWT());
 
-    //         let boat2 = new Equipments({name: "Albatros", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_02"});
-    //         boat2.ownerId = user._id;
-    //         boat2 = await  boat2.save();
+            // Assert
+            res.should.have.status(400);
+        });
 
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat2._id;
-    //         task = await task.save();
+        it('it should GET a 400 http code as a result because the user does not exist', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
 
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat2._id;
-    //         entry.taskId = task._id;
-    //         entry = await entry.save();
+            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            fakeUser.setPassword("test");
 
-    //         let jsonEntry = {name:"Vidange d'huile"};
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: boat._uiId , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+            const jsonImage1 = await image1.toJSON()
+
+            let jsonImage = {name:"image1 modified"};
+
+            // Act
+            let res = await chai.request(app).post('/api/images/'+ boat._uiId + '/' + jsonImage1._uiId).send({image: jsonImage}).set("Authorization", "Token " + fakeUser.generateJWT());
+
+            // Assert
+            res.should.have.status(400);
+        });
+
+        it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
+
+            let fakeUser = new Users({ name: "t", firstname: "p", email: "tp@gmail.com" });
+            fakeUser.setPassword("test");
+            fakeUser = await fakeUser.save();
+
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: boat._uiId , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+            const jsonImage1 = await image1.toJSON()
+
+            let jsonImage = {name:"image1 modified"};
+
+             // Act
+             let res = await chai.request(app).post('/api/images/'+ boat._uiId + '/' + jsonImage1._uiId).send({image: jsonImage}).set("Authorization", "Token " + fakeUser.generateJWT());
+
+            // Assert
+            res.should.have.status(400);
+        });
+    });
+
+    describe('/DELETE/:parentUiId/:imageUiId delete image', () => {
+        it('it should get a 200 http code as a result because the orphan image was deleted successfully', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
+
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "boat_01" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+
+            // Act
+            let res = await chai.request(app).delete('/api/images/boat_01/' + image1._uiId).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("image");
+            res.body.image.should.be.a("object");
+            res.body.image.should.not.have.property("_id");
+            res.body.image.should.have.property("_uiId");
+            res.body.image._uiId.should.be.eql(image1._uiId.toString());
+
+            expect(config.get("ImageFolder")).to.be.a.directory().and.empty;
+        });
+
+        it('it should get a 200 http code as a result because the image was deleted successfully', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
+
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "boat_01" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            image1 = (await image1.save());
+
+            // Act
+            let res = await chai.request(app).delete('/api/images/'+ boat._uiId + '/' + image1._uiId).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("image");
+            res.body.image.should.be.a("object");
+            res.body.image.should.not.have.property("_id");
+            res.body.image.should.have.property("_uiId");
+            res.body.image._uiId.should.be.eql(image1._uiId.toString());
+
+            expect(config.get("ImageFolder")).to.be.a.directory().and.empty;
+        });
+
+        it('it should get a 400 http code as a result because the image does not exist', async () => {
+            // Arrange
+            fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');
+            fs.copyFileSync('tests/toUpload/thumbnail1.jpeg', config.get("ImageFolder") + 'thumbnail1.jpeg');
+
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "boat_01" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
             
-    //         // Act
-    //         let res = await chai.request(app).post('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).send({entry: jsonEntry}).set("Authorization", "Token " + user.generateJWT());
+            // Act
+            let res = await chai.request(app).delete('/api/images/'+ boat._uiId + '/' + image1._uiId).set("Authorization", "Token " + user.generateJWT());
 
-    //         // Assert
-    //         res.should.have.status(400);
-    //     });
-    // });
-
-    // describe('/DELETE/:equipmentId/:taskId/:entryId delete entry', () => {
-    //     it('it should get a 200 http code as a result because the orphan entry was deleted successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry = await entry.save();
-
-    //         // Act
-    //         let res = await chai.request(app).delete('/api/entries/'+ boat._uiId.toString() + '/-/' + entry._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
-
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.not.have.property("_id");
-    //         res.body.entry.should.have.property("_uiId");
-    //         res.body.entry._uiId.should.be.eql(entry._uiId.toString());
-    //     });
-
-    //     it('it should get a 200 http code as a result because the entry was deleted successfully', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry.taskId = task._id;
-    //         entry = await entry.save();
-
-    //         // Act
-    //         let res = await chai.request(app).delete('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
-
-    //         // Assert
-    //         res.should.have.status(200);
-    //         res.body.should.have.property("entry");
-    //         res.body.entry.should.be.a("object");
-    //         res.body.entry.should.not.have.property("_id");
-    //         res.body.entry.should.have.property("_uiId");
-    //         res.body.entry._uiId.should.be.eql(entry._uiId.toString());
-    //     });
-
-    //     it('it should get a 400 http code as a result because the entry does not exist', async () => {
-    //         // Arrange
-    //         let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
-    //         user.setPassword("test");
-    //         user = await user.save();
-
-    //         let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
-    //         boat.ownerId = user._id;
-    //         boat = await  boat.save();
-
-    //         let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
-    //         task.equipmentId = boat._id;
-    //         task = await task.save();
-
-    //         let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
-    //         entry.equipmentId = boat._id;
-    //         entry.taskId = task._id;
-            
-    //         // Act
-    //         let res = await chai.request(app).delete('/api/entries/'+ boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
-
-    //         // Assert
-    //         res.should.have.status(400);
-    //     });
-    // });
+            // Assert
+            res.should.have.status(400);            
+        });
+    });
 });
