@@ -1,7 +1,7 @@
 import config, {isDev, isTest} from "./configUtils";
 import logger from "./logger";
 
-const expectedVersion = 0.4;
+export const expectedVersion = 0.4;
 
 import mongoose, { Schema } from "mongoose";
 
@@ -15,11 +15,11 @@ if (isDev) {
 }
 
 const DbMetadaSchema = new mongoose.Schema({ version: Number });
-interface IDbMetada extends mongoose.Document {
+export interface IDbMetada extends mongoose.Document {
     version: number;
 }
 
-const DbMetadatas = mongoose.model<IDbMetada>("DbMetadatas", DbMetadaSchema);
+export const DbMetadatas = mongoose.model<IDbMetada>("DbMetadatas", DbMetadaSchema);
 
 export default async function CheckDbVersion(callBackOnSuccess: () => void): Promise<void> {
     try {
@@ -38,5 +38,4 @@ export default async function CheckDbVersion(callBackOnSuccess: () => void): Pro
     } catch (err) {
         logger.error("Error when getting the version of the database", err);
     }
-
 }
