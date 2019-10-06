@@ -1,25 +1,10 @@
-import config, {isDev, isTest} from "./configUtils";
+import {isTest} from "./configUtils";
 import logger from "./logger";
 
 export const expectedVersion = 0.4;
 
-import mongoose, { Schema } from "mongoose";
+import DbMetadatas, { IDbMetada } from "../models/Metadata";
 
-// Configure mongoose's promise to global promise
-mongoose.Promise = global.Promise;
-
-// Configure Mongoose
-mongoose.connect("mongodb:" + config.get("DBHost"), {useNewUrlParser: true});
-if (isDev) {
-  mongoose.set("debug", true);
-}
-
-const DbMetadaSchema = new mongoose.Schema({ version: Number });
-export interface IDbMetada extends mongoose.Document {
-    version: number;
-}
-
-export const DbMetadatas = mongoose.model<IDbMetada>("DbMetadatas", DbMetadaSchema);
 
 export default async function CheckDbVersion(callBackOnSuccess: () => void): Promise<void> {
     try {

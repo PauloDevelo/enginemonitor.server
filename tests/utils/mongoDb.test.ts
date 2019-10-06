@@ -1,7 +1,11 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'dev';
 
-import CheckDbVersion, {DbMetadatas, IDbMetada, expectedVersion} from '../../src/utils/mongoDb';
+import DbMetadatas from '../../src/models/Metadata';
+
+delete require.cache[require.resolve('../../src/utils/configUtils')];
+delete require.cache[require.resolve('../../src/utils/mongoDb')];
+import CheckDbVersion, {expectedVersion} from '../../src/utils/mongoDb';
 
 import chai from 'chai';
 
