@@ -40,7 +40,7 @@ const upload = multer({
 
 export const checkImageQuota = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const user = getUser();
-    const userFolder = user.getUserImageFolder()
+    const userFolder = user.getUserImageFolder();
 
     const folderSize = fs.existsSync(userFolder) ? await getFolderSize(userFolder) : 0;
     const folderSizeLimit = user.getUserImageFolderSizeLimitInByte();

@@ -28,8 +28,8 @@ ImagesSchema.methods.toJSON = async function() {
 };
 
 export interface IImages extends mongoose.Document {
-    _uiId: string,
-    parentUiId: string,
+    _uiId: string;
+    parentUiId: string;
     path: string;
     thumbnailPath: string;
 
@@ -70,8 +70,8 @@ export const deleteImage = async (image: IImages): Promise<void> => {
 };
 
 const buildURL = (path: string): string => {
-    let newPath = path.replace(/\\/g, '/');
-    const imageFolder = (config.get("ImageFolder") as string).replace(/\\/g, '/');
+    let newPath = path.replace(/\\/g, "/");
+    const imageFolder = (config.get("ImageFolder") as string).replace(/\\/g, "/");
 
     newPath = newPath.replace(imageFolder, "");
 

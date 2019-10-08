@@ -67,7 +67,7 @@ UsersSchema.methods.toAuthJSON = async function() {
 };
 
 UsersSchema.methods.getUserImageFolder = function(): string {
-  
+
   return config.get("ImageFolder") + this._id;
 };
 

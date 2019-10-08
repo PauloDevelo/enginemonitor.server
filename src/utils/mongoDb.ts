@@ -5,7 +5,6 @@ export const expectedVersion = 0.4;
 
 import DbMetadatas, { IDbMetada } from "../models/Metadata";
 
-
 export default async function CheckDbVersion(callBackOnSuccess: () => void): Promise<void> {
     try {
         if (isTest) {

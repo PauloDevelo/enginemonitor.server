@@ -34,10 +34,12 @@ class ImagesController implements IController {
         .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
         .post(  this.path + "/:parentUiId", wrapAsync(checkImageQuota), this.cpUpload, wrapAsync(this.addImage))
+        // tslint:disable-next-line:max-line-length
         .post(  this.path + "/:parentUiId/:imageUiId", wrapAsync(this.checkParentBelongsImage), wrapAsync(this.updateImage))
         .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
     }
 
+    // tslint:disable-next-line:max-line-length
     private checkImageProperties = (image: any, res: express.Response, next: express.NextFunction, reject: express.NextFunction): void => {
         const errors: any = {};
 
@@ -75,16 +77,16 @@ class ImagesController implements IController {
         }
     }
 
+    // tslint:disable-next-line:max-line-length
     private checkParentBelongsImage = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
-        let existingImage = await getImageByUiId(req.params.imageUiId);
+        const existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
             throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
         }
 
-        if(existingImage.parentUiId !== req.params.parentUiId){
+        if (existingImage.parentUiId !== req.params.parentUiId) {
             res.status(400).json({ errors: { operation: "invalid" } });
-        }
-        else{
+        } else {
             next();
         }
     }
@@ -109,8 +111,7 @@ class ImagesController implements IController {
             fs.unlinkSync(req.files.imageData[0].path);
             fs.unlinkSync(req.files.thumbnail[0].path);
             res.status(400).json({ errors: { authentication: "error" } });
-        }
-        else {
+        } else {
             const newImage = new Images({
                 _uiId,
                 name,
@@ -119,12 +120,12 @@ class ImagesController implements IController {
                 thumbnailPath: req.files.thumbnail[0].path
             });
 
-            this.checkImageProperties(newImage, res, 
-                async() => {
+            this.checkImageProperties(newImage, res,
+                async () => {
                     const result = await newImage.save();
                     res.json({ image: await result.toJSON() });
                 },
-                async(errors) => {
+                async (errors) => {
                     fs.unlinkSync(req.files.imageData[0].path);
                     fs.unlinkSync(req.files.thumbnail[0].path);
                     throw res.status(422).json({errors});
