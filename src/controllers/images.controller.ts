@@ -1,6 +1,8 @@
 import * as express from "express";
 import auth from "../security/auth";
 
+import fs from "fs";
+
 import Entries from "../models/Entries";
 import Equipments from "../models/Equipments";
 import Images, {deleteImage, getImageByUiId, getImagesByParentUiId} from "../models/Images";
@@ -36,7 +38,7 @@ class ImagesController implements IController {
         .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
     }
 
-    private checkImageProperties = (image: any, res: express.Response, next: express.NextFunction): void => {
+    private checkImageProperties = (image: any, res: express.Response, next: express.NextFunction, reject: express.NextFunction): void => {
         const errors: any = {};
 
         if (!image._uiId) {
@@ -54,7 +56,7 @@ class ImagesController implements IController {
         if (Object.keys(errors).length === 0) {
             next();
         } else {
-            throw res.status(422).json({errors});
+            reject(errors);
         }
     }
 
@@ -104,6 +106,8 @@ class ImagesController implements IController {
         const userId = getUser()._id;
 
         if (await this.checkOwnership(userId, parentUiId) === false) {
+            fs.unlinkSync(req.files.imageData[0].path);
+            fs.unlinkSync(req.files.thumbnail[0].path);
             res.status(400).json({ errors: { authentication: "error" } });
         }
         else {
@@ -115,10 +119,16 @@ class ImagesController implements IController {
                 thumbnailPath: req.files.thumbnail[0].path
             });
 
-            this.checkImageProperties(newImage, res, async() => {
-                const result = await newImage.save();
-                res.json({ image: await result.toJSON() });
-            })
+            this.checkImageProperties(newImage, res, 
+                async() => {
+                    const result = await newImage.save();
+                    res.json({ image: await result.toJSON() });
+                },
+                async(errors) => {
+                    fs.unlinkSync(req.files.imageData[0].path);
+                    fs.unlinkSync(req.files.thumbnail[0].path);
+                    throw res.status(422).json({errors});
+                });
         }
     }
 

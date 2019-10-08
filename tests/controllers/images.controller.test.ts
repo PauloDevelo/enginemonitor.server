@@ -4,7 +4,6 @@ process.env.NODE_ENV = 'test';
 import fs from 'fs';
 import rimraf from 'rimraf';
 
-
 import server from '../../src/server';
 const app = server.app;
 
@@ -292,6 +291,47 @@ describe('Images', () => {
             expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().with.files([imageFilename, thumbnailFilename]);
         });
 
+        it('it should get a 500 http code error as a result because the user storage is full', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+            .field('name', 'my first image added')
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', boat._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+            .set("Authorization", "Token " + user.generateJWT());
+
+            const maxAttempt = 20;
+            let attemptNum = 1;
+            // Act
+            while(res.status === 200 && attemptNum++ < maxAttempt){
+                res = await chai.request(app).post('/api/images/' + boat._uiId.toString())
+                .field('name', 'my first image added')
+                .field('_uiId', "image_added_01")
+                .field('parentUiId', boat._uiId)
+                .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
+                .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+                .set("Authorization", "Token " + user.generateJWT());
+            }
+
+            // Assert
+            res.should.have.status(500);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.message.should.be.eql("userExceedStorageLimit");
+
+            const successfulAttempts = attemptNum - 1;
+            expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().with.files.have.lengthOf(successfulAttempts * 2);
+        });
+
         it('it should GET a 422 http code as a result because the _uiId was missing', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
@@ -316,6 +356,8 @@ describe('Images', () => {
             res.body.errors.should.be.a("object");
             res.body.errors.should.have.property("_uiId");
             res.body.errors._uiId.should.be.eql("isrequired");
+
+            expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().and.empty;
         });
 
         it('it should GET a 422 http code as a result because the name was missing', async () => {
@@ -342,6 +384,8 @@ describe('Images', () => {
             res.body.errors.should.be.a("object");
             res.body.errors.should.have.property("name");
             res.body.errors.name.should.be.eql("isrequired");
+
+            expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().and.empty;
         });
 
         it('it should GET a 422 http code as a result because the parentUiId was missing', async () => {
@@ -368,6 +412,8 @@ describe('Images', () => {
             res.body.errors.should.be.a("object");
             res.body.errors.should.have.property("parentUiId");
             res.body.errors.parentUiId.should.be.eql("isrequired");
+
+            expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().and.empty;
         });
 
         it('it should GET a 400 http code as a result because the user does not exist', async () => {
@@ -394,6 +440,7 @@ describe('Images', () => {
 
             // Assert
             res.should.have.status(400);
+            expect(config.get("ImageFolder")).to.be.a.directory().and.empty;
         });
 
         it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {
@@ -421,6 +468,7 @@ describe('Images', () => {
 
             // Assert
             res.should.have.status(400);
+            expect(config.get("ImageFolder")).to.be.a.directory().and.empty;
         });
     });
 
