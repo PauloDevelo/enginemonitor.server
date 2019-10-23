@@ -1,6 +1,8 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
 
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
+
 import fs from 'fs';
 import rimraf from 'rimraf';
 
@@ -23,8 +25,21 @@ import Users from '../../src/models/Users';
 import Equipments from '../../src/models/Equipments';
 import config from '../../src/utils/configUtils';
 
+
+
 describe('Images', () => {
-    before(async() => await cleanUp());
+    before(async() => {
+        await cleanUp();
+        mockLogger();
+        ignoredErrorMessages.push("Cannot read property '_id'");
+        ignoredErrorMessages.push("userExceedStorageLimit");
+        ignoredErrorMessages.push("Cannot read property 'toJSON'");
+    });
+
+    after(() => {
+        restoreLogger();
+    });
+
     afterEach(async() => await cleanUp());
 
     const cleanUp = async () => {

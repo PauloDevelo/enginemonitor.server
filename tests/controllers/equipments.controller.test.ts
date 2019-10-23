@@ -1,5 +1,6 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
 
 import server from '../../src/server';
 const app = server.app;
@@ -18,7 +19,20 @@ import Equipments, { AgeAcquisitionType } from '../../src/models/Equipments';
 import Tasks from '../../src/models/Tasks';
 import Entries from '../../src/models/Entries';
 
+
+
 describe('Equipments', () => {
+    before(() => {
+        mockLogger();
+        ignoredErrorMessages.push("[object Object]");
+        ignoredErrorMessages.push("No authorization token was found");
+        ignoredErrorMessages.push("jwt expired");
+    });
+
+    after(() => {
+        restoreLogger();
+    });
+
     afterEach(async () => {
         await Equipments.deleteMany({});  
         await Users.deleteMany({});     

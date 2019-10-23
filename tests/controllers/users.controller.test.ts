@@ -19,7 +19,19 @@ import sinon from 'sinon';
 import Users from '../../src/models/Users';
 import NewPasswords from '../../src/models/NewPasswords';
 
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
+
 describe('Users', () => {
+    before(() => {
+        mockLogger();
+        ignoredErrorMessages.push("Sending a message");
+        ignoredErrorMessages.push("No authorization token was found");
+    });
+
+    after(() => {
+        restoreLogger();
+    });
+
     afterEach(async () => {
         await Users.deleteMany({});
         await NewPasswords.deleteMany({});
@@ -102,6 +114,7 @@ describe('Users', () => {
             res.body.should.not.have.property('user');
             expect(sendVerificationEmailSpy.calledOnce).to.be.true;
             expect(sendVerificationEmailSpy.withArgs("paul.t@mail.com", user.verificationToken).calledOnce).to.be.true;
+            sendVerificationEmailSpy.restore();
         });
         
         it('it should not POST a new user when name field is missing', async () => {
@@ -123,6 +136,7 @@ describe('Users', () => {
             res.body.errors.should.have.property('name');
             res.body.errors.name.should.be.eql('isrequired');
             expect(sendVerificationEmailSpy.called).to.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
         it('it should not POST a new user when firstname field is missing', async () => {
@@ -141,6 +155,7 @@ describe('Users', () => {
             res.body.errors.should.have.property('firstname');
             res.body.errors.firstname.should.be.eql('isrequired');
             expect(sendVerificationEmailSpy.called).to.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
         it('it should not POST a new user when password field is missing', async () => {
@@ -159,6 +174,7 @@ describe('Users', () => {
             res.body.errors.should.have.property('password');
             res.body.errors.password.should.be.eql('isrequired');
             expect(sendVerificationEmailSpy.called).to.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
         it('it should not POST a new user when email field is missing', async () => {
@@ -349,6 +365,7 @@ describe('Users', () => {
 
             res.should.have.status(200);
             expect(sendVerificationEmailSpy.calledOnceWith(jsonUser.email, newUser.verificationToken)).to.be.true;
+            sendVerificationEmailSpy.restore();
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link for an email that does not exist', async() =>{
@@ -366,6 +383,7 @@ describe('Users', () => {
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isinvalid");
             expect(sendVerificationEmailSpy.called).to.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link for an email that does not exist', async() =>{
@@ -383,6 +401,7 @@ describe('Users', () => {
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isinvalid");
             expect(sendVerificationEmailSpy.called).to.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link but some the user is not sent', async() =>{
@@ -398,6 +417,7 @@ describe('Users', () => {
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isrequired");
             expect(sendVerificationEmailSpy.called).to.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
         it('Should not called the function sendVerificationEmail because the user asked to resend the verification link but the email is undefined', async() =>{
@@ -414,6 +434,7 @@ describe('Users', () => {
             res.body.errors.should.have.property("email");
             res.body.errors.email.should.be.eql("isrequired");
             sendVerificationEmailSpy.called.should.be.false;
+            sendVerificationEmailSpy.restore();
         });
 
     });
@@ -439,6 +460,7 @@ describe('Users', () => {
             res.should.have.status(200);
             
             expect(sendChangePasswordEmail.calledOnceWith(jsonReset.email, newNewPasswordDoc.verificationToken)).to.be.true;
+            sendChangePasswordEmail.restore();
         });
 
         it('should not send an email to confirm the change of password because the email passed does not exist', async() => {
@@ -461,6 +483,7 @@ describe('Users', () => {
             res.should.have.status(400);
             res.body.errors.email.should.be.eq('isinvalid');
             expect(sendChangePasswordEmail.called).to.be.false;
+            sendChangePasswordEmail.restore();
         });
 
         it('should not send an email to confirm the change of password because there is no email passed', async() => {
@@ -483,6 +506,7 @@ describe('Users', () => {
             res.should.have.status(422);
             res.body.errors.email.should.be.eq('isrequired');
             expect(sendChangePasswordEmail.called).to.be.false;
+            sendChangePasswordEmail.restore();
         });
 
         it('should not send an email to confirm the change of password because there is no email passed', async() => {
@@ -505,6 +529,7 @@ describe('Users', () => {
             res.should.have.status(422);
             res.body.errors.password.should.be.eq('isrequired');
             expect(sendChangePasswordEmail.called).to.be.false;
+            sendChangePasswordEmail.restore();
         });
     });
 

@@ -1,5 +1,6 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
 
 import server from '../../src/server';
 const app = server.app;
@@ -17,6 +18,15 @@ import Tasks from '../../src/models/Tasks';
 import Entries from '../../src/models/Entries';
 
 describe('Entries', () => {
+    before(() => {
+        mockLogger();
+        ignoredErrorMessages.push("[object Object]");
+    });
+
+    after(() => {
+        restoreLogger();
+    });
+
     afterEach(async () => {
         await Entries.deleteMany({}); 
         await Tasks.deleteMany({}); 

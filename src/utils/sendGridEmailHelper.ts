@@ -1,12 +1,15 @@
 import { MailData } from "@sendgrid/helpers/classes/mail";
 import sgMail from "@sendgrid/mail";
-import config, { isProd } from "./configUtils";
+import config, { isProd, isTest } from "./configUtils";
 import logger from "./logger";
 
 const from = "no-reply@ecogium.fr";
 
-const sendMsg = (msg: MailData) => {
-  logger.debug("Sending a message", msg);
+function sendMsg(msg: MailData) {
+  if(isTest === false){
+    const debugMsg = "Sending a message " + JSON.stringify(msg);
+    logger.debug(debugMsg);
+  }
 
   if (isProd === true) {
     sgMail.setApiKey(config.get("SENDGRID_API_KEY"));
