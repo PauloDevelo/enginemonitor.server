@@ -114,10 +114,12 @@ class ImagesController implements IController {
         } else {
             const newImage = new Images({
                 _uiId,
+                description: "",
                 name,
                 parentUiId,
                 path: req.files.imageData[0].path,
-                thumbnailPath: req.files.thumbnail[0].path
+                thumbnailPath: req.files.thumbnail[0].path,
+                title: ""
             });
 
             this.checkImageProperties(newImage, res,
