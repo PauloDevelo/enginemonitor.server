@@ -6,7 +6,7 @@ import logger from "./logger";
 const from = "no-reply@ecogium.fr";
 
 function sendMsg(msg: MailData) {
-  if(isTest === false){
+  if (isTest === false) {
     const debugMsg = "Sending a message " + JSON.stringify(msg);
     logger.debug(debugMsg);
   }
@@ -15,7 +15,7 @@ function sendMsg(msg: MailData) {
     sgMail.setApiKey(config.get("SENDGRID_API_KEY"));
     return sgMail.send(msg);
   }
-};
+}
 
 export const sendVerificationEmail = (to: string, token: string) => {
   const hostUrl = config.get("hostURL");

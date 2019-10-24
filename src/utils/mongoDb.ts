@@ -14,7 +14,7 @@ export default async function CheckDbVersion(callBackOnSuccess: () => void): Pro
 
             if (dbMetadataDoc.version !== expectedVersion) {
                 // tslint:disable-next-line:max-line-length
-                const  errorMessage:string = `The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`
+                const  errorMessage: string = `The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`;
                 logger.error(errorMessage);
             } else {
                 callBackOnSuccess();
