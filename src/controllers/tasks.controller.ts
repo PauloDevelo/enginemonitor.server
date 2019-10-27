@@ -41,10 +41,6 @@ class TasksController implements IController {
             errors.name = "isrequired";
         }
 
-        if (!task.usagePeriodInHour && equipment.ageAcquisitionType !== AgeAcquisitionType.time) {
-            errors.usagePeriodInHour = "isrequired";
-        }
-
         if (!task.periodInMonth) {
             errors.periodInMonth = "isrequired";
         }

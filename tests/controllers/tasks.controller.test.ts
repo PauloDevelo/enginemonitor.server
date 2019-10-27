@@ -428,7 +428,7 @@ describe('Tasks', () => {
             res.body.errors.name.should.be.eql("isrequired");
         });
 
-        it('it should GET a 422 http code as a result because the task usagePeriodInHour was missing', async () => {
+        it('it should GET a 200 http code as a result even when the task usagePeriodInHour was missing', async () => {
             // Arrange
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
             user.setPassword("test");
@@ -447,11 +447,20 @@ describe('Tasks', () => {
             let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
 
             // Assert
-            res.should.have.status(422);
-            res.body.should.have.property("errors");
-            res.body.errors.should.be.a("object");
-            res.body.errors.should.have.property("usagePeriodInHour");
-            res.body.errors.usagePeriodInHour.should.be.eql("isrequired");
+            res.should.have.status(200);
+            res.body.should.have.property("task");
+            res.body.task.should.be.a("object");
+            res.body.task.should.have.property("name");
+            res.body.task.should.not.have.property("usagePeriodInHour");
+            res.body.task.should.have.property("periodInMonth");
+            res.body.task.should.have.property("description");
+            res.body.task.should.have.property("_uiId");
+            res.body.task.should.not.have.property("_id");
+
+            res.body.task.name.should.be.eql("Vidange");
+            res.body.task.periodInMonth.should.be.eql(12);
+            res.body.task.description.should.be.eql("Faire la vidange");
+            res.body.task._uiId.should.be.eql("task_01");
         });
 
         it('it should GET a 200 http code as a result because the task usagePeriodInHour was missing but its equipment is using only time and no usage tracking', async () => {
