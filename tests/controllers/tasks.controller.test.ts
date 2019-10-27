@@ -15,7 +15,7 @@ const expect = chai.expect;
 const should = chai.should();
 
 import Users from '../../src/models/Users';
-import Equipments from '../../src/models/Equipments';
+import Equipments, {AgeAcquisitionType} from '../../src/models/Equipments';
 import Entries from '../../src/models/Entries';
 import Tasks from '../../src/models/Tasks';
 
@@ -452,6 +452,29 @@ describe('Tasks', () => {
             res.body.errors.should.be.a("object");
             res.body.errors.should.have.property("usagePeriodInHour");
             res.body.errors.usagePeriodInHour.should.be.eql("isrequired");
+        });
+
+        it('it should GET a 200 http code as a result because the task usagePeriodInHour was missing but its equipment is using only time and no usage tracking', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            let userId = user._id;
+            let token = user.generateJWT();
+
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"boat_01", ageAcquisitionType: AgeAcquisitionType.time});
+            boat.ownerId = userId;
+            boat = await  boat.save();
+
+            let task = { name:"Vidange", periodInMonth:12, description:"Faire la vidange", _uiId:"task_01" };
+
+            // Act
+            let res = await chai.request(app).post('/api/tasks/'+ boat._uiId.toString() + '/' + task._uiId).send({task: task}).set("Authorization", "Token " + token);
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.not.have.property("errors");
         });
 
         it('it should GET a 422 http code as a result because the task month was missing', async () => {

@@ -6,7 +6,7 @@ import auth from "../security/auth";
 import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
-import { getEquipmentByUiId } from "../models/Equipments";
+import { AgeAcquisitionType, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks, { deleteTask, getTaskByUiId, ITasks } from "../models/Tasks";
 
 import IController from "./IController";
@@ -30,7 +30,7 @@ class TasksController implements IController {
         .delete(this.path + "/:equipmentUiId/:taskUiId", auth.required, wrapAsync(this.deleteTask));
     }
 
-    private checkTaskProperties = (task: ITasks) => {
+    private checkTaskProperties = (equipment: IEquipments, task: ITasks) => {
         const errors: any = {};
 
         if (!task._uiId) {
@@ -41,7 +41,7 @@ class TasksController implements IController {
             errors.name = "isrequired";
         }
 
-        if (!task.usagePeriodInHour) {
+        if (!task.usagePeriodInHour && equipment.ageAcquisitionType !== AgeAcquisitionType.time) {
             errors.usagePeriodInHour = "isrequired";
         }
 
@@ -93,15 +93,15 @@ class TasksController implements IController {
         return res.json({ tasks: jsonTasks });
     }
 
-    private createTask = async (equipmentId: mongoose.Types.ObjectId, req: express.Request, res: express.Response) => {
+    private createTask = async (equipment: IEquipments, req: express.Request, res: express.Response) => {
         const { body: { task } } = req;
 
-        const errors = this.checkTaskProperties(task);
+        const errors = this.checkTaskProperties(equipment, task);
         if (errors) {
             throw res.status(422).json(errors);
         }
 
-        const query = { name: task.name, equipmentId };
+        const query = { name: task.name, equipmentId: equipment._id };
         const taskCounter = await Tasks.countDocuments(query);
         if (taskCounter > 0) {
             throw res.status(422).json({
@@ -111,7 +111,7 @@ class TasksController implements IController {
             });
         } else {
             let newTask = new Tasks(task);
-            newTask.equipmentId = equipmentId;
+            newTask.equipmentId = equipment._id;
 
             newTask = await newTask.save();
             return res.json({ task: await newTask.toJSON() });
@@ -119,16 +119,16 @@ class TasksController implements IController {
     }
 
     private changeOrCreateTask = async (req: express.Request, res: express.Response) => {
-        const equipmentId = await this.getEquipmentId(req, res);
+        const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
 
-        let existingTask = (await getTaskByUiId(equipmentId, req.params.taskUiId));
+        let existingTask = (await getTaskByUiId(equipment._id, req.params.taskUiId));
         if (!existingTask) {
-            return await this.createTask(equipmentId, req, res);
+            return await this.createTask(equipment, req, res);
         } else {
             const { body: { task } } = req;
 
             if (task.name) {
-                const query = { name: task.name, equipmentId };
+                const query = { name: task.name, equipmentId: equipment._id };
                 const tasks = await Tasks.find(query);
                 const taskWithSameNameIndex = tasks.findIndex((t) => t._uiId !== req.params.taskUiId);
                 if (taskWithSameNameIndex !== -1) {
