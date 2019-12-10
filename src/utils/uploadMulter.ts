@@ -8,8 +8,7 @@ import {getUser} from "./requestContext";
 
 const storage = multer.diskStorage({
     destination(req, file, cb) {
-        const user = getUser();
-        const dir = user.getUserImageFolder();
+        const dir = getUser().getUserImageFolder();
 
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
@@ -18,7 +17,7 @@ const storage = multer.diskStorage({
         cb(null, dir);
     },
     filename(req, file, cb) {
-        cb(null, Date.now() + file.originalname);
+        cb(null, file.originalname);
     }
 });
 

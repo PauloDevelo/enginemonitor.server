@@ -25,8 +25,6 @@ import Users from '../../src/models/Users';
 import Equipments from '../../src/models/Equipments';
 import config from '../../src/utils/configUtils';
 
-
-
 describe('Images', () => {
     before(async() => {
         await cleanUp();
@@ -332,8 +330,8 @@ describe('Images', () => {
                 .field('name', 'my first image added')
                 .field('_uiId', "image_added_01")
                 .field('parentUiId', boat._uiId)
-                .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), boat._uiId + ".jpeg")
-                .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + boat._uiId + ".jpeg")
+                .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), `${boat._uiId}_${attemptNum}.jpeg`)
+                .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), `thumbnail_${boat._uiId}_${attemptNum}.jpeg`)
                 .set("Authorization", "Token " + user.generateJWT());
             }
 
