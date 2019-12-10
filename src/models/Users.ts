@@ -59,6 +59,7 @@ UsersSchema.methods.toAuthJSON = async function() {
     _uiId: this._uiId,
     email: this.email,
     firstname: this.firstname,
+    imageFolder: this.getUserImageFolder(),
     imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
     imageFolderSizeLimitInByte: this.getUserImageFolderSizeLimitInByte(),
     name: this.name,
