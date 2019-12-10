@@ -324,7 +324,7 @@ describe('Equipments', () => {
 
             nbEntries = await Entries.countDocuments({});
             nbEntries.should.be.eql(0);
-        }).timeout(5000);
+        }).timeout(10000);
 
         it('it should get a 400 http code as a result because the equipment does not exist', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });

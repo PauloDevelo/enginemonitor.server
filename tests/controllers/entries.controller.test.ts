@@ -130,7 +130,7 @@ describe('Entries', () => {
 
             res.body.entries[2].should.have.property("equipmentUiId");
             res.body.entries[2].equipmentUiId.should.be.eql("boat_01");
-        });
+        }).timeout(5000);
 
         it('it should GET a 400 http code as a result because the user does not exist', async () => {
             // Arrange
@@ -858,7 +858,7 @@ describe('Entries', () => {
             res.body.entry.should.not.have.property("_id");
             res.body.entry.should.have.property("_uiId");
             res.body.entry._uiId.should.be.eql(entry._uiId.toString());
-        });
+        }).timeout(5000);
 
         it('it should get a 200 http code as a result because the entry was deleted successfully', async () => {
             // Arrange
