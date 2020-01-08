@@ -170,17 +170,23 @@ describe('Tasks', () => {
 
             let now1 = moment();
             now1.subtract(2, 'years');
-            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12235, remarks: "RAS", _uiId:"entry_01" });
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12235, remarks: "RAS", _uiId:"entry_01", ack: true });
             entry1.equipmentId = boat._id;
             entry1.taskId = task._id;
             entry1 = await entry1.save();
 
             let now2 = moment();
             now2.subtract(2, 'month');
-            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12335, remarks: "RAS", _uiId:"entry_02" });
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12335, remarks: "RAS", _uiId:"entry_02", ack: true });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = boat._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
 
             // Act
             let res = await chai.request(app).get('/api/tasks/'+ boat._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
@@ -205,17 +211,23 @@ describe('Tasks', () => {
 
             let now1 = moment();
             now1.subtract(2, 'years');
-            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 1, remarks: "RAS", _uiId:"entry_01" });
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 1, remarks: "RAS", _uiId:"entry_01", ack: true });
             entry1.equipmentId = boat._id;
             entry1.taskId = task._id;
             entry1 = await entry1.save();
 
             let now2 = moment();
             now2.subtract(2, 'month');
-            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 100, remarks: "RAS", _uiId:"entry_02" });
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 100, remarks: "RAS", _uiId:"entry_02", ack: true });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = boat._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
 
             // Act
             let res = await chai.request(app).get('/api/tasks/'+ boat._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
@@ -240,17 +252,23 @@ describe('Tasks', () => {
 
             let now1 = moment();
             now1.subtract(2, 'years');
-            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01" });
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01", ack: true });
             entry1.equipmentId = boat._id;
             entry1.taskId = task._id;
             entry1 = await entry1.save();
 
             let now2 = moment();
             now2.subtract(6, 'month');
-            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12155, remarks: "RAS", _uiId:"entry_02" });
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12155, remarks: "RAS", _uiId:"entry_02", ack: true });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = boat._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
 
             // Act
             let res = await chai.request(app).get('/api/tasks/'+ boat._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
@@ -275,17 +293,23 @@ describe('Tasks', () => {
 
             let now1 = moment();
             now1.subtract(2, 'years');
-            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01" });
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01", ack: true });
             entry1.equipmentId = boat._id;
             entry1.taskId = task._id;
             entry1 = await entry1.save();
 
             let now2 = moment();
             now2.subtract(11, 'month');
-            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12155, remarks: "RAS", _uiId:"entry_02" });
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12155, remarks: "RAS", _uiId:"entry_02", ack: true });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = boat._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
 
             // Act
             let res = await chai.request(app).get('/api/tasks/'+ boat._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
@@ -310,17 +334,23 @@ describe('Tasks', () => {
 
             let now1 = moment();
             now1.subtract(2, 'years');
-            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01" });
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01", ack: true });
             entry1.equipmentId = boat._id;
             entry1.taskId = task._id;
             entry1 = await entry1.save();
 
             let now2 = moment();
             now2.subtract(13, 'month');
-            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12155, remarks: "RAS", _uiId:"entry_02" });
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12155, remarks: "RAS", _uiId:"entry_02", ack: true });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = boat._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
 
             // Act
             let res = await chai.request(app).get('/api/tasks/'+ boat._uiId.toString()).set("Authorization", "Token " + user.generateJWT());
@@ -345,17 +375,23 @@ describe('Tasks', () => {
 
             let now1 = moment();
             now1.subtract(2, 'years');
-            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01" });
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 12045, remarks: "RAS", _uiId:"entry_01", ack: true });
             entry1.equipmentId = boat._id;
             entry1.taskId = task._id;
             entry1 = await entry1.save();
 
             let now2 = moment();
             now2.subtract(3, 'month');
-            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12135, remarks: "RAS", _uiId:"entry_02" });
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 12135, remarks: "RAS", _uiId:"entry_02", ack: true });
             entry2.equipmentId = boat._id;
             entry2.taskId = task._id;
             entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = boat._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
 
             // Act
             let res = await chai.request(app).get('/api/tasks/'+ boat._uiId.toString()).set("Authorization", "Token " + user.generateJWT());

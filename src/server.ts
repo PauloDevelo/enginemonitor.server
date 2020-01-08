@@ -5,6 +5,7 @@ import EquipmentsController from "./controllers/equipments.controller";
 import ImagesController from "./controllers/images.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
+import logger from "./utils/logger";
 import CheckDbVersion from "./utils/mongoDb";
 
 const server = new App(
@@ -18,4 +19,13 @@ const server = new App(
 
 export default server; // for testing
 
-CheckDbVersion(() => { server.listen(); });
+const tryStartServer = async () => {
+  try {
+    await CheckDbVersion();
+    server.listen();
+  } catch (error) {
+    logger.error(error);
+  }
+};
+
+tryStartServer();

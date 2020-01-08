@@ -5,6 +5,7 @@ import { getTask } from "./Tasks";
 
 export const EntriesSchema = new mongoose.Schema({
     _uiId: String,
+    ack: Boolean,
     age: Number,
     date: Date,
     equipmentId: mongoose.Schema.Types.ObjectId,
@@ -16,6 +17,7 @@ export const EntriesSchema = new mongoose.Schema({
 EntriesSchema.methods.toJSON = async function() {
     return {
         _uiId: this._uiId,
+        ack: this.ack,
         age: this.age,
         date: this.date,
         equipmentUiId: (await getEquipment(this.equipmentId))._uiId,
@@ -27,6 +29,7 @@ EntriesSchema.methods.toJSON = async function() {
 
 export interface IEntries extends mongoose.Document {
     _uiId: string;
+    ack: boolean;
     equipmentId: mongoose.Types.ObjectId;
     taskId: mongoose.Types.ObjectId | undefined;
     name: string;

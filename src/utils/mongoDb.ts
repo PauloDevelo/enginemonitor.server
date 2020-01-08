@@ -1,26 +1,25 @@
 import {isTest} from "./configUtils";
-import logger from "./logger";
 
-export const expectedVersion = 0.4;
+export const expectedVersion = 0.5;
 
+import { rejects } from "assert";
 import DbMetadatas from "../models/Metadata";
 
-export default async function CheckDbVersion(callBackOnSuccess: () => void): Promise<void> {
-    try {
+export default async function CheckDbVersion(): Promise<void> {
+    return new Promise((resolve, reject) => {
         if (isTest) {
-            callBackOnSuccess();
+            resolve();
         } else {
-            const dbMetadataDoc = await DbMetadatas.findOne();
-
-            if (dbMetadataDoc.version !== expectedVersion) {
-                // tslint:disable-next-line:max-line-length
-                const  errorMessage: string = `The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`;
-                logger.error(errorMessage);
-            } else {
-                callBackOnSuccess();
-            }
+            DbMetadatas.findOne().then((dbMetadataDoc) => {
+                if (dbMetadataDoc.version !== expectedVersion) {
+                    const  errorMessage: string = `The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`;
+                    throw new Error(errorMessage);
+                } else {
+                    resolve();
+                }
+            }).catch((reason) => {
+                reject(reason);
+            });
         }
-    } catch (err) {
-        logger.error("Error when getting the version of the database", err);
-    }
+    });
 }

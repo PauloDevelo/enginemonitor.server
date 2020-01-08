@@ -1,4 +1,4 @@
-const newVersion = 0.4;
+const newVersion = 0.5;
 
 db = connect("localhost/" + databaseName);
 
@@ -46,6 +46,16 @@ if(dbMetadata.version < 0.4){
         const entry = myCursor.next();
         db.entries.update({ _id: entry._id }, {$set : { _uiId: "" + seed }}, {upsert:false, multi:true});
         seed++;
+    }
+}
+
+if(dbMetadata.version < 0.5){
+    print('Updating Database to the version 0.5');
+
+    const myCursor = db.entries.find();
+    while (myCursor.hasNext()) {
+        const entry = myCursor.next();
+        db.entries.update({ _id: entry._id }, {$set : { ack: true }}, {upsert:false, multi:true});
     }
 }
 

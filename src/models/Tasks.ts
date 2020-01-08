@@ -14,8 +14,8 @@ export const TasksSchema = new mongoose.Schema({
     usagePeriodInHour: Number,
 });
 
-TasksSchema.methods.getLastEntry = async function(): Promise<IEntries> {
-    const query = { equipmentId: this.equipmentId, taskId: this._id };
+TasksSchema.methods.getLastAckEntry = async function(): Promise<IEntries> {
+    const query = { equipmentId: this.equipmentId, taskId: this._id, ack: true };
     let entries = await Entries.find(query);
     entries = entries.sort((a, b) => {
         if ( a.date > b.date) {
@@ -34,10 +34,10 @@ TasksSchema.methods.getLastEntry = async function(): Promise<IEntries> {
     }
 };
 
-TasksSchema.methods.getLastEntryAge = async function(): Promise<number> {
-    const lastEntry = await this.getLastEntry();
-    if (lastEntry != null) {
-        return lastEntry.age;
+TasksSchema.methods.getLastAckEntryAge = async function(): Promise<number> {
+    const lastAckEntry = await this.getLastAckEntry();
+    if (lastAckEntry != null) {
+        return lastAckEntry.age;
     } else {
         return 0;
     }
@@ -50,13 +50,13 @@ TasksSchema.methods.getTimeInHourLeft = async function(): Promise<number> {
 
     const equipment = await Equipments.findById(this.equipmentId);
 
-    return  this.usagePeriodInHour + await this.getLastEntryAge() - equipment.age;
+    return  this.usagePeriodInHour + await this.getLastAckEntryAge() - equipment.age;
 };
 
-TasksSchema.methods.getLastEntryDate = async function(): Promise<Date> {
-    const lastEntry = await this.getLastEntry();
-    if (lastEntry != null) {
-        return lastEntry.date;
+TasksSchema.methods.getLastAckEntryDate = async function(): Promise<Date> {
+    const lastAckEntry = await this.getLastAckEntry();
+    if (lastAckEntry != null) {
+        return lastAckEntry.date;
     } else {
         const equipment = await Equipments.findById(this.equipmentId);
         return equipment.installation;
@@ -64,7 +64,7 @@ TasksSchema.methods.getLastEntryDate = async function(): Promise<Date> {
 };
 
 TasksSchema.methods.getNextDueDate = async function(): Promise<Date> {
-    const nextDueDate = moment(await this.getLastEntryDate());
+    const nextDueDate = moment(await this.getLastAckEntryDate());
     nextDueDate.add(this.periodInMonth, "M");
 
     return nextDueDate.toDate();
@@ -124,10 +124,10 @@ export interface ITasks extends mongoose.Document {
     periodInMonth: number;
     description: string;
 
-    getLastEntry(): Promise<IEntries>;
-    getLastEntryAge(): Promise<number>;
+    getLastAckEntry(): Promise<IEntries>;
+    getLastAckEntryAge(): Promise<number>;
     getTimeInHourLeft(): Promise<number>;
-    getLastEntryDate(): Promise<Date>;
+    getLastAckEntryDate(): Promise<Date>;
     getNextDueDate(): Promise<Date>;
     getLevel(): Promise<number>;
     toJSON(): Promise<any>;

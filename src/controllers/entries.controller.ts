@@ -113,6 +113,10 @@ class EntriesController implements IController {
     private createEntry = async (equipmentId: mongoose.Types.ObjectId, taskId: mongoose.Types.ObjectId, req: express.Request, res: express.Response) => {
         const { body: { entry } } = req;
 
+        if (entry.ack === undefined){
+            entry.ack = true;
+        }
+
         const errors = this.checkEntryProperties(entry);
         if (errors) {
             throw res.status(422).json(errors);

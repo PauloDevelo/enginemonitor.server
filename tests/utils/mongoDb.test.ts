@@ -30,33 +30,26 @@ describe("Test of monDb utils", () =>{
         restoreLogger();
     });
 
-    it("When the db release does not match with the current db release number, it should return false", async () => {
+    it("When the db release does not match with the current db release number, it should throw an excption", (done) => {
         // Arrange
         const version = new DbMetadatas({version: expectedVersion + 1});
-        await version.save();
-
-        let success = false;
-        const callBackOnSuccess = () => {success = true;}
-
-        // Act
-        await CheckDbVersion(callBackOnSuccess);
-
-        // Assert
-        success.should.be.false;
+        version.save().then(() => {
+            // Act
+            CheckDbVersion().catch(() => {
+                // Assert
+                done();
+            });  
+        }); 
     });
 
-    it("When the db release does match with the current db release number, it should return true", async() => {
+    it("When the db release does match with the current db release number, it throw an exception", (done) => {
         // Arrange
         const version = new DbMetadatas({version: expectedVersion});
-        await version.save();
-
-        let success = false;
-        const callBackOnSuccess = () => {success = true;}
-
-        // Act
-        await CheckDbVersion(callBackOnSuccess);
-
-        // Assert
-        success.should.be.true;
+        version.save().then(() => {
+            CheckDbVersion().then(() => {
+                // Assert
+                done();
+            });
+        });
     });
 });
