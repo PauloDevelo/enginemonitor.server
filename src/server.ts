@@ -6,7 +6,7 @@ import ImagesController from "./controllers/images.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
 import logger from "./utils/logger";
-import CheckDbVersion from "./utils/mongoDb";
+import getDbVersion from "./utils/mongoDb";
 
 const server = new App(
   [
@@ -21,7 +21,8 @@ export default server; // for testing
 
 const tryStartServer = async () => {
   try {
-    await CheckDbVersion();
+    const dbVersion = await getDbVersion();
+    logger.info(`The Database version is ${dbVersion}`);
     server.listen();
   } catch (error) {
     logger.error(error);

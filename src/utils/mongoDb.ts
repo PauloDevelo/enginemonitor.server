@@ -5,7 +5,7 @@ export const expectedVersion = 0.5;
 import { rejects } from "assert";
 import DbMetadatas from "../models/Metadata";
 
-export default async function CheckDbVersion(): Promise<void> {
+export default async function getDbVersion(): Promise<number> {
     return new Promise((resolve, reject) => {
         if (isTest) {
             resolve();
@@ -15,7 +15,7 @@ export default async function CheckDbVersion(): Promise<void> {
                     const  errorMessage: string = `The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`;
                     throw new Error(errorMessage);
                 } else {
-                    resolve();
+                    resolve(dbMetadataDoc.version);
                 }
             }).catch((reason) => {
                 reject(reason);

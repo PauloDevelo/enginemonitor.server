@@ -4,7 +4,7 @@ delete require.cache[require.resolve('../../src/utils/configUtils')];
 delete require.cache[require.resolve('../../src/utils/mongoDb')];
 
 import DbMetadatas from '../../src/models/Metadata';
-import CheckDbVersion, {expectedVersion} from '../../src/utils/mongoDb';
+import getDbVersion, {expectedVersion} from '../../src/utils/mongoDb';
 
 import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
 
@@ -15,13 +15,13 @@ const should = chai.should();
 
 describe("Test of monDb utils", () =>{
     before(async() => {
-        await DbMetadatas.remove({});
+        await DbMetadatas.deleteMany({});
         mockLogger();
         ignoredErrorMessages.push('The current version');
     });
     
     afterEach(async ()=>{
-        await DbMetadatas.remove({});
+        await DbMetadatas.deleteMany({});
     });
 
     after(async ()=>{
@@ -35,7 +35,7 @@ describe("Test of monDb utils", () =>{
         const version = new DbMetadatas({version: expectedVersion + 1});
         version.save().then(() => {
             // Act
-            CheckDbVersion().catch(() => {
+            getDbVersion().catch(() => {
                 // Assert
                 done();
             });  
@@ -46,7 +46,7 @@ describe("Test of monDb utils", () =>{
         // Arrange
         const version = new DbMetadatas({version: expectedVersion});
         version.save().then(() => {
-            CheckDbVersion().then(() => {
+            getDbVersion().then(() => {
                 // Assert
                 done();
             });
