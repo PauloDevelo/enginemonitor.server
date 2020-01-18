@@ -81,7 +81,7 @@ class UsersController implements IController {
             return res.status(422).json({ errors: { email: "alreadyexisting" } });
         }
 
-        let finalUser = new Users(user);
+        let finalUser = new Users({ ...user, isVerified: false });
         finalUser.setPassword(user.password);
         finalUser = await finalUser.save();
 

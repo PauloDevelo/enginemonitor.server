@@ -26,7 +26,6 @@ UsersSchema.methods.setPassword = function(password: string) {
 };
 
 UsersSchema.methods.setNewPassword = function(newPassword: INewPassword) {
-  this.isVerified = true;
   this.salt = newPassword.salt;
   this.hash = newPassword.hash;
   this.changeVerificationToken();
