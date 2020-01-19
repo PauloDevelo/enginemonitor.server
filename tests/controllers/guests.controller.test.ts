@@ -1,10 +1,9 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
 
 import server from '../../src/server';
 const app = server.app;
-
-import config from '../../src/utils/configUtils';
 
 const chai = require('chai')
   , chaiHttp = require('chai-http');
@@ -18,13 +17,10 @@ import sinon from 'sinon';
 import Guests from '../../src/models/Guests';
 import Users from '../../src/models/Users';
 
-import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
-import GuestsController from '../../src/controllers/guests.controller';
-
 describe('Guests', () => {
     before(() => {
         mockLogger();
-        //ignoredErrorMessages.push("Sending a message");
+        ignoredErrorMessages.push("No authorization token was found");
     });
 
     after(() => {
@@ -98,6 +94,76 @@ describe('Guests', () => {
           res.body.user._uiId.should.be.eql(guestUser._uiId);
           res.body.user.name.should.be.eql(guestUser.name);
           res.body.user.firstname.should.be.eql(guestUser.firstname);
+        });
+      });
+
+      describe('/POST guest Create a Guest link with the current owner', () => {
+        it('it should GET a 401 http code as a result because the request does not have the token', async () => {
+          // Arrange
+
+          // Act
+          const res = await chai.request(app).post('/api/guests/', ).send({ guestUiId: 'lsdfhguroqwfh', nameGuestLink: 'Guest link for Le Bon Coin' });
+          
+          // Assert
+          res.status.should.be.eql(401);
+          res.body.errors.message.should.be.eql("No authorization token was found");
+          res.body.errors.error.name.should.be.eql("UnauthorizedError");
+          res.body.errors.error.code.should.be.eql("credentials_required");
+          res.body.errors.error.status.should.be.eql(401);
+        });
+
+        it('it should GET a 422 http code as a result because the request is missing guestUiId', async () => {
+          // Arrange
+          const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+          user.setPassword("test");
+          await user.save();
+
+          // Act
+          const res = await chai.request(app).post('/api/guests/', ).send({ guestUiId: undefined, nameGuestLink: 'Guest link for Le Bon Coin' }).set("Authorization", "Token " + user.generateJWT());
+          
+          // Assert
+          res.should.have.status(422);
+          res.body.should.have.property("errors");
+          res.body.errors.should.be.a("object");
+          res.body.errors.should.have.property("guestUiId");
+          res.body.errors.guestUiId.should.be.eql("isrequired");
+        });
+
+        it('it should GET a 422 http code as a result because the request is missing nameGuestLink', async () => {
+          // Arrange
+          const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+          user.setPassword("test");
+          await user.save();
+
+          // Act
+          const res = await chai.request(app).post('/api/guests/', ).send({ guestUiId: 'ldsihflasihfd;asidf', nameGuestLink: undefined }).set("Authorization", "Token " + user.generateJWT());
+          
+          // Assert
+          res.should.have.status(422);
+          res.body.should.have.property("errors");
+          res.body.errors.should.be.a("object");
+          res.body.errors.should.have.property("nameGuestLink");
+          res.body.errors.nameGuestLink.should.be.eql("isrequired");
+        });
+
+        it('it should GET a 200 http code as a result because the Guest link succeed', async () => {
+          // Arrange
+          const user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+          user.setPassword("test");
+          await user.save();
+
+          // Act
+          const res = await chai.request(app).post('/api/guests/', ).send({ guestUiId: 'ldsihflasihfd;asidf', nameGuestLink: 'A Guest link for LeBonCoin' }).set("Authorization", "Token " + user.generateJWT());
+          
+          // Assert
+          res.should.have.status(200);
+          res.body.should.have.property("guest");
+          res.body.guest.should.be.a("object");
+
+          res.body.guest.should.have.property("name");
+          res.body.guest.name.should.be.eql('A Guest link for LeBonCoin');
+
+          res.body.guest.should.have.property("niceKey");
         });
     });
 });

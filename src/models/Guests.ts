@@ -7,11 +7,20 @@ export const GuestsSchema = new mongoose.Schema({
     ownerUserId: mongoose.Schema.Types.ObjectId,
 });
 
+GuestsSchema.methods.toJSON = function() {
+  return {
+    name: this.name,
+    niceKey: this.niceKey,
+  };
+};
+
 export interface IGuests extends mongoose.Document {
   name: string;
   niceKey: string;
   guestUserId: mongoose.Types.ObjectId,
   ownerUserId: mongoose.Types.ObjectId;
+
+  toJSON(): any;
 }
 
 export const getGuestByNiceKey = async (niceKey: string): Promise<IGuests> => {
