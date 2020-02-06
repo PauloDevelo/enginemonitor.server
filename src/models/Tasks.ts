@@ -144,9 +144,7 @@ export const getTask = async (taskId: mongoose.Types.ObjectId): Promise<ITasks> 
 
 export const deleteTasks = async (equipmentId: mongoose.Types.ObjectId): Promise<void> => {
     const tasks = await Tasks.find({ equipmentId });
-    const promises = tasks.map((task) => {
-        return deleteTask(task);
-    });
+    const promises = tasks.map(task => deleteTask(task));
 
     await Promise.all(promises);
 };
