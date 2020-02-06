@@ -29,8 +29,7 @@ describe('Guests', () => {
 
     afterEach(async () => {
         await Guests.deleteMany({});
-        await Users.deleteMany({});
-        sinon.restore();        
+        await Users.deleteMany({});      
     });
 
     describe('/GET guest', () => {

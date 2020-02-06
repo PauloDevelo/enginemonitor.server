@@ -1,5 +1,6 @@
 
 import App from "./app";
+import AssetsController from "./controllers/assets.controller";
 import EntriesController from "./controllers/entries.controller";
 import EquipmentsController from "./controllers/equipments.controller";
 import GuestsController from "./controllers/guests.controller";
@@ -17,6 +18,7 @@ const server = new App(
     new EquipmentsController(),
     new ImagesController(),
     new GuestsController(),
+    new AssetsController(),
 ]);
 
 export default server; // for testing

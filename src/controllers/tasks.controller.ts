@@ -6,6 +6,7 @@ import auth from "../security/auth";
 import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
+import Assets, { getAssetByUiId, IAssets } from "../models/Assets";
 import { AgeAcquisitionType, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks, { deleteTask, getTaskByUiId, ITasks } from "../models/Tasks";
 
@@ -24,10 +25,12 @@ class TasksController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path + "/:equipmentUiId", auth.required, wrapAsync(this.checkAuthAndOwnership))
-        .get(this.path + "/:equipmentUiId",            auth.required, wrapAsync(this.getTasks))
-        .post(this.path + "/:equipmentUiId/:taskUiId",   auth.required, wrapAsync(this.changeOrCreateTask))
-        .delete(this.path + "/:equipmentUiId/:taskUiId", auth.required, wrapAsync(this.deleteTask));
+        this.router
+        // tslint:disable-next-line:max-line-length
+        .use(this.path + "/:assetUiId/:equipmentUiId",              auth.required, wrapAsync(this.checkAuthAndOwnership))
+        .get(this.path + "/:assetUiId/:equipmentUiId",              auth.required, wrapAsync(this.getTasks))
+        .post(this.path + "/:assetUiId/:equipmentUiId/:taskUiId",   auth.required, wrapAsync(this.changeOrCreateTask))
+        .delete(this.path + "/:assetUiId/:equipmentUiId/:taskUiId", auth.required, wrapAsync(this.deleteTask));
     }
 
     private checkTaskProperties = (equipment: IEquipments, task: ITasks) => {
@@ -58,18 +61,19 @@ class TasksController implements IController {
 
     private checkAuthAndOwnership = async (req: express.Request, res: express.Response, next: any) => {
         const user = getUser();
-
         if (!user) {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
-        const existingEquipment = (await getEquipmentByUiId(req.params.equipmentUiId));
-        if (!existingEquipment) {
-            return res.sendStatus(400);
+        const assetUiId = req.params.assetUiId;
+        const asset = await getAssetByUiId(assetUiId);
+        if (!asset) {
+            return res.status(400).json({ errors: { asset: "notfound" } });
         }
 
-        if (existingEquipment.ownerId.toString() !== user._id.toString()) {
-            return res.sendStatus(401);
+        const existingEquipment = (await getEquipmentByUiId(asset._id, req.params.equipmentUiId));
+        if (!existingEquipment) {
+            return res.sendStatus(400);
         }
 
         next();
@@ -115,7 +119,8 @@ class TasksController implements IController {
     }
 
     private changeOrCreateTask = async (req: express.Request, res: express.Response) => {
-        const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
+        const equipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
 
         let existingTask = (await getTaskByUiId(equipment._id, req.params.taskUiId));
         if (!existingTask) {
@@ -156,7 +161,8 @@ class TasksController implements IController {
     }
 
     private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {
-        const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
+        const equipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
 
         if (equipment) {
             return equipment._id;

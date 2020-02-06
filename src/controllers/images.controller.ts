@@ -3,6 +3,7 @@ import auth from "../security/auth";
 
 import fs from "fs";
 
+import { getUserAssets } from "../models/AssetUser";
 import Entries from "../models/Entries";
 import Equipments from "../models/Equipments";
 import Images, {deleteImage, getImageByUiId, getImagesByParentUiId} from "../models/Images";
@@ -163,27 +164,30 @@ class ImagesController implements IController {
     }
 
     private checkOwnership = async (userId: Types.ObjectId, parentUiId: string): Promise<boolean> => {
+        const assetsOwned = await getUserAssets();
+
         const query = { _uiId : parentUiId };
 
-        const equipments = await Equipments.find(query);
-        if (equipments.length > 0) {
-            return equipments[0].ownerId.toString() === userId.toString();
+        const assetIds = (await Equipments.find(query)).map((equipment) => equipment.assetId);
+        if (assetIds.length > 0) {
+            // tslint:disable-next-line:max-line-length
+            return assetsOwned.findIndex((assetOwned) => assetIds.findIndex((assetId) => assetId.toString() === assetOwned._id.toString()) !== -1) !== -1;
         }
 
         const tasks = await Tasks.find(query);
         if (tasks.length > 0) {
             const task = tasks[0];
             const parentEquipment = await Equipments.findById(task.equipmentId);
-
-            return parentEquipment.ownerId.toString() === userId.toString();
+            // tslint:disable-next-line:max-line-length
+            return assetsOwned.findIndex((assetOwned) => assetOwned._id.toString() === parentEquipment.assetId.toString()) !== -1;
         }
 
         const entries = await Entries.find(query);
         if (entries.length > 0) {
             const entry = entries[0];
             const parentEquipment = await Equipments.findById(entry.equipmentId);
-
-            return parentEquipment.ownerId.toString() === userId.toString();
+            // tslint:disable-next-line:max-line-length
+            return assetsOwned.findIndex((assetOwned) => assetOwned._id.toString() === parentEquipment.assetId.toString()) !== -1;
         }
 
         return true;
