@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 export const GuestsSchema = new mongoose.Schema({
+    guestUserId: mongoose.Schema.Types.ObjectId,
     name: String,
     niceKey: String,
-    guestUserId: mongoose.Schema.Types.ObjectId,
     ownerUserId: mongoose.Schema.Types.ObjectId,
 });
 
@@ -15,9 +15,9 @@ GuestsSchema.methods.toJSON = function() {
 };
 
 export interface IGuests extends mongoose.Document {
+  guestUserId: mongoose.Types.ObjectId;
   name: string;
   niceKey: string;
-  guestUserId: mongoose.Types.ObjectId,
   ownerUserId: mongoose.Types.ObjectId;
 
   toJSON(): any;
