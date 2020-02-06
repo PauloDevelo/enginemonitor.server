@@ -1,7 +1,7 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import shortid from 'shortid';
+import shortid from "shortid";
 
 import wrapAsync from "../utils/expressHelpers";
 
@@ -56,12 +56,17 @@ class GuestsController implements IController {
             return res.status(422).json(errors);
         }
 
-        let guestUser = new Users({ _uiId: guestUiId, name: 'Guest', firstname: 'Guest', email: '', isVerified: true });
-        guestUser.setPassword('guest');
+        let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true });
+        guestUser.setPassword("guest");
         guestUser = await guestUser.save();
 
         const niceKey = shortid.generate();
-        const guestLink = new Guests({ name: nameGuestLink, ownerUserId:  getUser()._id, guestUserId: guestUser._id, niceKey });
+        const guestLink = new Guests({
+            guestUserId: guestUser._id,
+            name: nameGuestLink,
+            niceKey,
+            ownerUserId:  getUser()._id,
+        });
         await guestLink.save();
 
         return res.json({ guest: await guestLink.toJSON() });
