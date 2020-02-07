@@ -28,16 +28,19 @@ class UsersController implements IController {
     }
 
     private intializeRoutes() {
-        this.router  .post(this.path,           auth.optional, wrapAsync(this.createUser))
-        .post(this.path + "/login",             auth.optional, wrapAsync(this.login))
-        .post(this.path + "/resetpassword",     auth.optional, wrapAsync(this.resetPassword))
-        .post(this.path + "/verificationemail", auth.optional, wrapAsync(this.verificationEmail))
-        .get(this.path + "/changepassword",     auth.optional, wrapAsync(this.changePassword))
-        .get(this.path + "/verification",       auth.optional, wrapAsync(this.checkEmail))
+        this.router  
+        .post(this.path,                        auth.optional, this.checkUserProperties, wrapAsync(this.checkIfEmailAlreadyExist), wrapAsync(this.createUser))
+        .post(this.path + "/login",             auth.optional, this.checkLoginBody, wrapAsync(this.login))
+        .post(this.path + "/resetpassword",     auth.optional, wrapAsync(this.checkResetPasswordBody), wrapAsync(this.resetPassword))
+        .post(this.path + "/verificationemail", auth.optional, wrapAsync(this.checkVerificationEmail), wrapAsync(this.verificationEmail))
+        .get(this.path + "/changepassword",     auth.optional, wrapAsync(this.checkChangePasswordQuery), wrapAsync(this.changePassword))
+        .get(this.path + "/verification",       auth.optional, wrapAsync(this.checkCheckEmailQuery), wrapAsync(this.checkEmail))
         .get(this.path + "/current",            auth.required, wrapAsync(this.getCurrent));
     }
 
-    private checkUserProperties = (user: any) => {
+    private checkUserProperties = (req: express.Request, res: express.Response, next: any) => {
+        const { body: { user } } = req;
+
         const errors: any = {};
 
         if (!user.email) {
@@ -61,25 +64,26 @@ class UsersController implements IController {
         }
 
         if (Object.keys(errors).length === 0) {
-            return undefined;
+            next();
         } else {
-            return { errors };
+            return res.status(422).json({ errors });
         }
+    }
+
+    private checkIfEmailAlreadyExist = async(req: express.Request, res: express.Response, next: any) => {
+        const { body: { user } } = req;
+        
+        const userCount = await Users.countDocuments({ email: user.email });
+        if (userCount > 0) {
+            return res.status(422).json({ errors: { email: "alreadyexisting" } });
+        }
+
+        next();
     }
 
     // POST new user route (optional, everyone has access)
     private createUser = async (req: express.Request, res: express.Response) => {
         const { body: { user } } = req;
-
-        const errors = this.checkUserProperties(user);
-        if (errors) {
-            return res.status(422).json(errors);
-        }
-
-        const userCount = await Users.countDocuments({ email: user.email });
-        if (userCount > 0) {
-            return res.status(422).json({ errors: { email: "alreadyexisting" } });
-        }
 
         let finalUser = new Users({ ...user, isVerified: false });
         finalUser.setPassword(user.password);
@@ -90,8 +94,7 @@ class UsersController implements IController {
         res.status(200).json({});
     }
 
-    // GET Verify the user's email
-    private checkEmail = async (req: express.Request, res: express.Response) => {
+    private checkCheckEmailQuery = async(req: express.Request, res: express.Response, next: any) => {
         const { query: { email , token } } = req;
 
         if (!email) {
@@ -112,15 +115,21 @@ class UsersController implements IController {
             return res.status(400).json({ errors: { token: "isinvalid" } });
         }
 
-        user[0].isVerified = true;
+        next();
+    }
 
-        await user[0].save();
+    // GET Verify the user's email
+    private checkEmail = async (req: express.Request, res: express.Response) => {
+        const { query: { email , token } } = req;
+
+        const user = await Users.findOne({ email });
+        user.isVerified = true;
+        await user.save();
 
         res.redirect(config.get("frontEndUrl"));
     }
 
-    // GET Change the user's password after clicking on the confirmation email
-    private changePassword = async (req: express.Request, res: express.Response) => {
+    private checkChangePasswordQuery = async (req: express.Request, res: express.Response, next: any) => {
         const { query: { token } } = req;
 
         if (!token) {
@@ -137,16 +146,25 @@ class UsersController implements IController {
             return res.status(400).json({ errors: { email: "isinvalid" } });
         }
 
-        user[0].setNewPassword(newPassword[0]);
+        next();
+    }
 
-        await user[0].save();
-        await newPassword[0].remove();
+    // GET Change the user's password after clicking on the confirmation email
+    private changePassword = async (req: express.Request, res: express.Response) => {
+        const { query: { token } } = req;
+
+        const newPassword = await NewPasswords.findOne({ verificationToken: token });
+        const user = await Users.findOne({ email: newPassword[0].email });
+        
+        user.setNewPassword(newPassword);
+
+        await user.save();
+        await newPassword.remove();
 
         res.redirect(config.get("frontEndUrl"));
     }
 
-    // POST create a new password and send an email to confirm the change of password
-    private resetPassword = async (req: express.Request, res: express.Response) => {
+    private checkResetPasswordBody = async (req: express.Request, res: express.Response, next: any) => {
         const { body: { email, newPassword } } = req;
 
         if (!email) {
@@ -163,6 +181,13 @@ class UsersController implements IController {
             return res.status(400).json({ errors: { email: "isinvalid" } });
         }
 
+        next();
+    }
+
+    // POST create a new password and send an email to confirm the change of password
+    private resetPassword = async (req: express.Request, res: express.Response) => {
+        const { body: { email, newPassword } } = req;
+
         await NewPasswords.deleteMany({ email });
 
         let newPasswords = new NewPasswords();
@@ -174,8 +199,7 @@ class UsersController implements IController {
         return res.status(200).json({});
     }
 
-    // POST send another verification email
-    private verificationEmail = async (req: express.Request, res: express.Response) => {
+    private checkVerificationEmail = async (req: express.Request, res: express.Response, next: any) => {
         const { body: { email } } = req;
 
         if (!email) {
@@ -187,7 +211,14 @@ class UsersController implements IController {
             return res.status(400).json({ errors: { email: "isinvalid" } });
         }
 
-        let userInDb = usersInDb[0];
+        next();
+    }
+
+    // POST send another verification email
+    private verificationEmail = async (req: express.Request, res: express.Response) => {
+        const { body: { email } } = req;
+
+        let userInDb = (await Users.find({email}))[0];
         if (!userInDb.isVerified) {
             userInDb.changeVerificationToken();
             userInDb = await userInDb.save();
@@ -199,8 +230,7 @@ class UsersController implements IController {
         }
     }
 
-    // POST login route (optional, everyone has access)
-    private login = async (req: express.Request, res: express.Response, next: any): Promise<void> => {
+    private checkLoginBody = (req: express.Request, res: express.Response, next: any) => {
         const { body: { user } } = req;
 
         if (!user.email) {
@@ -213,6 +243,11 @@ class UsersController implements IController {
             return;
         }
 
+        next();
+    }
+
+    // POST login route (optional, everyone has access)
+    private login = async (req: express.Request, res: express.Response, next: any): Promise<void> => {
         return passport.authenticate("local", { session: false }, async (err, passportUser: IUser, info) => {
             if (err) {
                 return next(err);
