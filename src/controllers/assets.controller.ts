@@ -30,7 +30,7 @@ class AssetsController implements IController {
         .delete(this.path + "/:assetUiId",      auth.required, wrapAsync(this.deleteAsset));
     }
 
-    private checkAssetProperties = (next: (req: express.Request, res: express.Response)=>void) => {
+    private checkAssetProperties = (next: (req: express.Request, res: express.Response) => void) => {
         return (req: express.Request, res: express.Response) => {
             const { body: { asset } } = req;
 
@@ -61,10 +61,10 @@ class AssetsController implements IController {
             } else {
                 return res.status(422).json({ errors });
             }
-        }
+        };
     }
 
-    private checkNameDoesNotExist = (next: (req: express.Request, res: express.Response)=>void) => {
+    private checkNameDoesNotExist = (next: (req: express.Request, res: express.Response) => void) => {
         return async (req: express.Request, res: express.Response) => {
             const { body: { asset } } = req;
 
@@ -72,9 +72,9 @@ class AssetsController implements IController {
             if (assetWithSimilarNameIndex !== -1) {
                 return res.status(422).json({ errors: { name: "alreadyexisting" } });
             }
-            
+
             return next(req, res);
-        }
+        };
     }
 
     private checkAuth = async (req: express.Request, res: express.Response, authSucceed: any) => {
@@ -123,7 +123,7 @@ class AssetsController implements IController {
         if (!existingAsset) {
             this.checkAssetProperties(this.checkNameDoesNotExist(this.addAsset))(req, res);
         } else {
-            const updateExistingAsset = async() => {
+            const updateExistingAsset = async () => {
                 existingAsset = Object.assign(existingAsset, asset);
                 existingAsset = await existingAsset.save();
                 res.json({ asset: await existingAsset.toJSON() });

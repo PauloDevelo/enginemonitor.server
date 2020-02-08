@@ -28,12 +28,17 @@ class UsersController implements IController {
     }
 
     private intializeRoutes() {
-        this.router  
+        this.router
+        // tslint:disable-next-line:max-line-length
         .post(this.path,                        auth.optional, this.checkUserProperties, wrapAsync(this.checkIfEmailAlreadyExist), wrapAsync(this.createUser))
         .post(this.path + "/login",             auth.optional, this.checkLoginBody, wrapAsync(this.login))
+        // tslint:disable-next-line:max-line-length
         .post(this.path + "/resetpassword",     auth.optional, wrapAsync(this.checkResetPasswordBody), wrapAsync(this.resetPassword))
+        // tslint:disable-next-line:max-line-length
         .post(this.path + "/verificationemail", auth.optional, wrapAsync(this.checkVerificationEmail), wrapAsync(this.verificationEmail))
+        // tslint:disable-next-line:max-line-length
         .get(this.path + "/changepassword",     auth.optional, wrapAsync(this.checkChangePasswordQuery), wrapAsync(this.changePassword))
+        // tslint:disable-next-line:max-line-length
         .get(this.path + "/verification",       auth.optional, wrapAsync(this.checkCheckEmailQuery), wrapAsync(this.checkEmail))
         .get(this.path + "/current",            auth.required, wrapAsync(this.getCurrent));
     }
@@ -70,9 +75,9 @@ class UsersController implements IController {
         }
     }
 
-    private checkIfEmailAlreadyExist = async(req: express.Request, res: express.Response, next: any) => {
+    private checkIfEmailAlreadyExist = async (req: express.Request, res: express.Response, next: any) => {
         const { body: { user } } = req;
-        
+
         const userCount = await Users.countDocuments({ email: user.email });
         if (userCount > 0) {
             return res.status(422).json({ errors: { email: "alreadyexisting" } });
@@ -94,7 +99,7 @@ class UsersController implements IController {
         res.status(200).json({});
     }
 
-    private checkCheckEmailQuery = async(req: express.Request, res: express.Response, next: any) => {
+    private checkCheckEmailQuery = async (req: express.Request, res: express.Response, next: any) => {
         const { query: { email , token } } = req;
 
         if (!email) {
@@ -155,7 +160,7 @@ class UsersController implements IController {
 
         const newPassword = await NewPasswords.findOne({ verificationToken: token });
         const user = await Users.findOne({ email: newPassword[0].email });
-        
+
         user.setNewPassword(newPassword);
 
         await user.save();

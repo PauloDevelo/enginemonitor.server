@@ -48,15 +48,15 @@ export const getAssetByUiId = async (assetUiId: string): Promise<IAssets | undef
 };
 
 export const deleteAssetModel = async (asset: IAssets): Promise<void> => {
-    const promises: PromiseLike<void>[] = [];
+    const promises: Array<PromiseLike<void>> = [];
 
     const deleteAssetUserModelPromise = async () => {
         await deleteAssetUserModel(asset._id);
     };
 
-    const deleteAssetPromise = async() => {
+    const deleteAssetPromise = async () => {
         await asset.remove();
-    }
+    };
 
     promises.push(deleteEquipments(asset._id));
     promises.push(deleteAssetUserModelPromise());

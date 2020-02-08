@@ -39,7 +39,7 @@ export interface IImages extends mongoose.Document {
 export const deleteExistingImages = async (parentUiId: string): Promise<void> => {
     const imagesToDelete = await getImagesByParentUiId(parentUiId);
 
-    const deletion = imagesToDelete.map(imageToDelete => deleteImage(imageToDelete))
+    const deletion = imagesToDelete.map((imageToDelete) => deleteImage(imageToDelete));
 
     await Promise.all(deletion);
 };

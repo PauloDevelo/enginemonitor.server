@@ -47,7 +47,7 @@ export const getEntryByUiId = async (equipmentId: mongoose.Types.ObjectId, entry
 
 export const deleteEntriesFromParent = async (conditions: any): Promise<void> => {
     const entries = await Entries.find(conditions);
-    const promises = entries.map(entry => deleteEntry(entry));
+    const promises = entries.map((entry) => deleteEntry(entry));
     Promise.all(promises);
 };
 

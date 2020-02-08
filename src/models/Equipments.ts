@@ -59,19 +59,19 @@ export const getEquipmentByUiId = async (assetId: mongoose.Types.ObjectId, equip
 };
 
 export const deleteEquipmentModel = async (equipment: IEquipments): Promise<void> => {
-    const deletions : PromiseLike<void>[] = [];
+    const deletions: Array<PromiseLike<void>> = [];
 
-    const removeEquipmentPromise = async() => {
+    const removeEquipmentPromise = async () => {
         await equipment.remove();
         return;
-    }
+    };
 
     deletions.push(deleteExistingImages(equipment._uiId));
     deletions.push(deleteTasks(equipment._id));
     deletions.push(deleteEntriesFromParent({equipmentId: equipment._id, taskId: undefined}));
     deletions.push(removeEquipmentPromise());
 
-    await Promise.all(deletions)
+    await Promise.all(deletions);
 };
 
 export const deleteEquipments = async (assetId: mongoose.Types.ObjectId) => {
