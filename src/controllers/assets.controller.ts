@@ -68,13 +68,16 @@ class AssetsController implements IController {
 
     private checkNameDoesNotExist = (next: (req: express.Request, res: express.Response) => void) => {
         return async (req: express.Request, res: express.Response) => {
+            const assetUiId = req.params.assetUiId
             const { body: { asset } } = req;
 
-            const assetWithSimilarNameIndex = (await getUserAssets()).findIndex((a) => a.name === asset.name);
-            if (assetWithSimilarNameIndex !== -1) {
-                return res.status(422).json({ errors: { name: "alreadyexisting" } });
+            if (asset.name !== undefined && assetUiId !== undefined){
+                const assetWithSimilarNameIndex = (await getUserAssets()).findIndex((a) => a.name === asset.name && a._uiId !== assetUiId);
+                if (assetWithSimilarNameIndex !== -1) {
+                    return res.status(422).json({ errors: { name: "alreadyexisting" } });
+                }
             }
-
+            
             return next(req, res);
         };
     }
