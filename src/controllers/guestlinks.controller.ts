@@ -5,7 +5,7 @@ import shortid from "shortid";
 
 import wrapAsync from "../utils/expressHelpers";
 
-import { getAssetByUiId, IAssets } from "../models/Assets";
+import Assets, { getAssetByUiId, IAssets } from "../models/Assets";
 import AssetUser, { createUserAssetLink } from "../models/AssetUser";
 import GuestLinks, { getGuestLinkByNiceKey, IGuestLink } from "../models/GuestLinks";
 import Users from "../models/Users";
@@ -34,7 +34,7 @@ class GuestLinksController implements IController {
     }
 
     private checkGuestLinkProperties = (req: express.Request, res: express.Response, next: any) => {
-        const { body: { guestLinkUiId, guestUiId, nameGuestLink } } = req;
+        const { body: { guestLinkUiId, guestUiId, nameGuestLink, assetUiId } } = req;
 
         const errors: any = {};
 
@@ -48,6 +48,10 @@ class GuestLinksController implements IController {
 
         if (!nameGuestLink) {
             errors.nameGuestLink = "isrequired";
+        }
+
+        if (!assetUiId) {
+            errors.assetUiId = "isrequired";
         }
 
         if (Object.keys(errors).length === 0) {
@@ -114,13 +118,23 @@ class GuestLinksController implements IController {
 
     private deleteGuestAndLink = async (req: express.Request, res: express.Response) => {
         let guestLinkToRemove = await GuestLinks.findOne({_uiId: req.params.guestLinkUiId});
-        const guestUser = await Users.findById(guestLinkToRemove.guestUserId);
+        if (!guestLinkToRemove) {
+            return res.status(400).json({ errors: { guestLinkUiId: "isinvalid" } });
+        }
 
-        await AssetUser.remove({ userId: guestUser._id });
+        const guestUser = await Users.findById(guestLinkToRemove.guestUserId);
+        const assetUser = await AssetUser.findOne({ userId: guestUser._id });
+        const asset = await Assets.findById(assetUser.assetId);
+        if ((await asset.isOwnedByCurrentUser()) === false){
+            return res.status(400).json({ errors: { guestLinkUiId: "isinvalid" } });
+        }
+
+        await assetUser.remove();
         await guestUser.remove();
         guestLinkToRemove = await guestLinkToRemove.remove();
 
-        return res.json({ guest: await guestLinkToRemove.toJSON() });
+        return res.json({ guestlink: await guestLinkToRemove.toJSON() });
+        
     }
 
     // GET guest route (optional, everyone has access)
