@@ -20,6 +20,8 @@ export const EquipmentsSchema = new mongoose.Schema({
     installation: Date,
     model: String,
     name: String,
+    //deprecated
+    ownerId: mongoose.Schema.Types.ObjectId,
 });
 
 EquipmentsSchema.methods.toJSON = async function() {
@@ -42,7 +44,9 @@ export interface IEquipments extends mongoose.Document {
     ageUrl: string;
     brand: string;
     installation: Date;
-    assetId: mongoose.Types.ObjectId;
+    assetId?: mongoose.Types.ObjectId;
+    //deprecated
+    ownerId?: mongoose.Types.ObjectId;
     name: string;
 
     toJSON(): any;
