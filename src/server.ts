@@ -3,7 +3,7 @@ import App from "./app";
 import AssetsController from "./controllers/assets.controller";
 import EntriesController from "./controllers/entries.controller";
 import EquipmentsController from "./controllers/equipments.controller";
-import GuestsController from "./controllers/guests.controller";
+import GuestLinksController from "./controllers/guestlinks.controller";
 import ImagesController from "./controllers/images.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
@@ -17,7 +17,7 @@ const server = new App(
     new TasksController(),
     new EquipmentsController(),
     new ImagesController(),
-    new GuestsController(),
+    new GuestLinksController(),
     new AssetsController(),
 ]);
 
