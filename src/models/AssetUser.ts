@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 import {getUser} from "../utils/requestContext";
 import Assets, {IAssets} from "./Assets";
+import { IUser } from "./Users";
 
 export const AssetUserSchema = new mongoose.Schema({
   assetId: mongoose.Types.ObjectId,
@@ -11,6 +12,16 @@ export const AssetUserSchema = new mongoose.Schema({
 export interface IAssetUser extends mongoose.Document {
   assetId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+}
+
+export const createUserAssetLink = async (user: IUser, asset: IAssets) => {
+  const assetUserLink = {
+      assetId: asset._id,
+      userId: user._id,
+  };
+
+  const newAssetUserLink = new AssetUser(assetUserLink);
+  return await newAssetUserLink.save();
 }
 
 export const getUserAssets =  async (): Promise<IAssets[]> => {
