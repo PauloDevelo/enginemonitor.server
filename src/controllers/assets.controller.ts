@@ -2,7 +2,7 @@ import * as express from "express";
 import auth from "../security/auth";
 
 import Assets, { deleteAssetModel, getAssetByUiId, IAssets } from "../models/Assets";
-import { getUserAssets, createUserAssetLink } from "../models/AssetUser";
+import { createUserAssetLink, getUserAssets } from "../models/AssetUser";
 import Equipments from "../models/Equipments";
 import { IUser } from "../models/Users";
 
@@ -142,8 +142,9 @@ class AssetsController implements IController {
         return res.json({ asset: await existingAsset.toJSON() });
     }
 
-    //This function needs to be removed since it was used for migrating the users from the version without asset to the version with asset.
-    //Once all the user are migrated, there should be no orphan equipment anymore...
+    // This function needs to be removed since it was used for migrating the users
+    // from the version without asset to the version with asset.
+    // Once all the user are migrated, there should be no orphan equipment anymore...
     private assignAssetInOrphanEquipment = async (owner: IUser, asset: IAssets) => {
         const query = { assetId: undefined, ownerId: owner._id };
         const equipments = await Equipments.find(query);
