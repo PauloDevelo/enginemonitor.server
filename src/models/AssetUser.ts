@@ -22,7 +22,7 @@ export const createUserAssetLink = async (user: IUser, asset: IAssets) => {
 
   const newAssetUserLink = new AssetUser(assetUserLink);
   return await newAssetUserLink.save();
-}
+};
 
 export const getUserAssets =  async (): Promise<IAssets[]> => {
   const userAssetIds = await AssetUser.find({ userId: getUser()._id });

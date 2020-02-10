@@ -20,7 +20,7 @@ export const EquipmentsSchema = new mongoose.Schema({
     installation: Date,
     model: String,
     name: String,
-    //deprecated
+    // deprecated
     ownerId: mongoose.Schema.Types.ObjectId,
 });
 
@@ -45,7 +45,7 @@ export interface IEquipments extends mongoose.Document {
     brand: string;
     installation: Date;
     assetId?: mongoose.Types.ObjectId;
-    //deprecated
+    // deprecated
     ownerId?: mongoose.Types.ObjectId;
     name: string;
 
