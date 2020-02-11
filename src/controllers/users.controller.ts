@@ -1,19 +1,19 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import { ServerResponse } from "http";
-
 import passport from "../security/passport";
 import config from "../utils/configUtils";
 import wrapAsync from "../utils/expressHelpers";
 import sendGridHelper from "../utils/sendGridEmailHelper";
 
-import NewPasswords, { INewPassword } from "../models/NewPasswords";
+import NewPasswords from "../models/NewPasswords";
 import Users, { IUser } from "../models/Users";
 
 import IController from "./IController";
 
-import logger from "../utils/logger";
+import getUser from "../utils/requestContext";
+import { getAssetByUiId } from "../models/Assets";
+import AssetUser from "../models/AssetUser";
 
 class UsersController implements IController {
     private path: string = "/users";
@@ -40,7 +40,30 @@ class UsersController implements IController {
         .get(this.path + "/changepassword",     auth.optional, wrapAsync(this.checkChangePasswordQuery), wrapAsync(this.changePassword))
         // tslint:disable-next-line:max-line-length
         .get(this.path + "/verification",       auth.optional, wrapAsync(this.checkCheckEmailQuery), wrapAsync(this.checkEmail))
-        .get(this.path + "/current",            auth.required, wrapAsync(this.getCurrent));
+        .get(this.path + "/current",            auth.required, wrapAsync(this.getCurrent))
+        .get(`${this.path}/credentials/:assetUiId`, auth.required, wrapAsync(this.checkAssetOwnership), wrapAsync(this.getUserCredentials))
+    }
+
+    private checkAssetOwnership = async (req: express.Request, res: express.Response, authSucceed: any) => {
+        const user = getUser();
+        if (!user) {
+            return res.status(400).json({ errors: { authentication: "error" } });
+        }
+
+        const asset = await getAssetByUiId(req.params.assetUiId);
+        if (!asset) {
+            return res.status(400).json({ errors: { asset: "notfound" } });
+        }
+
+        return authSucceed();
+    }
+
+    private getUserCredentials = async (req: express.Request, res: express.Response, authSucceed: any) => {
+        const asset = await getAssetByUiId(req.params.assetUiId);
+        const user = getUser();
+        const assetUser = await AssetUser.findOne( { assetId: asset._id, userId: user._id } );
+
+        return res.json({credentials: await assetUser.toJSON()});
     }
 
     private checkUserProperties = (req: express.Request, res: express.Response, next: any) => {

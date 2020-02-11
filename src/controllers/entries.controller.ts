@@ -12,6 +12,7 @@ import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
+import { checkCredentials } from "./controller.helper";
 
 class EntriesController implements IController {
     private path: string = "/entries";
@@ -28,7 +29,7 @@ class EntriesController implements IController {
     private intializeRoutes() {
         this.router
         // tslint:disable-next-line:max-line-length
-        .use(this.path + "/:assetUiId/:equipmentUiId",                          auth.required, wrapAsync(this.checkAuthAndOwnership))
+        .use(this.path + "/:assetUiId/:equipmentUiId",                          auth.required, wrapAsync(this.checkAuthAndOwnership), wrapAsync(checkCredentials))
         // tslint:disable-next-line:max-line-length
         .get(this.path + "/:assetUiId/:equipmentUiId",                          auth.required, wrapAsync(this.getAllEntries))
         // tslint:disable-next-line:max-line-length

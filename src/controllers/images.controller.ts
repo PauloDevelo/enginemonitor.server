@@ -32,7 +32,7 @@ class ImagesController implements IController {
 
     private initializeRoutes() {
         this.router
-        .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
+        .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams), wrapAsync(this.checkCredentials))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
         .post(  this.path + "/:parentUiId", wrapAsync(checkImageQuota), this.cpUpload, wrapAsync(this.addImage))
         // tslint:disable-next-line:max-line-length
@@ -75,6 +75,24 @@ class ImagesController implements IController {
             next();
         } else {
             res.status(400).json({ errors: { authentication: "error" } });
+        }
+    }
+
+    private checkCredentials = async (req: express.Request, res: express.Response, next: any) => {
+        switch(req.method){
+            case 'GET':
+                next();
+                break;
+            case 'POST':
+            case 'DELETE':
+            default:
+                const user = getUser();
+                
+                if(user.forbidUploadingImage){
+                    return res.status(400).json({ errors: 'credentialError' });
+                }
+                next();
+                return;
         }
     }
 

@@ -73,11 +73,11 @@ class GuestLinksController implements IController {
 
         const niceKey = shortid.generate();
 
-        let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true });
+        let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true, forbidUploadingImage: true, forbidCreatingAsset: true });
         guestUser.setPassword(niceKey);
         guestUser = await guestUser.save();
 
-        await createUserAssetLink(guestUser, asset);
+        await createUserAssetLink( { user: guestUser, asset, readonly: true});
 
         const guestLink = new GuestLinks({
             _uiId: guestLinkUiId,

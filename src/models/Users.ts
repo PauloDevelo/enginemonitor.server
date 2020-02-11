@@ -15,7 +15,9 @@ export const UsersSchema = new mongoose.Schema({
   isVerified: Boolean,
   name: String,
   salt: String,
-  verificationToken: String
+  verificationToken: String,
+  forbidUploadingImage: Boolean,
+  forbidCreatingAsset: Boolean
 });
 
 UsersSchema.methods.setPassword = function(password: string) {
@@ -61,13 +63,14 @@ UsersSchema.methods.toAuthJSON = async function() {
     imageFolder: this.getUserImageFolder(),
     imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
     imageFolderSizeLimitInByte: this.getUserImageFolderSizeLimitInByte(),
+    forbidUploadingImage: this.forbidUploadingImage,
+    forbidCreatingAsset: this.forbidCreatingAsset,
     name: this.name,
     token: this.generateJWT(),
   };
 };
 
 UsersSchema.methods.getUserImageFolder = function(): string {
-
   return config.get("ImageFolder") + this._id;
 };
 
@@ -95,6 +98,8 @@ export interface IUser extends mongoose.Document {
   verificationToken: string;
   salt: string;
   isVerified: boolean;
+  forbidUploadingImage?: boolean;
+  forbidCreatingAsset?: boolean;
 
   setPassword(password: string): void;
   setNewPassword(password: INewPassword): void;

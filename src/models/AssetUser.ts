@@ -7,20 +7,25 @@ import { IUser } from "./Users";
 export const AssetUserSchema = new mongoose.Schema({
   assetId: mongoose.Types.ObjectId,
   userId: mongoose.Types.ObjectId,
+  readonly: Boolean
 });
+
+AssetUserSchema.methods.toJSON = async function() {
+  return {
+    readonly: this.readonly
+  };
+};
 
 export interface IAssetUser extends mongoose.Document {
   assetId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+  readonly?: boolean;
+
+  toJSON(): any;
 }
 
-export const createUserAssetLink = async (user: IUser, asset: IAssets) => {
-  const assetUserLink = {
-      assetId: asset._id,
-      userId: user._id,
-  };
-
-  const newAssetUserLink = new AssetUser(assetUserLink);
+export const createUserAssetLink = async ({ user, asset, readonly }: { user: IUser, asset: IAssets, readonly?: boolean }) => {
+  const newAssetUserLink = new AssetUser({ assetId: asset._id, userId: user._id, readonly });
   return await newAssetUserLink.save();
 };
 

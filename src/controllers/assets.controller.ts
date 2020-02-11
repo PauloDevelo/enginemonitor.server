@@ -11,6 +11,7 @@ import {getUser} from "../utils/requestContext";
 
 import { Mongoose } from "mongoose";
 import IController from "./IController";
+import { checkCredentials } from "./controller.helper";
 
 class AssetsController implements IController {
     private path: string = "/assets";
@@ -29,7 +30,7 @@ class AssetsController implements IController {
         .use(   this.path,                      auth.required, wrapAsync(this.checkAuth))
         .get(   this.path,                      auth.required, wrapAsync(this.getAssets))
         .post(  this.path + "/:assetUiId",      auth.required, wrapAsync(this.changeOrAddAsset))
-        .delete(this.path + "/:assetUiId",      auth.required, wrapAsync(this.deleteAsset));
+        .delete(this.path + "/:assetUiId",      auth.required, wrapAsync(checkCredentials), wrapAsync(this.deleteAsset));
     }
 
     private checkAssetProperties = (next: (req: express.Request, res: express.Response) => void) => {
@@ -82,6 +83,16 @@ class AssetsController implements IController {
         };
     }
 
+    private checkAssetCreationCredential = async (req: express.Request, res: express.Response, next: any) => {
+        const user = getUser();
+        
+        if(user.forbidCreatingAsset){
+            return res.status(400).json({ errors: 'credentialError' });
+        }
+
+        next(req, res);
+    }
+
     private checkAuth = async (req: express.Request, res: express.Response, authSucceed: any) => {
         const user = getUser();
         if (!user) {
@@ -110,7 +121,7 @@ class AssetsController implements IController {
 
         const user = getUser();
 
-        await createUserAssetLink(user, newAsset);
+        await createUserAssetLink( {user, asset: newAsset, readonly: false});
 
         await this.assignAssetInOrphanEquipment(user, newAsset);
 
@@ -122,7 +133,8 @@ class AssetsController implements IController {
 
         let existingAsset = await getAssetByUiId(req.params.assetUiId);
         if (!existingAsset) {
-            this.checkAssetProperties(this.checkNameDoesNotExist(this.addAsset))(req, res);
+
+            this.checkAssetCreationCredential(req, res, this.checkAssetProperties(this.checkNameDoesNotExist(this.addAsset)));
         } else {
             const updateExistingAsset = async () => {
                 existingAsset = Object.assign(existingAsset, asset);
@@ -130,7 +142,7 @@ class AssetsController implements IController {
                 res.json({ asset: await existingAsset.toJSON() });
             };
 
-            this.checkNameDoesNotExist(updateExistingAsset)(req, res);
+            checkCredentials(req, res, () => this.checkNameDoesNotExist(updateExistingAsset)(req, res));
         }
     }
 

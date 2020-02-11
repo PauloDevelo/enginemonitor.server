@@ -11,6 +11,7 @@ import { AgeAcquisitionType, getEquipmentByUiId, IEquipments } from "../models/E
 import Tasks, { deleteTask, getTaskByUiId, ITasks } from "../models/Tasks";
 
 import IController from "./IController";
+import { checkCredentials } from "./controller.helper";
 
 class TasksController implements IController {
     private path: string = "/tasks";
@@ -27,7 +28,7 @@ class TasksController implements IController {
     private intializeRoutes() {
         this.router
         // tslint:disable-next-line:max-line-length
-        .use(this.path + "/:assetUiId/:equipmentUiId",              auth.required, wrapAsync(this.checkAuthAndOwnership))
+        .use(this.path + "/:assetUiId/:equipmentUiId",              auth.required, wrapAsync(this.checkAuthAndOwnership), wrapAsync(checkCredentials))
         .get(this.path + "/:assetUiId/:equipmentUiId",              auth.required, wrapAsync(this.getTasks))
         .post(this.path + "/:assetUiId/:equipmentUiId/:taskUiId",   auth.required, wrapAsync(this.changeOrCreateTask))
         .delete(this.path + "/:assetUiId/:equipmentUiId/:taskUiId", auth.required, wrapAsync(this.deleteTask));
