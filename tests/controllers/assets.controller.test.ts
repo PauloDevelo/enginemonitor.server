@@ -214,7 +214,7 @@ describe('Assets', () => {
       });
     });
 
-    describe('POST/:equipmentId equipment', () => {
+    describe('POST/:assetUiId asset', () => {
         const sailboat = {_uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus'};
 
         beforeEach(async() => {
@@ -299,7 +299,7 @@ describe('Assets', () => {
         });
     });
 
-    describe('DELETE/:equipmentId equipment', () => {
+    describe('DELETE/:assetUiId asset', () => {
         const sailboat = {_uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus'};
 
         beforeEach(async() => {

@@ -15,12 +15,19 @@ export const checkCredentials = async (req: express.Request, res: express.Respon
       default:
           const user = getUser();
           const asset = await getAssetByUiId(req.params.assetUiId);
-          const assetUser = await AssetUser.findOne({ assetId: asset._id, userId: user._id });
 
-          if(assetUser.readonly){
-              return res.status(400).json({ errors: 'credentialError' });
+          try{
+            const assetUser = await AssetUser.findOne({ assetId: asset._id, userId: user._id });
+
+            if(assetUser.readonly){
+                return res.status(400).json({ errors: 'credentialError' });
+            }
+            next();
           }
-          next();
+          catch(error){
+            return res.status(400).json({ errors: 'credentialError' });
+          }
+          
           return;
   }
 }
