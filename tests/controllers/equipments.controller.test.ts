@@ -24,6 +24,10 @@ import AssetUser from '../../src/models/AssetUser';
 describe('Equipments', () => {
     let user: IUser;
     let userJWT: string;
+
+    let roUser: IUser;
+    let roUserJWT: string;
+
     let boat: IAssets;
 
     before(() => {
@@ -41,14 +45,21 @@ describe('Equipments', () => {
         user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
         user.setPassword("test");
         user = await user.save();
-
         userJWT = `Token ${user.generateJWT()}`;
+
+        roUser = new Users({ name: "read", firstname: "only", email: "read.only@gmail.com" });
+        roUser.setPassword("test");
+        roUser = await roUser.save();
+        roUserJWT = `Token ${roUser.generateJWT()}`;
 
         boat = new Assets({_uiId: 'sailboat_01', brand: 'aluminium & techniques', manufactureDate: '1979/01/01', modelName: 'heliotrope', name: 'Arbutus',});
         boat = await boat.save();
 
         let assetUserLink = new AssetUser({ assetId: boat._id, userId: user._id });
         assetUserLink = await assetUserLink.save();
+
+        let assetRoUserLink = new AssetUser({ assetId: boat._id, userId: roUser._id, readonly: true });
+        assetRoUserLink = await assetRoUserLink.save();
     })
 
     afterEach(async () => {
@@ -135,6 +146,34 @@ describe('Equipments', () => {
             res.body.equipments[0].should.have.property("_uiId");
             res.body.equipments[0]._uiId.should.be.eql("boat_01");
         });
+
+        it('it should GET a 200 http code as a result and a equipment because we set a read only user token', async () => {
+            // Arrange
+            
+            // Act
+            let res = await chai.request(app).get(`/api/equipments/${boat._uiId}`).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("equipments");
+            res.body.equipments.should.be.a("array");
+            res.body.equipments.length.should.be.eql(1);
+
+            res.body.equipments[0].should.have.property("name");
+            res.body.equipments[0].name.should.be.eql("Arbutus");
+
+            res.body.equipments[0].should.have.property("brand");
+            res.body.equipments[0].brand.should.be.eql("Nanni");
+            
+            res.body.equipments[0].should.have.property("model");
+            res.body.equipments[0].model.should.be.eql("N3.30");
+
+            res.body.equipments[0].should.have.property("age");
+            res.body.equipments[0].age.should.be.eql(1234);
+
+            res.body.equipments[0].should.have.property("_uiId");
+            res.body.equipments[0]._uiId.should.be.eql("boat_01");
+        });
     });
 
     describe('POST equipments', () => {
@@ -195,6 +234,18 @@ describe('Equipments', () => {
             res.body.equipment.ageAcquisitionType.should.be.eql(AgeAcquisitionType.manualEntry);  
             res.body.equipment.ageUrl.should.be.eql('');
             res.body.equipment._uiId.should.be.eql('123456');
+        });
+
+        it('it should get a 400 http code credential error as a result because the user is readonly', async () => {
+            // Arrange
+            let equipment = { name: "Arbutus", brand: "Nanni", model: "N3.30", age: 1234, installation: "2018-01-09T23:00:00.000Z", ageAcquisitionType:AgeAcquisitionType.manualEntry, ageUrl:'', _uiId:'123456' };
+
+            // Act
+            let res = await chai.request(app).post(`/api/equipments/${boat._uiId}/${equipment._uiId}`).send({equipment:equipment}).set("Authorization", roUserJWT);
+            
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
         });
 
         it('it should get a 422 http error code because there is already an equipment with the same name', async () => {
@@ -297,7 +348,20 @@ describe('Equipments', () => {
             res.body.equipment.should.have.property("ageAcquisitionType");
             res.body.equipment.ageAcquisitionType.should.be.eql(2);
         });
+
+        it('it should get a 400 http code credential error as a result because the user is readonly', async () => {
+            // Arrange
+            const modifications = {equipment:{ageAcquisitionType:2}};
+
+            // Act
+            let res = await chai.request(app).post(`/api/equipments/${boat._uiId}/${engine._uiId}`).send(modifications).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
+        });
     });
+
 
     describe('DELETE/:equipmentId equipment', () => {
         let engine: IEquipments;
@@ -347,6 +411,17 @@ describe('Equipments', () => {
 
             nbEntries = await Entries.countDocuments({});
             nbEntries.should.be.eql(0);
+        });
+
+        it('it should get a 400 http code credential error because the user is read only', async () => {
+            // Arrange
+            
+            // Act
+            let res = await chai.request(app).delete(`/api/equipments/${boat._uiId}/${engine._uiId}`).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
         });
 
         it('it should get a 400 http code as a result because the equipment does not exist', async () => {
