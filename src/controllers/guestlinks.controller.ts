@@ -12,6 +12,8 @@ import Users from "../models/Users";
 
 import IController from "./IController";
 
+import { checkUserCredentials } from '../controllers/controller.helper';
+
 class GuestLinksController implements IController {
     private path: string = "/guestlinks";
     private router: express.Router = express.Router();
@@ -71,23 +73,27 @@ class GuestLinksController implements IController {
             return res.status(400).json({ errors: { assetUiId: "isinvalid" } });
         }
 
-        const niceKey = shortid.generate();
+        const next = async() => {
+            const niceKey = shortid.generate();
+    
+            let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true, forbidUploadingImage: true, forbidCreatingAsset: true });
+            guestUser.setPassword(niceKey);
+            guestUser = await guestUser.save();
+    
+            await createUserAssetLink( { user: guestUser, asset, readonly: true});
+    
+            const guestLink = new GuestLinks({
+                _uiId: guestLinkUiId,
+                guestUserId: guestUser._id,
+                name: nameGuestLink,
+                niceKey
+            });
+            await guestLink.save();
+    
+            return res.json({ guestlink: await guestLink.toJSON() });
+        };
 
-        let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true, forbidUploadingImage: true, forbidCreatingAsset: true });
-        guestUser.setPassword(niceKey);
-        guestUser = await guestUser.save();
-
-        await createUserAssetLink( { user: guestUser, asset, readonly: true});
-
-        const guestLink = new GuestLinks({
-            _uiId: guestLinkUiId,
-            guestUserId: guestUser._id,
-            name: nameGuestLink,
-            niceKey
-        });
-        await guestLink.save();
-
-        return res.json({ guestlink: await guestLink.toJSON() });
+        checkUserCredentials(req.method, assetUiId, res, next);
     }
 
     private getGuestLinksForAnAssetUiId = async (req: express.Request, res: express.Response) => {
@@ -129,12 +135,15 @@ class GuestLinksController implements IController {
             return res.status(400).json({ errors: { guestLinkUiId: "isinvalid" } });
         }
 
-        await assetUser.remove();
-        await guestUser.remove();
-        guestLinkToRemove = await guestLinkToRemove.remove();
-
-        return res.json({ guestlink: await guestLinkToRemove.toJSON() });
+        const next = async() => {
+            await assetUser.remove();
+            await guestUser.remove();
+            guestLinkToRemove = await guestLinkToRemove.remove();
+    
+            return res.json({ guestlink: await guestLinkToRemove.toJSON() });
+        }
         
+        checkUserCredentials(req.method, asset._uiId, res, next);
     }
 
     // GET guest route (optional, everyone has access)
