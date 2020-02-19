@@ -182,7 +182,7 @@ class UsersController implements IController {
         const { query: { token } } = req;
 
         const newPassword = await NewPasswords.findOne({ verificationToken: token });
-        const user = await Users.findOne({ email: newPassword[0].email });
+        const user = await Users.findOne({ email: newPassword.email });
 
         user.setNewPassword(newPassword);
 
