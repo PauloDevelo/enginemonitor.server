@@ -2,7 +2,7 @@ import * as express from "express";
 import auth from "../security/auth";
 
 import Assets, { deleteAssetModel, getAssetByUiId, IAssets } from "../models/Assets";
-import { createUserAssetLink, getUserAssets } from "../models/AssetUser";
+import AssetUser, { createUserAssetLink, getUserAssets } from "../models/AssetUser";
 import Equipments from "../models/Equipments";
 import { IUser } from "../models/Users";
 
@@ -30,7 +30,7 @@ class AssetsController implements IController {
         .use(   this.path,                      auth.required, wrapAsync(this.checkAuth))
         .get(   this.path,                      auth.required, wrapAsync(this.getAssets))
         .post(  this.path + "/:assetUiId",      auth.required, wrapAsync(this.changeOrAddAsset))
-        .delete(this.path + "/:assetUiId",      auth.required, wrapAsync(checkCredentials), wrapAsync(this.deleteAsset));
+        .delete(this.path + "/:assetUiId",      auth.required, wrapAsync(this.checkDeleteCredentials), wrapAsync(this.deleteAsset));
     }
 
     private checkAssetProperties = (next: (req: express.Request, res: express.Response) => void) => {
@@ -148,9 +148,6 @@ class AssetsController implements IController {
 
     private deleteAsset = async (req: express.Request, res: express.Response) => {
         const existingAsset = await getAssetByUiId(req.params.assetUiId);
-        if (!existingAsset) {
-            return res.sendStatus(400);
-        }
 
         deleteAssetModel(existingAsset);
 
@@ -173,6 +170,29 @@ class AssetsController implements IController {
         await Promise.all(equipmentSavingPromises);
         return;
     }
+
+    private checkDeleteCredentials = async (req: express.Request, res: express.Response, next: any) => {
+        const user = getUser();
+        const asset = await getAssetByUiId(req.params.assetUiId);
+
+        if(!asset){
+            return res.status(400).json({ errors: { entity: "notfound" } });
+        }
+
+        try{
+            const assetUser = await AssetUser.findOne({ assetId: asset._id, userId: user._id });
+
+            if(assetUser.readonly){
+                return res.status(400).json({ errors: 'credentialError' });
+            }
+            next();
+        }
+        catch(error){
+            return res.status(400).json({ errors: 'credentialError' });
+        }
+        
+        return;
+      }
 }
 
 export default AssetsController;

@@ -355,6 +355,10 @@ describe('Equipments', () => {
 
             // Assert
             res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("entity");
+            res.body.errors.entity.should.be.eql("notfound");
         });
 
         it('it should get a 400 http code as a result because the equipment requested is not own by the user', async () => {

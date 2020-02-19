@@ -171,7 +171,8 @@ class ImagesController implements IController {
     private deleteImage = async (req: express.Request, res: express.Response): Promise<void> => {
         const existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
-            res.sendStatus(400);
+            res.status(400).json({ errors: { entity: "notfound" } });
+            return;
         }
 
         const imageJson = await existingImage.toJSON();

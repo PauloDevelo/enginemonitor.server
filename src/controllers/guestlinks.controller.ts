@@ -119,7 +119,7 @@ class GuestLinksController implements IController {
     private deleteGuestAndLink = async (req: express.Request, res: express.Response) => {
         let guestLinkToRemove = await GuestLinks.findOne({_uiId: req.params.guestLinkUiId});
         if (!guestLinkToRemove) {
-            return res.status(400).json({ errors: { guestLinkUiId: "isinvalid" } });
+            return res.status(400).json({ errors: { entity: "notfound" } });
         }
 
         const guestUser = await Users.findById(guestLinkToRemove.guestUserId);

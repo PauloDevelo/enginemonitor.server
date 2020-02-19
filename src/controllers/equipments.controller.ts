@@ -136,7 +136,7 @@ class EquipmentsController implements IController {
         const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
         const existingEquipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
         if (!existingEquipment) {
-            return res.sendStatus(400);
+            return res.status(400).json({ errors: { entity: "notfound" } });
         }
 
         await deleteEquipmentModel(existingEquipment);

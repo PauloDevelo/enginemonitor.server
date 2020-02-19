@@ -676,6 +676,10 @@ describe('Entries', () => {
 
             // Assert
             res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("entity");
+            res.body.errors.entity.should.be.eql("notfound");
         });
     });
 });

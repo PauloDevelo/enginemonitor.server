@@ -609,7 +609,11 @@ describe('Images', () => {
             let res = await chai.request(app).delete('/api/images/'+ engine._uiId + '/' + image1._uiId).set("Authorization", "Token " + user.generateJWT());
 
             // Assert
-            res.should.have.status(400);            
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("entity");
+            res.body.errors.entity.should.be.eql("notfound");           
         });
     });
 });

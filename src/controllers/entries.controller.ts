@@ -168,7 +168,7 @@ class EntriesController implements IController {
         const existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
 
         if (!existingEntry) {
-            return res.sendStatus(400);
+            return res.status(400).json({ errors: { entity: "notfound" } });
         }
 
         if ((!(existingEntry.taskId)  && taskId) ||
