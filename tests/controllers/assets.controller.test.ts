@@ -22,6 +22,9 @@ describe('Assets', () => {
     let user: IUser;
     let userJWT: string;
 
+    let readonlyUser: IUser;
+    let roUserJWT: string;
+
     before(() => {
         mockLogger();
         ignoredErrorMessages.push("No authorization token was found");
@@ -38,6 +41,12 @@ describe('Assets', () => {
         user = await user.save();
 
         userJWT = `Token ${user.generateJWT()}`;
+
+        readonlyUser = new Users({ name: "read", firstname: "only", email: "read.only@gmail.com", forbidCreatingAsset: true });
+        readonlyUser.setPassword("test");
+        readonlyUser = await readonlyUser.save();
+
+        roUserJWT = `Token ${readonlyUser.generateJWT()}`;
     })
 
     afterEach(async () => {
@@ -85,7 +94,37 @@ describe('Assets', () => {
             res.should.have.status(401);
         });
 
-        it('it should GET a 200 http code as a result and a equipment because we set the correct token', async () => {
+        it("it should GET a 200 http code as a result and an equipment because we set a readonly user's token", async () => {
+            // Arrange
+            let arbutus = new Assets({_uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus'});
+            arbutus = await arbutus.save();
+
+            let readOnlyUserAssetLink = new AssetUser({ assetId:arbutus._id,  userId: readonlyUser._id, readonly: true });
+            readOnlyUserAssetLink = await readOnlyUserAssetLink.save();
+            
+            // Act
+            let res = await chai.request(app).get(`/api/assets`).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("assets");
+            res.body.assets.should.be.a("array");
+            res.body.assets.length.should.be.eql(1);
+
+            res.body.assets[0].should.have.property("name");
+            res.body.assets[0].should.have.property("brand");
+            res.body.assets[0].should.have.property("modelBrand");
+            res.body.assets[0].should.have.property("manufactureDate");
+            res.body.assets[0].should.have.property("_uiId");
+
+            res.body.assets[0].name.should.be.eql("Arbutus");
+            res.body.assets[0].brand.should.be.eql("Aluminum & Technics");
+            res.body.assets[0].modelBrand.should.be.eql("Heliotrope");
+            res.body.assets[0].manufactureDate.should.be.eql('1979-01-01T00:00:00.000Z');
+            res.body.assets[0]._uiId.should.be.eql("sailboat_01");
+        });
+
+        it('it should GET a 200 http code as a result and an equipment because we set the correct token', async () => {
             // Arrange
             let arbutus = new Assets({_uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus'});
             arbutus = await arbutus.save();
@@ -169,6 +208,19 @@ describe('Assets', () => {
             res.body.asset._uiId.should.be.eql("sailboat_01");
         });
 
+        it('it should get a 400 http code with credential error as a result because a user without the asset creation credential tried to create an asset', async () => {
+            // Arrange
+            let asset = {_uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus'};
+
+            // Act
+            let res = await chai.request(app).post(`/api/assets/${asset._uiId}`).send({ asset }).set("Authorization", roUserJWT);
+            
+            // Assert
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.eql("credentialError");
+        });
+
         it('it should get a 422 http error code because there is already an asset with the same name', async () => {
             // Arrange
             let asset = {_uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus'};
@@ -234,6 +286,23 @@ describe('Assets', () => {
             res.body.asset.should.be.a("object");
             res.body.asset.should.have.property("brand");
             res.body.asset.brand.should.be.eql('beneteau');
+        });
+
+        it('it should get a 400 http code with credential error as a result because a readonly user tried to modified an asset', async () => {
+            // Arrange
+            const asset = await Assets.findOne({ _uiId: sailboat._uiId });
+            let roUserAssetLink = new AssetUser({ assetId:asset._id,  userId: readonlyUser._id, readonly: true });
+            roUserAssetLink = await roUserAssetLink.save();
+
+            const modifications = {asset:{brand:'beneteau'}};
+
+            // Act
+            let res = await chai.request(app).post(`/api/assets/${sailboat._uiId}`).send(modifications).set("Authorization", roUserJWT);
+            
+            // Assert
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.eql("credentialError");
         });
 
         it('it should get a 200 http code as a result because the asset manufactureDate was successfully modified', async () => {
@@ -347,6 +416,22 @@ describe('Assets', () => {
 
             // Assert
             res.should.have.status(400);
+        });
+
+        it('it should get a 400 http code as a result because the asset requested is not own by the user', async () => {
+            // Arrange
+            const asset = await Assets.findOne({ _uiId: sailboat._uiId });
+
+            let readOnlyUserAssetLink = new AssetUser({ assetId:asset._id,  userId: readonlyUser._id, readonly: true });
+            readOnlyUserAssetLink = await readOnlyUserAssetLink.save();
+
+            // Act
+            let res = await chai.request(app).delete(`/api/assets/${sailboat._uiId}`).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.eql("credentialError");
         });
     });
 });
