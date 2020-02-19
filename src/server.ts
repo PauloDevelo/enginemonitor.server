@@ -7,6 +7,7 @@ import GuestLinksController from "./controllers/guestlinks.controller";
 import ImagesController from "./controllers/images.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
+import ServerController from "./controllers/server.controller";
 import logger from "./utils/logger";
 import getDbVersion from "./utils/mongoDb";
 
@@ -19,6 +20,7 @@ const server = new App(
     new ImagesController(),
     new GuestLinksController(),
     new AssetsController(),
+    new ServerController(),
 ]);
 
 export default server; // for testing
