@@ -22,6 +22,10 @@ import AssetUser from '../../src/models/AssetUser';
 describe('Entries', () => {
     let user: IUser;
     let userJWT: string;
+
+    let roUser: IUser;
+    let roUserJWT: string;
+    
     let boat: IAssets;
     let engine: IEquipments;
     let task: ITasks;
@@ -36,10 +40,14 @@ describe('Entries', () => {
     });
 
     beforeEach('Set the minimum of data in the db', async() => {
-
         user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
         user.setPassword("test");
         user = await user.save();
+
+        roUser = new Users({ name: "read", firstname: "only", email: "read.only@gmail.com" });
+        roUser.setPassword("test");
+        roUser = await roUser.save();
+        roUserJWT = `Token ${roUser.generateJWT()}`;
 
         boat = new Assets({_uiId: 'sailboat_01', brand: 'aluminium & techniques', manufactureDate: '1979/01/01', modelName: 'heliotrope', name: 'Arbutus',});
         boat = await boat.save();
@@ -48,6 +56,9 @@ describe('Entries', () => {
 
         let assetUserLink = new AssetUser({ assetId: boat._id, userId: user._id });
         assetUserLink = await assetUserLink.save();
+
+        let assetRoUserLink = new AssetUser({ assetId: boat._id, userId: roUser._id, readonly: true });
+        assetRoUserLink = await assetRoUserLink.save();
 
         engine = new Equipments({name: "Engine", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"engine_01", assetId: boat._id});
         engine = await  engine.save();
@@ -88,6 +99,89 @@ describe('Entries', () => {
 
             // Act
             let res = await chai.request(app).get(`/api/entries/${boat._uiId}/${engine._uiId}`).set("Authorization", userJWT);
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entries");
+            res.body.entries.should.be.a("array");
+            res.body.entries.length.should.be.eql(3);
+
+            res.body.entries[0].should.have.property("name");
+            res.body.entries[0].name.should.be.eql("My first entry");
+
+            res.body.entries[0].should.have.property("date");
+
+            res.body.entries[0].should.have.property("age");
+            res.body.entries[0].age.should.be.eql(12345);
+
+            res.body.entries[0].should.have.property("remarks");
+            res.body.entries[0].remarks.should.be.eql("RAS");
+
+            res.body.entries[0].should.have.property("_uiId");
+            res.body.entries[0]._uiId.should.be.eql("entry_01");
+
+            res.body.entries[0].should.have.property("equipmentUiId");
+            res.body.entries[0].equipmentUiId.should.be.eql("engine_01");
+
+            res.body.entries[0].should.not.have.property("_id");
+            res.body.entries[0].should.not.have.property("equipmentId");
+
+            res.body.entries[1].should.have.property("name");
+            res.body.entries[1].name.should.be.eql("My second entry");
+
+            res.body.entries[1].should.have.property("date");
+
+            res.body.entries[1].should.have.property("age");
+            res.body.entries[1].age.should.be.eql(12346);
+
+            res.body.entries[1].should.have.property("remarks");
+            res.body.entries[1].remarks.should.be.eql("RAS2");
+
+            res.body.entries[1].should.have.property("_uiId");
+            res.body.entries[1]._uiId.should.be.eql("entry_02");
+
+            res.body.entries[1].should.have.property("equipmentUiId");
+            res.body.entries[1].equipmentUiId.should.be.eql("engine_01");
+
+
+            res.body.entries[2].should.have.property("name");
+            res.body.entries[2].name.should.be.eql("My third entry");
+
+            res.body.entries[2].should.have.property("date");
+
+            res.body.entries[2].should.have.property("age");
+            res.body.entries[2].age.should.be.eql(12347);
+
+            res.body.entries[2].should.have.property("remarks");
+            res.body.entries[2].remarks.should.be.eql("RAS3");
+
+            res.body.entries[2].should.have.property("_uiId");
+            res.body.entries[2]._uiId.should.be.eql("entry_03");
+
+            res.body.entries[2].should.have.property("equipmentUiId");
+            res.body.entries[2].equipmentUiId.should.be.eql("engine_01");
+        });
+
+        it('it should GET a 200 http code as a result with the read only user as well', async () => {
+            // Arrange
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId:"entry_01", equipmentId: engine._id, taskId: task._id });
+            entry = await entry.save();
+
+            let task2 = new Tasks({name:"Vidange2", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId:"task_02"});
+            task2.equipmentId = engine._id;
+            task2 = await task2.save();
+
+            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2", _uiId:"entry_02" });
+            entry2.equipmentId = engine._id;
+            entry2.taskId = task2._id;
+            entry2 = await entry2.save();
+
+            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3", _uiId:"entry_03" });
+            entry3.equipmentId = engine._id;
+            entry3 = await entry3.save();
+
+            // Act
+            let res = await chai.request(app).get(`/api/entries/${boat._uiId}/${engine._uiId}`).set("Authorization", roUserJWT);
 
             // Assert
             res.should.have.status(200);
@@ -231,6 +325,39 @@ describe('Entries', () => {
             res.body.entries[0].should.not.have.property("equipmentId");
         });
 
+        it('it should GET a 200 http code as a result because the read only user has enough credential to get them', async () => {
+            // Arrange
+
+            // Act
+            let res = await chai.request(app).get(getEntriesUrl).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entries");
+            res.body.entries.should.be.a("array");
+            res.body.entries.length.should.be.eql(1);
+
+            res.body.entries[0].should.have.property("name");
+            res.body.entries[0].name.should.be.eql("My first entry");
+
+            res.body.entries[0].should.have.property("date");
+
+            res.body.entries[0].should.have.property("age");
+            res.body.entries[0].age.should.be.eql(12345);
+
+            res.body.entries[0].should.have.property("remarks");
+            res.body.entries[0].remarks.should.be.eql("RAS");
+
+            res.body.entries[0].should.have.property("_uiId");
+            res.body.entries[0]._uiId.should.be.eql("entry_01");
+
+            res.body.entries[0].should.have.property("equipmentUiId");
+            res.body.entries[0].equipmentUiId.should.be.eql("engine_01");
+
+            res.body.entries[0].should.not.have.property("_id");
+            res.body.entries[0].should.not.have.property("equipmentId");
+        });
+
         it('it should GET entries sorted by date', async () => {
             // Arrange
             await Entries.deleteMany({});
@@ -346,6 +473,18 @@ describe('Entries', () => {
             res.body.entry.equipmentUiId.should.be.eql(engine._uiId.toString());
             res.body.entry._uiId.should.be.eql('123456');
             res.body.entry.ack.should.be.eql(true);
+        });
+
+        it('it should GET a 400 http code and a credential error because the read only user does not have credential to change an entry', async () => {
+            // Arrange
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: '123456' }
+
+            // Act
+            let res = await chai.request(app).post(`/api/entries/${boat._uiId}/${engine._uiId}/${task._uiId}/${entry._uiId}`).send({entry: entry}).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
         });
 
         it('it should GET a 200 http code as a result because the entry was return successfully', async () => {
@@ -517,6 +656,22 @@ describe('Entries', () => {
             res.body.entry.remarks.should.be.eql("RAS");
         });
 
+        it('it should get a 400 http code and a credential error with the read only user', async () => {
+            // Arrange
+            let orphanEntry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
+            orphanEntry.equipmentId = engine._id;
+            orphanEntry = await orphanEntry.save();
+
+            let jsonEntry = {name:"Vidange d'huile"};
+            
+            // Act
+            let res = await chai.request(app).post(`/api/entries/${boat._uiId}/${engine._uiId}/-/${orphanEntry._uiId}`).send({entry: jsonEntry}).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
+        });
+
         it('it should get a 200 http code as a result because the entry name changed successfully', async () => {
             // Arrange
             let jsonEntry = {name:"Vidange d'huile"};
@@ -663,6 +818,21 @@ describe('Entries', () => {
             res.body.entry.should.not.have.property("_id");
             res.body.entry.should.have.property("_uiId");
             res.body.entry._uiId.should.be.eql(entry._uiId.toString());
+        });
+
+        it('it should get a 400 http code and a credential error with the read only user', async () => {
+            // Arrange
+            let entry = new Entries({ name: "My first entry", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: "entry_01" });
+            entry.equipmentId = engine._id;
+            entry.taskId = task._id;
+            entry = await entry.save();
+
+            // Act
+            let res = await chai.request(app).delete(`/api/entries/${boat._uiId}/${engine._uiId}/${task._uiId}/${entry._uiId}`).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
         });
 
         it('it should get a 400 http code as a result because the entry does not exist', async () => {
