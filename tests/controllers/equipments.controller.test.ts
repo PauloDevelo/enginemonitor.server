@@ -362,7 +362,6 @@ describe('Equipments', () => {
         });
     });
 
-
     describe('DELETE/:equipmentId equipment', () => {
         let engine: IEquipments;
 
