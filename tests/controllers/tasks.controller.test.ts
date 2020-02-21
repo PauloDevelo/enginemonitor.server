@@ -24,6 +24,10 @@ import AssetUser from '../../src/models/AssetUser';
 describe('Tasks', () => {
     let user: IUser;
     let userJWT: string;
+
+    let roUser: IUser;
+    let roUserJWT: string;
+
     let boat: IAssets;
     let engine: IEquipments;
     
@@ -43,11 +47,19 @@ describe('Tasks', () => {
 
         userJWT = `Token ${user.generateJWT()}`;
 
+        roUser = new Users({ name: "read", firstname: "only", email: "read.only@gmail.com" });
+        roUser.setPassword("test");
+        roUser = await roUser.save();
+        roUserJWT = `Token ${roUser.generateJWT()}`;
+
         boat = new Assets({_uiId: 'sailboat_01', brand: 'aluminium & techniques', manufactureDate: '1979/01/01', modelName: 'heliotrope', name: 'Arbutus',});
         boat = await boat.save();
 
         let assetUserLink = new AssetUser({ assetId: boat._id, userId: user._id });
         assetUserLink = await assetUserLink.save();
+
+        let assetRoUserLink = new AssetUser({ assetId: boat._id, userId: roUser._id, readonly: true });
+        assetRoUserLink = await assetRoUserLink.save();
 
         engine = new Equipments({name: "Engine", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"engine_01"});
         engine.assetId = boat._id;
@@ -141,6 +153,18 @@ describe('Tasks', () => {
 
             // Assert
             res.should.have.status(400);
+        });
+
+        it('it should get a task because the read only user has enough credential to get task', async () => {
+            // Arrange
+        
+            // Act
+            let res = await chai.request(app).get(getTasksUrl).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property('tasks');
+            res.body.tasks.length.should.be.eql(1);
         });
 
         it('it should get a task with a level 1 because the task were performed less than 12 months and less than 200 hours of usage', async () => {
@@ -372,6 +396,18 @@ describe('Tasks', () => {
             res.body.task._uiId.should.be.eql("asdggg");
         });
 
+        it('it should GET a 400 http code and a credential error because the read only user does not have enough credential to create a task', async () => {
+            // Arrange
+            let task = {name:"Vidange", usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId: "asdggg"};
+
+            // Act
+            let res = await chai.request(app).post(`/api/tasks/${boat._uiId}/${engine._uiId}/${task._uiId}`).send({task: task}).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
+        });
+
         it('it should GET a 422 http code as a result because the task name was missing', async () => {
             // Arrange
             let task = { usagePeriodInHour:200, periodInMonth:12, description:"Faire la vidange", _uiId:"task_01" };
@@ -590,6 +626,18 @@ describe('Tasks', () => {
             res.body.errors.should.have.property("name");
             res.body.errors.name.should.be.eql("alreadyexisting");
         });
+
+        it('it should get a 400 http code and a credential error as a result because the read only user does not have credential', async () => {
+            // Arrange
+            let jsonTask = {name:"Vidange d'huile"};
+            
+            // Act
+            let res = await chai.request(app).post(postTaskUrl).send({task: jsonTask}).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
+        });
     });
 
     describe('/DELETE/:equipmentId/:taskId delete task', () => {
@@ -658,6 +706,25 @@ describe('Tasks', () => {
 
             // Assert
             res.should.have.status(400);
+        });
+
+        it('it should get a 400 http code and a credential error because the read only user does not have enogh credentials', async () => {
+            // Arrange
+            let entry2 = new Entries({ name: "My second entry", date: new Date().toString(), age: 12346, remarks: "RAS2", _uiId:"entry_01" });
+            entry2.equipmentId = engine._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            let entry3 = new Entries({ name: "My third entry", date: new Date().toString(), age: 12347, remarks: "RAS3", _uiId:"entry_02" });
+            entry3.equipmentId = engine._id;
+            entry3 = await entry3.save();
+
+            // Act
+            let res = await chai.request(app).delete(deleteTaskUrl).set("Authorization", roUserJWT);
+
+            // Assert
+            res.should.have.status(400);
+            res.body.errors.should.be.eql('credentialError');
         });
     });
 });
