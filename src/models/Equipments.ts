@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 import {getUser} from "../utils/requestContext";
 
+import { deleteEntriesFromParent } from "./Entries";
+import {deleteExistingImages} from "./Images";
+import {deleteTasks} from "./Tasks";
+
 export enum AgeAcquisitionType {
     time = 0,
     manualEntry= 1,
@@ -34,13 +38,13 @@ EquipmentsSchema.methods.toJSON = async function() {
 
 export interface IEquipments extends mongoose.Document {
     _uiId: string;
-    brand: string;
-    ownerId: mongoose.Types.ObjectId;
-    name: string;
     age: number;
-    installation: Date;
     ageAcquisitionType: number;
     ageUrl: string;
+    brand: string;
+    installation: Date;
+    ownerId: mongoose.Types.ObjectId;
+    name: string;
 
     toJSON(): any;
 }
@@ -54,6 +58,17 @@ export const getEquipmentByUiId = async (equipmentUiId: string): Promise<IEquipm
 
     const query = { ownerId: user._id, _uiId: equipmentUiId };
     return await Equipments.findOne(query);
+};
+
+export const deleteEquipmentModel = async (equipment: IEquipments): Promise<void> => {
+    const promises = [];
+
+    promises.push(deleteExistingImages(equipment._uiId));
+    promises.push(deleteTasks(equipment._id));
+    promises.push(deleteEntriesFromParent({equipmentId: equipment._id, taskId: undefined}));
+    promises.push(equipment.remove());
+
+    await Promise.all(promises);
 };
 
 const Equipments = mongoose.model<IEquipments>("Equipments", EquipmentsSchema);

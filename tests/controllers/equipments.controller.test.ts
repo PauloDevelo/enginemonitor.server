@@ -1,7 +1,8 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
 
-import server from '../../../src/server';
+import server from '../../src/server';
 const app = server.app;
 
 import mongoose from 'mongoose';
@@ -13,12 +14,25 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
 
-import Users from '../../../src/models/Users';
-import Equipments, { AgeAcquisitionType } from '../../../src/models/Equipments';
-import Tasks from '../../../src/models/Tasks';
-import Entries from '../../../src/models/Entries';
+import Users from '../../src/models/Users';
+import Equipments, { AgeAcquisitionType } from '../../src/models/Equipments';
+import Tasks from '../../src/models/Tasks';
+import Entries from '../../src/models/Entries';
+
+
 
 describe('Equipments', () => {
+    before(() => {
+        mockLogger();
+        ignoredErrorMessages.push("[object Object]");
+        ignoredErrorMessages.push("No authorization token was found");
+        ignoredErrorMessages.push("jwt expired");
+    });
+
+    after(() => {
+        restoreLogger();
+    });
+
     afterEach(async () => {
         await Equipments.deleteMany({});  
         await Users.deleteMany({});     
@@ -310,7 +324,7 @@ describe('Equipments', () => {
 
             nbEntries = await Entries.countDocuments({});
             nbEntries.should.be.eql(0);
-        });
+        }).timeout(10000);
 
         it('it should get a 400 http code as a result because the equipment does not exist', async () => {
             let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });

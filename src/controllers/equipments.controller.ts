@@ -1,17 +1,12 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import { ServerResponse } from "http";
+import Equipments, { deleteEquipmentModel, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 
-import Entries from "../models/Entries";
-import Equipments, { getEquipmentByUiId, IEquipments } from "../models/Equipments";
-import Tasks from "../models/Tasks";
-
+import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
 import IController from "./IController";
-
-import logger from "../utils/logger";
 
 class EquipmentsController implements IController {
     private path: string = "/equipments";
@@ -26,10 +21,10 @@ class EquipmentsController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path,              auth.required, this.checkAuth)
-        .get(   this.path,                      auth.required, this.getEquipments)
-        .post(  this.path + "/:equipmentUiId",    auth.required, this.changeOrAddEquipment)
-        .delete(this.path + "/:equipmentUiId",    auth.required, this.deleteEquipment);
+        this.router.use(this.path,              auth.required, wrapAsync(this.checkAuth))
+        .get(   this.path,                      auth.required, wrapAsync(this.getEquipments))
+        .post(  this.path + "/:equipmentUiId",    auth.required, wrapAsync(this.changeOrAddEquipment))
+        .delete(this.path + "/:equipmentUiId",    auth.required, wrapAsync(this.deleteEquipment));
     }
 
     private checkEquipmentProperties = (equipment: IEquipments) => {
@@ -76,92 +71,65 @@ class EquipmentsController implements IController {
     }
 
     private getEquipments = async (req: express.Request, res: express.Response) => {
-        try {
-            const userId = getUser()._id;
+        const userId = getUser()._id;
 
-            const query = { ownerId: userId };
-            const equipments = await Equipments.find(query);
+        const query = { ownerId: userId };
+        const equipments = await Equipments.find(query);
 
-            const jsonEquipments: any[] = [];
-            for (const equipment of equipments) {
-                jsonEquipments.push(await equipment.toJSON());
-            }
-
-            return res.json({ equipments: jsonEquipments });
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+        const jsonEquipments: any[] = [];
+        for (const equipment of equipments) {
+            jsonEquipments.push(await equipment.toJSON());
         }
+
+        return res.json({ equipments: jsonEquipments });
     }
 
     private addEquipment = async (req: express.Request, res: express.Response) => {
-        try {
-            const { body: { equipment } } = req;
-            const userId = getUser()._id;
+        const { body: { equipment } } = req;
+        const userId = getUser()._id;
 
-            const errors = this.checkEquipmentProperties(equipment);
-            if (errors) {
-                return res.status(422).json(errors);
-            }
-
-            const query = { name: equipment.name, ownerId: userId };
-            const equipmentCounter = await Equipments.countDocuments(query);
-            if (equipmentCounter > 0) {
-                return res.status(422).json({ errors: { name: "alreadyexisting" } });
-            }
-
-            let newEquipment = new Equipments(equipment);
-            newEquipment.ownerId = userId;
-
-            newEquipment = await newEquipment.save();
-            res.json({ equipment: await newEquipment.toJSON() });
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+        const errors = this.checkEquipmentProperties(equipment);
+        if (errors) {
+            return res.status(422).json(errors);
         }
+
+        const query = { name: equipment.name, ownerId: userId };
+        const equipmentCounter = await Equipments.countDocuments(query);
+        if (equipmentCounter > 0) {
+            return res.status(422).json({ errors: { name: "alreadyexisting" } });
+        }
+
+        let newEquipment = new Equipments(equipment);
+        newEquipment.ownerId = userId;
+
+        newEquipment = await newEquipment.save();
+        res.json({ equipment: await newEquipment.toJSON() });
     }
 
     private changeOrAddEquipment = async (req: express.Request, res: express.Response) => {
-        try {
-            const { body: { equipment } } = req;
+        const { body: { equipment } } = req;
 
-            let existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
-            if (!existingEquipment) {
-                this.addEquipment(req, res);
-                return;
-            } else {
-                existingEquipment = Object.assign(existingEquipment, equipment);
-                existingEquipment = await existingEquipment.save();
+        let existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        if (!existingEquipment) {
+            this.addEquipment(req, res);
+            return;
+        } else {
+            existingEquipment = Object.assign(existingEquipment, equipment);
+            existingEquipment = await existingEquipment.save();
 
-                return res.json({ equipment: await existingEquipment.toJSON() });
-            }
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+            return res.json({ equipment: await existingEquipment.toJSON() });
         }
     }
 
     private deleteEquipment = async (req: express.Request, res: express.Response) => {
-        try {
-            const existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
-            if (!existingEquipment) {
-                return res.sendStatus(400);
-            }
-
-            await Entries.deleteMany({ equipmentId: existingEquipment._id});
-            await Tasks.deleteMany({ equipmentId: existingEquipment._id});
-
-            await existingEquipment.remove();
-            return res.json({ equipment: await existingEquipment.toJSON() });
-        } catch (error) {
-            this.handleCaughtError(req, res, error);
+        const existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        if (!existingEquipment) {
+            return res.sendStatus(400);
         }
-    }
 
-    private handleCaughtError = (req: express.Request, res: express.Response, err: any) => {
-        if (err instanceof ServerResponse) {
-            return;
-        } else {
-            logger.error(err);
-            res.sendStatus(500);
-        }
+        deleteEquipmentModel(existingEquipment);
+
+        return res.json({ equipment: await existingEquipment.toJSON() });
     }
 }
 

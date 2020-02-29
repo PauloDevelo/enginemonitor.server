@@ -1,9 +1,11 @@
 import mongoose from "mongoose";
 import { getEquipment } from "./Equipments";
+import { deleteExistingImages } from "./Images";
 import { getTask } from "./Tasks";
 
 export const EntriesSchema = new mongoose.Schema({
     _uiId: String,
+    ack: Boolean,
     age: Number,
     date: Date,
     equipmentId: mongoose.Schema.Types.ObjectId,
@@ -15,6 +17,7 @@ export const EntriesSchema = new mongoose.Schema({
 EntriesSchema.methods.toJSON = async function() {
     return {
         _uiId: this._uiId,
+        ack: this.ack,
         age: this.age,
         date: this.date,
         equipmentUiId: (await getEquipment(this.equipmentId))._uiId,
@@ -26,6 +29,7 @@ EntriesSchema.methods.toJSON = async function() {
 
 export interface IEntries extends mongoose.Document {
     _uiId: string;
+    ack: boolean;
     equipmentId: mongoose.Types.ObjectId;
     taskId: mongoose.Types.ObjectId | undefined;
     name: string;
@@ -39,6 +43,20 @@ export interface IEntries extends mongoose.Document {
 export const getEntryByUiId = async (equipmentId: mongoose.Types.ObjectId, entryUiId: string): Promise<IEntries> => {
     const query = { equipmentId, _uiId: entryUiId };
     return await Entries.findOne(query);
+};
+
+export const deleteEntriesFromParent = async (conditions: any): Promise<void> => {
+    const entries = await Entries.find(conditions);
+    const promises = entries.map((entry) => deleteEntry(entry));
+    Promise.all(promises);
+};
+
+export const deleteEntry = async (entry: IEntries): Promise<void> => {
+    const promises = [];
+    promises.push(deleteExistingImages(entry._uiId));
+    promises.push(entry.remove());
+
+    await Promise.all(promises);
 };
 
 const Entries = mongoose.model<IEntries>("Entries", EntriesSchema);

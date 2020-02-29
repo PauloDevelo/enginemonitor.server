@@ -13,5 +13,9 @@
 
     "SENDGRID_API_KEY": "Send grid API key",
 
-    "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT"
+    "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT",
+
+    // Size limit of the image folder for one user
+    "userImageFolderLimitInByte": 20971520,
+    "ImageFolder": "uploads"
  }

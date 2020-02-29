@@ -14,6 +14,7 @@ import https from "https";
 import morgan from "morgan";
 import path from "path";
 
+import { ServerResponse } from "http";
 import IController from "./controllers/IController";
 
 class App {
@@ -25,6 +26,7 @@ class App {
 
         this.initializeMiddlewares();
         this.initializeControllers(controllers);
+        this.initializeErrorHandlers();
     }
 
     public listen() {
@@ -57,32 +59,49 @@ class App {
             this.app.use(morgan("dev"));
         }
 
-        this.app.use(bodyParser.urlencoded({ extended: false }));
-        this.app.use(bodyParser.json());
+        this.app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+        this.app.use(bodyParser.json({limit: "50mb"}));
         this.app.use(express.static(path.join(__dirname, "public")));
 
-        this.app.use(auth.optional, requestContextBinder());
+        this.app.use("/api/uploads", express.static(config.get("ImageFolder")));
 
-        if (!isProd) {
-            this.app.use(errorHandler());
-        }
+        this.app.use(auth.optional, requestContextBinder());
     }
 
     private initializeControllers(controllers: IController[]) {
         controllers.forEach((controller) => {
             this.app.use(this.path, controller.getRouter());
         });
+    }
 
-        this.app.use(this.path, (err: any, req: express.Request, res: express.Response, next: any) => {
-            if (err) {
-                res.status(err.status || 500).json({
-                    errors: {
-                        error: err,
-                        message: err.message,
-                    },
-                });
-            }
-        });
+    private initializeErrorHandlers() {
+        this.app.use(this.logErrors);
+        this.app.use(this.clientErrorHandler);
+        this.app.use(this.errorHandler);
+    }
+
+    private logErrors(err: any, req: express.Request, res: express.Response, next: any) {
+        logger.error(err);
+        next(err);
+    }
+
+    private clientErrorHandler(err, req, res, next) {
+        if (req.xhr) {
+          res.status(500).send({ error: "Something failed!" });
+        } else {
+          next(err);
+        }
+      }
+
+    private errorHandler(err: any, req: express.Request, res: express.Response, next: any) {
+        if (!(err instanceof ServerResponse)) {
+            res.status(err.status || 500).json({
+                errors: {
+                    error: err,
+                    message: err.message,
+                },
+            });
+        }
     }
 }
 

@@ -1,42 +1,25 @@
-import config, {isDev, isTest} from "./configUtils";
-import logger from "./logger";
+import {isTest} from "./configUtils";
 
-const expectedVersion = 0.4;
+export const expectedVersion = 0.5;
 
-import mongoose, { Schema } from "mongoose";
+import { rejects } from "assert";
+import DbMetadatas from "../models/Metadata";
 
-// Configure mongoose's promise to global promise
-mongoose.Promise = global.Promise;
-
-// Configure Mongoose
-mongoose.connect("mongodb:" + config.get("DBHost"), {useNewUrlParser: true});
-if (isDev) {
-  mongoose.set("debug", true);
-}
-
-const DbMetadaSchema = new mongoose.Schema({ version: Number });
-interface IDbMetada extends mongoose.Document {
-    version: number;
-}
-
-const DbMetadatas = mongoose.model<IDbMetada>("DbMetadatas", DbMetadaSchema);
-
-export default async function CheckDbVersion(callBackOnSuccess: () => void): Promise<void> {
-    try {
+export default async function getDbVersion(): Promise<number> {
+    return new Promise((resolve, reject) => {
         if (isTest) {
-            callBackOnSuccess();
+            resolve();
         } else {
-            const dbMetadataDoc = await DbMetadatas.findOne();
-
-            if (dbMetadataDoc.version !== expectedVersion) {
-                // tslint:disable-next-line:max-line-length
-                logger.error(`The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`);
-            } else {
-                callBackOnSuccess();
-            }
+            DbMetadatas.findOne().then((dbMetadataDoc) => {
+                if (dbMetadataDoc.version !== expectedVersion) {
+                    const  errorMessage: string = `The current version ${dbMetadataDoc.version} doesn't match with the expected version ${expectedVersion}. Please upgrade the database.`;
+                    throw new Error(errorMessage);
+                } else {
+                    resolve(dbMetadataDoc.version);
+                }
+            }).catch((reason) => {
+                reject(reason);
+            });
         }
-    } catch (err) {
-        logger.error("Error when getting the version of the database", err);
-    }
-
+    });
 }

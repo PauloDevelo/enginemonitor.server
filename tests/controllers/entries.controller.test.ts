@@ -1,7 +1,8 @@
 //During the test the env variable is set to test
 process.env.NODE_ENV = 'test';
+import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
 
-import server from '../../../src/server';
+import server from '../../src/server';
 const app = server.app;
 
 const chai = require('chai')
@@ -11,12 +12,21 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
 
-import Users from '../../../src/models/Users';
-import Equipments from '../../../src/models/Equipments';
-import Tasks from '../../../src/models/Tasks';
-import Entries from '../../../src/models/Entries';
+import Users from '../../src/models/Users';
+import Equipments from '../../src/models/Equipments';
+import Tasks from '../../src/models/Tasks';
+import Entries from '../../src/models/Entries';
 
 describe('Entries', () => {
+    before(() => {
+        mockLogger();
+        ignoredErrorMessages.push("[object Object]");
+    });
+
+    after(() => {
+        restoreLogger();
+    });
+
     afterEach(async () => {
         await Entries.deleteMany({}); 
         await Tasks.deleteMany({}); 
@@ -120,7 +130,7 @@ describe('Entries', () => {
 
             res.body.entries[2].should.have.property("equipmentUiId");
             res.body.entries[2].equipmentUiId.should.be.eql("boat_01");
-        });
+        }).timeout(5000);
 
         it('it should GET a 400 http code as a result because the user does not exist', async () => {
             // Arrange
@@ -424,13 +434,57 @@ describe('Entries', () => {
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
             res.body.entry.should.have.property("_uiId");
+            res.body.entry.should.have.property("ack");
             res.body.entry.should.not.have.property("_id");
-
+            
             res.body.entry.name.should.be.eql("My first vidange",);
             res.body.entry.age.should.be.eql(12345);
             res.body.entry.remarks.should.be.eql("RAS");
             res.body.entry.equipmentUiId.should.be.eql(boat._uiId.toString());
             res.body.entry._uiId.should.be.eql('123456');
+            res.body.entry.ack.should.be.eql(true);
+        });
+
+        it('it should GET a 200 http code as a result because the entry was return successfully', async () => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+
+            let boat = new Equipments({name: "Arbutus", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId: "boat_01"});
+            boat.ownerId = user._id;
+            boat = await  boat.save();
+
+            let task = new Tasks({name:"Vidange", usagePeriodInHour:200, periodMonth:12, description:"Faire la vidange", _uiId: "task_01"});
+            task.equipmentId = boat._id;
+            task = await task.save();
+
+            let entry = { name: "My first vidange", date: new Date().toString(), age: 12345, remarks: "RAS", _uiId: '123456', ack: false }
+
+            // Act
+            let res = await chai.request(app).post('/api/entries/' + boat._uiId.toString() + '/' + task._uiId.toString() + '/' + entry._uiId).send({entry: entry}).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(200);
+            res.body.should.have.property("entry");
+            res.body.entry.should.be.a("object");
+            res.body.entry.should.have.property("equipmentUiId");
+            res.body.entry.should.not.have.property("taskId");
+            res.body.entry.should.not.have.property("equipmentId");
+            res.body.entry.should.have.property("name");
+            res.body.entry.should.have.property("date");
+            res.body.entry.should.have.property("age");
+            res.body.entry.should.have.property("remarks");
+            res.body.entry.should.have.property("_uiId");
+            res.body.entry.should.have.property("ack");
+            res.body.entry.should.not.have.property("_id");
+            
+            res.body.entry.name.should.be.eql("My first vidange",);
+            res.body.entry.age.should.be.eql(12345);
+            res.body.entry.remarks.should.be.eql("RAS");
+            res.body.entry.equipmentUiId.should.be.eql(boat._uiId.toString());
+            res.body.entry._uiId.should.be.eql('123456');
+            res.body.entry.ack.should.be.eql(false);
         });
 
         it('it should GET a 200 http code as a result because the orphan entry was return successfully', async () => {
@@ -459,12 +513,14 @@ describe('Entries', () => {
             res.body.entry.should.have.property("age");
             res.body.entry.should.have.property("remarks");
             res.body.entry.should.have.property("_uiId");
+            res.body.entry.should.have.property("ack");
 
             res.body.entry.name.should.be.eql("My first vidange",);
             res.body.entry.age.should.be.eql(12345);
             res.body.entry.remarks.should.be.eql("RAS");
             res.body.entry.equipmentUiId.should.be.eql(boat._uiId.toString());
             res.body.entry._uiId.should.be.eql("123456");
+            res.body.entry.ack.should.be.eql(true);
         });
 
         it('it should GET a 422 http code as a result because the entry _uiId was missing', async () => {
@@ -848,7 +904,7 @@ describe('Entries', () => {
             res.body.entry.should.not.have.property("_id");
             res.body.entry.should.have.property("_uiId");
             res.body.entry._uiId.should.be.eql(entry._uiId.toString());
-        });
+        }).timeout(5000);
 
         it('it should get a 200 http code as a result because the entry was deleted successfully', async () => {
             // Arrange

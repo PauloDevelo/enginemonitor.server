@@ -15,6 +15,10 @@
 # production
 /build
 
+# static images to serve
+/uploads
+/tests/uploads
+
 # misc
 .DS_Store
 .env.local
@@ -29,3 +33,4 @@ config/dev.json
 config/prod.json
 logs/equipmentMaintenanceError.log
 logs/equipmentMaintenanceOut.log
+logs

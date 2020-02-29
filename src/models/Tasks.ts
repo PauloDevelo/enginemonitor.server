@@ -1,8 +1,9 @@
 import moment from "moment";
 import mongoose from "mongoose";
 
-import Entries, { IEntries } from "./Entries";
+import Entries, { deleteEntriesFromParent, IEntries } from "./Entries";
 import Equipments, { AgeAcquisitionType } from "./Equipments";
+import {deleteExistingImages} from "./Images";
 
 export const TasksSchema = new mongoose.Schema({
     _uiId: String,
@@ -13,8 +14,8 @@ export const TasksSchema = new mongoose.Schema({
     usagePeriodInHour: Number,
 });
 
-TasksSchema.methods.getLastEntry = async function(): Promise<IEntries> {
-    const query = { equipmentId: this.equipmentId, taskId: this._id };
+TasksSchema.methods.getLastAckEntry = async function(): Promise<IEntries> {
+    const query = { equipmentId: this.equipmentId, taskId: this._id, ack: true };
     let entries = await Entries.find(query);
     entries = entries.sort((a, b) => {
         if ( a.date > b.date) {
@@ -33,10 +34,10 @@ TasksSchema.methods.getLastEntry = async function(): Promise<IEntries> {
     }
 };
 
-TasksSchema.methods.getLastEntryAge = async function(): Promise<number> {
-    const lastEntry = await this.getLastEntry();
-    if (lastEntry != null) {
-        return lastEntry.age;
+TasksSchema.methods.getLastAckEntryAge = async function(): Promise<number> {
+    const lastAckEntry = await this.getLastAckEntry();
+    if (lastAckEntry != null) {
+        return lastAckEntry.age;
     } else {
         return 0;
     }
@@ -49,13 +50,13 @@ TasksSchema.methods.getTimeInHourLeft = async function(): Promise<number> {
 
     const equipment = await Equipments.findById(this.equipmentId);
 
-    return  this.usagePeriodInHour + await this.getLastEntryAge() - equipment.age;
+    return  this.usagePeriodInHour + await this.getLastAckEntryAge() - equipment.age;
 };
 
-TasksSchema.methods.getLastEntryDate = async function(): Promise<Date> {
-    const lastEntry = await this.getLastEntry();
-    if (lastEntry != null) {
-        return lastEntry.date;
+TasksSchema.methods.getLastAckEntryDate = async function(): Promise<Date> {
+    const lastAckEntry = await this.getLastAckEntry();
+    if (lastAckEntry != null) {
+        return lastAckEntry.date;
     } else {
         const equipment = await Equipments.findById(this.equipmentId);
         return equipment.installation;
@@ -63,7 +64,7 @@ TasksSchema.methods.getLastEntryDate = async function(): Promise<Date> {
 };
 
 TasksSchema.methods.getNextDueDate = async function(): Promise<Date> {
-    const nextDueDate = moment(await this.getLastEntryDate());
+    const nextDueDate = moment(await this.getLastAckEntryDate());
     nextDueDate.add(this.periodInMonth, "M");
 
     return nextDueDate.toDate();
@@ -123,10 +124,10 @@ export interface ITasks extends mongoose.Document {
     periodInMonth: number;
     description: string;
 
-    getLastEntry(): Promise<IEntries>;
-    getLastEntryAge(): Promise<number>;
+    getLastAckEntry(): Promise<IEntries>;
+    getLastAckEntryAge(): Promise<number>;
     getTimeInHourLeft(): Promise<number>;
-    getLastEntryDate(): Promise<Date>;
+    getLastAckEntryDate(): Promise<Date>;
     getNextDueDate(): Promise<Date>;
     getLevel(): Promise<number>;
     toJSON(): Promise<any>;
@@ -139,6 +140,24 @@ export const getTaskByUiId = async (equipmentId: mongoose.Types.ObjectId, taskUi
 
 export const getTask = async (taskId: mongoose.Types.ObjectId): Promise<ITasks> => {
     return await Tasks.findById(taskId);
+};
+
+export const deleteTasks = async (equipmentId: mongoose.Types.ObjectId): Promise<void> => {
+    const tasks = await Tasks.find({ equipmentId });
+    const promises = tasks.map((task) => {
+        return deleteTask(task);
+    });
+
+    await Promise.all(promises);
+};
+
+export const deleteTask = async (task: ITasks): Promise<void> => {
+    const promises = [];
+    promises.push(deleteExistingImages(task._uiId));
+    promises.push(deleteEntriesFromParent({taskId: task._id}));
+    promises.push(task.remove());
+
+    await Promise.all(promises);
 };
 
 const Tasks = mongoose.model<ITasks>("Tasks", TasksSchema);
