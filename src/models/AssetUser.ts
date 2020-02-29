@@ -6,8 +6,8 @@ import { IUser } from "./Users";
 
 export const AssetUserSchema = new mongoose.Schema({
   assetId: mongoose.Types.ObjectId,
-  userId: mongoose.Types.ObjectId,
-  readonly: Boolean
+  readonly: Boolean,
+  userId: mongoose.Types.ObjectId
 });
 
 AssetUserSchema.methods.toJSON = async function() {
@@ -24,6 +24,7 @@ export interface IAssetUser extends mongoose.Document {
   toJSON(): any;
 }
 
+// tslint:disable-next-line:max-line-length
 export const createUserAssetLink = async ({ user, asset, readonly }: { user: IUser, asset: IAssets, readonly?: boolean }) => {
   const newAssetUserLink = new AssetUser({ assetId: asset._id, userId: user._id, readonly });
   return await newAssetUserLink.save();

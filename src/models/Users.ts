@@ -11,13 +11,13 @@ export const UsersSchema = new mongoose.Schema({
   _uiId: String,
   email: String,
   firstname: String,
+  forbidCreatingAsset: Boolean,
+  forbidUploadingImage: Boolean,
   hash: String,
   isVerified: Boolean,
   name: String,
   salt: String,
-  verificationToken: String,
-  forbidUploadingImage: Boolean,
-  forbidCreatingAsset: Boolean
+  verificationToken: String
 });
 
 UsersSchema.methods.setPassword = function(password: string) {
@@ -60,11 +60,11 @@ UsersSchema.methods.toAuthJSON = async function() {
     _uiId: this._uiId,
     email: this.email,
     firstname: this.firstname,
+    forbidCreatingAsset: this.forbidCreatingAsset,
+    forbidUploadingImage: this.forbidUploadingImage,
     imageFolder: this.getUserImageFolder(),
     imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
     imageFolderSizeLimitInByte: this.getUserImageFolderSizeLimitInByte(),
-    forbidUploadingImage: this.forbidUploadingImage,
-    forbidCreatingAsset: this.forbidCreatingAsset,
     name: this.name,
     token: this.generateJWT(),
   };

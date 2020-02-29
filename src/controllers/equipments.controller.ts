@@ -2,15 +2,15 @@ import * as express from "express";
 import auth from "../security/auth";
 
 import { getAssetByUiId } from "../models/Assets";
-import Equipments, { deleteEquipmentModel, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import AssetUser from "../models/AssetUser";
+import Equipments, { deleteEquipmentModel, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 
 import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
 import { Mongoose } from "mongoose";
-import IController from "./IController";
 import { checkCredentials } from "./controller.helper";
+import IController from "./IController";
 
 class EquipmentsController implements IController {
     private path: string = "/equipments";
@@ -26,6 +26,7 @@ class EquipmentsController implements IController {
 
     private intializeRoutes() {
         this.router
+        // tslint:disable-next-line:max-line-length
         .use(   this.path + "/:assetUiId",                      auth.required, wrapAsync(this.checkAuth), wrapAsync(checkCredentials))
         .get(   this.path + "/:assetUiId",                      auth.required, wrapAsync(this.getEquipments))
         .post(  this.path + "/:assetUiId/:equipmentUiId",       auth.required, wrapAsync(this.changeOrAddEquipment))

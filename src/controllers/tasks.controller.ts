@@ -10,8 +10,8 @@ import Assets, { getAssetByUiId, IAssets } from "../models/Assets";
 import { AgeAcquisitionType, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 import Tasks, { deleteTask, getTaskByUiId, ITasks } from "../models/Tasks";
 
-import IController from "./IController";
 import { checkCredentials } from "./controller.helper";
+import IController from "./IController";
 
 class TasksController implements IController {
     private path: string = "/tasks";

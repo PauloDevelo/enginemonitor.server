@@ -10,8 +10,8 @@ import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
 import { Mongoose } from "mongoose";
-import IController from "./IController";
 import { checkCredentials } from "./controller.helper";
+import IController from "./IController";
 
 class AssetsController implements IController {
     private path: string = "/assets";
@@ -30,6 +30,7 @@ class AssetsController implements IController {
         .use(   this.path,                      auth.required, wrapAsync(this.checkAuth))
         .get(   this.path,                      auth.required, wrapAsync(this.getAssets))
         .post(  this.path + "/:assetUiId",      auth.required, wrapAsync(this.changeOrAddAsset))
+        // tslint:disable-next-line:max-line-length
         .delete(this.path + "/:assetUiId",      auth.required, wrapAsync(this.checkDeleteCredentials), wrapAsync(this.deleteAsset));
     }
 
@@ -69,25 +70,26 @@ class AssetsController implements IController {
 
     private checkNameDoesNotExist = (next: (req: express.Request, res: express.Response) => void) => {
         return async (req: express.Request, res: express.Response) => {
-            const assetUiId = req.params.assetUiId
+            const assetUiId = req.params.assetUiId;
             const { body: { asset } } = req;
 
-            if (asset.name !== undefined && assetUiId !== undefined){
+            if (asset.name !== undefined && assetUiId !== undefined) {
+                // tslint:disable-next-line:max-line-length
                 const assetWithSimilarNameIndex = (await getUserAssets()).findIndex((a) => a.name === asset.name && a._uiId !== assetUiId);
                 if (assetWithSimilarNameIndex !== -1) {
                     return res.status(422).json({ errors: { name: "alreadyexisting" } });
                 }
             }
-            
+
             return next(req, res);
         };
     }
 
     private checkAssetCreationCredential = async (req: express.Request, res: express.Response, next: any) => {
         const user = getUser();
-        
-        if(user.forbidCreatingAsset){
-            return res.status(400).json({ errors: 'credentialError' });
+
+        if (user.forbidCreatingAsset) {
+            return res.status(400).json({ errors: "credentialError" });
         }
 
         next(req, res);
@@ -133,7 +135,7 @@ class AssetsController implements IController {
 
         let existingAsset = await getAssetByUiId(req.params.assetUiId);
         if (!existingAsset) {
-
+            // tslint:disable-next-line:max-line-length
             this.checkAssetCreationCredential(req, res, this.checkAssetProperties(this.checkNameDoesNotExist(this.addAsset)));
         } else {
             const updateExistingAsset = async () => {
@@ -175,22 +177,21 @@ class AssetsController implements IController {
         const user = getUser();
         const asset = await getAssetByUiId(req.params.assetUiId);
 
-        if(!asset){
+        if (!asset) {
             return res.status(400).json({ errors: { entity: "notfound" } });
         }
 
-        try{
+        try {
             const assetUser = await AssetUser.findOne({ assetId: asset._id, userId: user._id });
 
-            if(assetUser.readonly){
-                return res.status(400).json({ errors: 'credentialError' });
+            if (assetUser.readonly) {
+                return res.status(400).json({ errors: "credentialError" });
             }
             next();
+        } catch (error) {
+            return res.status(400).json({ errors: "credentialError" });
         }
-        catch(error){
-            return res.status(400).json({ errors: 'credentialError' });
-        }
-        
+
         return;
       }
 }

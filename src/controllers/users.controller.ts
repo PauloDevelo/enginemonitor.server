@@ -11,9 +11,9 @@ import Users, { IUser } from "../models/Users";
 
 import IController from "./IController";
 
-import getUser from "../utils/requestContext";
 import { getAssetByUiId } from "../models/Assets";
 import AssetUser from "../models/AssetUser";
+import getUser from "../utils/requestContext";
 
 class UsersController implements IController {
     private path: string = "/users";
@@ -41,7 +41,8 @@ class UsersController implements IController {
         // tslint:disable-next-line:max-line-length
         .get(this.path + "/verification",       auth.optional, wrapAsync(this.checkCheckEmailQuery), wrapAsync(this.checkEmail))
         .get(this.path + "/current",            auth.required, wrapAsync(this.getCurrent))
-        .get(`${this.path}/credentials/:assetUiId`, auth.required, wrapAsync(this.checkAssetOwnership), wrapAsync(this.getUserCredentials))
+        // tslint:disable-next-line:max-line-length
+        .get(`${this.path}/credentials/:assetUiId`, auth.required, wrapAsync(this.checkAssetOwnership), wrapAsync(this.getUserCredentials));
     }
 
     private checkAssetOwnership = async (req: express.Request, res: express.Response, authSucceed: any) => {

@@ -5,9 +5,9 @@ import EntriesController from "./controllers/entries.controller";
 import EquipmentsController from "./controllers/equipments.controller";
 import GuestLinksController from "./controllers/guestlinks.controller";
 import ImagesController from "./controllers/images.controller";
+import ServerController from "./controllers/server.controller";
 import TasksController from "./controllers/tasks.controller";
 import UsersController from "./controllers/users.controller";
-import ServerController from "./controllers/server.controller";
 import logger from "./utils/logger";
 import getDbVersion from "./utils/mongoDb";
 

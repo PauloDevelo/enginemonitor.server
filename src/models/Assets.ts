@@ -30,8 +30,8 @@ AssetsSchema.methods.toJSON = async function() {
 
 AssetsSchema.methods.isOwnedByCurrentUser = async function() {
     const assets = await getUserAssets();
-    return assets.findIndex(asset => asset.id === this.id) !== -1;
-}
+    return assets.findIndex((asset) => asset.id === this.id) !== -1;
+};
 
 export interface IAssets extends mongoose.Document {
     _uiId: string;

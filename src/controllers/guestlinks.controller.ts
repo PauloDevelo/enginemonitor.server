@@ -12,7 +12,7 @@ import Users from "../models/Users";
 
 import IController from "./IController";
 
-import { checkUserCredentials } from '../controllers/controller.helper';
+import { checkUserCredentials } from "../controllers/controller.helper";
 
 class GuestLinksController implements IController {
     private path: string = "/guestlinks";
@@ -73,15 +73,16 @@ class GuestLinksController implements IController {
             return res.status(400).json({ errors: { assetUiId: "isinvalid" } });
         }
 
-        const next = async() => {
+        const next = async () => {
             const niceKey = shortid.generate();
-    
+
+            // tslint:disable-next-line:max-line-length
             let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true, forbidUploadingImage: true, forbidCreatingAsset: true });
             guestUser.setPassword(niceKey);
             guestUser = await guestUser.save();
-    
+
             await createUserAssetLink( { user: guestUser, asset, readonly: true});
-    
+
             const guestLink = new GuestLinks({
                 _uiId: guestLinkUiId,
                 guestUserId: guestUser._id,
@@ -89,7 +90,7 @@ class GuestLinksController implements IController {
                 niceKey
             });
             await guestLink.save();
-    
+
             return res.json({ guestlink: await guestLink.toJSON() });
         };
 
@@ -131,18 +132,18 @@ class GuestLinksController implements IController {
         const guestUser = await Users.findById(guestLinkToRemove.guestUserId);
         const assetUser = await AssetUser.findOne({ userId: guestUser._id });
         const asset = await Assets.findById(assetUser.assetId);
-        if ((await asset.isOwnedByCurrentUser()) === false){
+        if ((await asset.isOwnedByCurrentUser()) === false) {
             return res.status(400).json({ errors: { guestLinkUiId: "isinvalid" } });
         }
 
-        const next = async() => {
+        const next = async () => {
             await assetUser.remove();
             await guestUser.remove();
             guestLinkToRemove = await guestLinkToRemove.remove();
-    
+
             return res.json({ guestlink: await guestLinkToRemove.toJSON() });
-        }
-        
+        };
+
         checkUserCredentials(req.method, asset._uiId, res, next);
     }
 

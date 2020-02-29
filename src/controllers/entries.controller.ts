@@ -11,8 +11,8 @@ import { getTaskByUiId } from "../models/Tasks";
 import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
-import IController from "./IController";
 import { checkCredentials } from "./controller.helper";
+import IController from "./IController";
 
 class EntriesController implements IController {
     private path: string = "/entries";
