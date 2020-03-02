@@ -624,6 +624,27 @@ describe('Images', () => {
             res.body.image.description.should.be.eql("image1 description modified");
         });
 
+        it('it shoudl get a 400 code error because the image cannot be found', async () => {
+            // Arrange
+            const image1Path = config.get("ImageFolder") + "image1.jpeg";
+            const thumbnail1Path = config.get("ImageFolder") + "thumbnail1.jpeg";
+            let image1 = new Images({ _uiId: "image_01", description: "image 1 description", name: "image1", parentUiId: "engine_01" , path:image1Path, thumbnailPath:thumbnail1Path, title:"image1"});
+            
+            const jsonImage1 = await image1.toJSON()
+
+            let jsonImage = {description:"image1 description modified"};
+            
+            // Act
+            let res = await chai.request(app).post('/api/images/'+ engine._uiId + '/' + jsonImage1._uiId).send({image: jsonImage}).set("Authorization", "Token " + user.generateJWT());
+
+            // Assert
+            res.should.have.status(400);
+            res.body.should.have.property("errors");
+            res.body.errors.should.be.a("object");
+            res.body.errors.should.have.property("entity");
+            res.body.errors.entity.should.be.eql("notfound");    
+        })
+
         it('it should get a 400 http code as a result because the image does not belong to the boat of the request', async () => {
             // Arrange
             fs.copyFileSync('tests/toUpload/image1.jpeg', config.get("ImageFolder") + 'image1.jpeg');

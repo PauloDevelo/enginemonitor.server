@@ -69,14 +69,16 @@ class ImagesController implements IController {
         const user = getUser();
         if (user === null || user === undefined) {
             res.status(400).json({ errors: { authentication: "error" } });
+            return;
         }
 
         const userId = user._id;
-        if (await this.checkOwnership(userId, req.params.parentUiId) === true) {
-            next();
-        } else {
+        if (await this.checkOwnership(userId, req.params.parentUiId) === false) {
             res.status(400).json({ errors: { authentication: "error" } });
+            return;
         }
+
+        next();
     }
 
     private checkCredentials = async (req: express.Request, res: express.Response, next: any) => {
@@ -101,14 +103,17 @@ class ImagesController implements IController {
     private checkParentBelongsImage = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
         const existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
-            throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
+            res.status(400).json({ errors: { entity: "notfound" } });
+            return;
         }
 
         if (existingImage.parentUiId !== req.params.parentUiId) {
             res.status(400).json({ errors: { operation: "invalid" } });
-        } else {
-            next();
+            return;
         }
+
+        next();
+        return;
     }
 
     private getImages = async (req: express.Request, res: express.Response) => {
@@ -160,7 +165,8 @@ class ImagesController implements IController {
 
         let existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
-            throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
+            res.status(400).json({ errors: { entity: "notfound" } });
+            return;
         }
 
         existingImage = Object.assign(existingImage, image);
