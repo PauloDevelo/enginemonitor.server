@@ -55,8 +55,12 @@ export const getImageByUiId = async (uiId: string): Promise<IImages> => {
 
 export const deleteImage = async (image: IImages): Promise<void> => {
     try {
-        fs.unlinkSync(image.path);
-        fs.unlinkSync(image.thumbnailPath);
+        if (fs.existsSync(image.path)) {
+            fs.unlinkSync(image.path);
+        }
+        if (fs.existsSync(image.thumbnailPath)) {
+            fs.unlinkSync(image.thumbnailPath);
+        }
 
         await image.remove();
     } catch (err) {
