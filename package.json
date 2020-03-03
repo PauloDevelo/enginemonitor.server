@@ -21,6 +21,7 @@
     "multer": "^1.4.2",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
+    "shortid": "^2.2.15",
     "winston": "^3.2.1"
   },
   "devDependencies": {
@@ -59,7 +60,7 @@
     "ts-start": "ts-node ./src/server.ts",
     "dev:start": "npm-run-all build start",
     "start": "node .",
-    "testWithCoverage": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha -r ts-node/register tests/**/*.test.ts --exit",
+    "testWithCoverage": "nyc -r lcov -e .ts -x \"*.test.ts\" mocha --no-timeouts -r ts-node/register tests/**/*.test.ts --exit",
     "reportCoverage": "nyc report",
     "test": "npm-run-all testWithCoverage reportCoverage"
   },

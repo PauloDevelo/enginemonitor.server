@@ -3,6 +3,7 @@ import auth from "../security/auth";
 
 import fs from "fs";
 
+import { getUserAssets } from "../models/AssetUser";
 import Entries from "../models/Entries";
 import Equipments from "../models/Equipments";
 import Images, {deleteImage, getImageByUiId, getImagesByParentUiId} from "../models/Images";
@@ -31,7 +32,8 @@ class ImagesController implements IController {
 
     private initializeRoutes() {
         this.router
-        .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams))
+        // tslint:disable-next-line:max-line-length
+        .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams), wrapAsync(this.checkCredentials))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
         .post(  this.path + "/:parentUiId", wrapAsync(checkImageQuota), this.cpUpload, wrapAsync(this.addImage))
         // tslint:disable-next-line:max-line-length
@@ -67,13 +69,33 @@ class ImagesController implements IController {
         const user = getUser();
         if (user === null || user === undefined) {
             res.status(400).json({ errors: { authentication: "error" } });
+            return;
         }
 
         const userId = user._id;
-        if (await this.checkOwnership(userId, req.params.parentUiId) === true) {
-            next();
-        } else {
+        if (await this.checkOwnership(userId, req.params.parentUiId) === false) {
             res.status(400).json({ errors: { authentication: "error" } });
+            return;
+        }
+
+        next();
+    }
+
+    private checkCredentials = async (req: express.Request, res: express.Response, next: any) => {
+        switch (req.method) {
+            case "GET":
+                next();
+                break;
+            case "POST":
+            case "DELETE":
+            default:
+                const user = getUser();
+
+                if (user.forbidUploadingImage) {
+                    return res.status(400).json({ errors: "credentialError" });
+                }
+                next();
+                return;
         }
     }
 
@@ -81,14 +103,17 @@ class ImagesController implements IController {
     private checkParentBelongsImage = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
         const existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
-            throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
+            res.status(400).json({ errors: { entity: "notfound" } });
+            return;
         }
 
         if (existingImage.parentUiId !== req.params.parentUiId) {
             res.status(400).json({ errors: { operation: "invalid" } });
-        } else {
-            next();
+            return;
         }
+
+        next();
+        return;
     }
 
     private getImages = async (req: express.Request, res: express.Response) => {
@@ -140,7 +165,8 @@ class ImagesController implements IController {
 
         let existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
-            throw new Error("The image " + req.params.imageUiId + " doesn't exist.");
+            res.status(400).json({ errors: { entity: "notfound" } });
+            return;
         }
 
         existingImage = Object.assign(existingImage, image);
@@ -152,7 +178,8 @@ class ImagesController implements IController {
     private deleteImage = async (req: express.Request, res: express.Response): Promise<void> => {
         const existingImage = await getImageByUiId(req.params.imageUiId);
         if (!existingImage) {
-            res.sendStatus(400);
+            res.status(400).json({ errors: { entity: "notfound" } });
+            return;
         }
 
         const imageJson = await existingImage.toJSON();
@@ -163,27 +190,30 @@ class ImagesController implements IController {
     }
 
     private checkOwnership = async (userId: Types.ObjectId, parentUiId: string): Promise<boolean> => {
+        const assetsOwned = await getUserAssets();
+
         const query = { _uiId : parentUiId };
 
-        const equipments = await Equipments.find(query);
-        if (equipments.length > 0) {
-            return equipments[0].ownerId.toString() === userId.toString();
+        const assetIds = (await Equipments.find(query)).map((equipment) => equipment.assetId);
+        if (assetIds.length > 0) {
+            // tslint:disable-next-line:max-line-length
+            return assetsOwned.findIndex((assetOwned) => assetIds.findIndex((assetId) => assetId.toString() === assetOwned._id.toString()) !== -1) !== -1;
         }
 
         const tasks = await Tasks.find(query);
         if (tasks.length > 0) {
             const task = tasks[0];
             const parentEquipment = await Equipments.findById(task.equipmentId);
-
-            return parentEquipment.ownerId.toString() === userId.toString();
+            // tslint:disable-next-line:max-line-length
+            return assetsOwned.findIndex((assetOwned) => assetOwned._id.toString() === parentEquipment.assetId.toString()) !== -1;
         }
 
         const entries = await Entries.find(query);
         if (entries.length > 0) {
             const entry = entries[0];
             const parentEquipment = await Equipments.findById(entry.equipmentId);
-
-            return parentEquipment.ownerId.toString() === userId.toString();
+            // tslint:disable-next-line:max-line-length
+            return assetsOwned.findIndex((assetOwned) => assetOwned._id.toString() === parentEquipment.assetId.toString()) !== -1;
         }
 
         return true;

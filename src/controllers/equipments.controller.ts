@@ -1,11 +1,15 @@
 import * as express from "express";
 import auth from "../security/auth";
 
+import { getAssetByUiId } from "../models/Assets";
+import AssetUser from "../models/AssetUser";
 import Equipments, { deleteEquipmentModel, getEquipmentByUiId, IEquipments } from "../models/Equipments";
 
 import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
+import { Mongoose } from "mongoose";
+import { checkCredentials } from "./controller.helper";
 import IController from "./IController";
 
 class EquipmentsController implements IController {
@@ -21,10 +25,12 @@ class EquipmentsController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path,              auth.required, wrapAsync(this.checkAuth))
-        .get(   this.path,                      auth.required, wrapAsync(this.getEquipments))
-        .post(  this.path + "/:equipmentUiId",    auth.required, wrapAsync(this.changeOrAddEquipment))
-        .delete(this.path + "/:equipmentUiId",    auth.required, wrapAsync(this.deleteEquipment));
+        this.router
+        // tslint:disable-next-line:max-line-length
+        .use(   this.path + "/:assetUiId",                      auth.required, wrapAsync(this.checkAuth), wrapAsync(checkCredentials))
+        .get(   this.path + "/:assetUiId",                      auth.required, wrapAsync(this.getEquipments))
+        .post(  this.path + "/:assetUiId/:equipmentUiId",       auth.required, wrapAsync(this.changeOrAddEquipment))
+        .delete(this.path + "/:assetUiId/:equipmentUiId",       auth.required, wrapAsync(this.deleteEquipment));
     }
 
     private checkEquipmentProperties = (equipment: IEquipments) => {
@@ -67,13 +73,18 @@ class EquipmentsController implements IController {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
+        const asset = await getAssetByUiId(req.params.assetUiId);
+        if (!asset) {
+            return res.status(400).json({ errors: { asset: "notfound" } });
+        }
+
         return authSucceed();
     }
 
     private getEquipments = async (req: express.Request, res: express.Response) => {
-        const userId = getUser()._id;
+        const asset = await getAssetByUiId(req.params.assetUiId);
 
-        const query = { ownerId: userId };
+        const query = { assetId: asset._id };
         const equipments = await Equipments.find(query);
 
         const jsonEquipments: any[] = [];
@@ -86,21 +97,21 @@ class EquipmentsController implements IController {
 
     private addEquipment = async (req: express.Request, res: express.Response) => {
         const { body: { equipment } } = req;
-        const userId = getUser()._id;
+        const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
 
         const errors = this.checkEquipmentProperties(equipment);
         if (errors) {
             return res.status(422).json(errors);
         }
 
-        const query = { name: equipment.name, ownerId: userId };
+        const query = { name: equipment.name, assetId };
         const equipmentCounter = await Equipments.countDocuments(query);
         if (equipmentCounter > 0) {
             return res.status(422).json({ errors: { name: "alreadyexisting" } });
         }
 
         let newEquipment = new Equipments(equipment);
-        newEquipment.ownerId = userId;
+        newEquipment.assetId = assetId;
 
         newEquipment = await newEquipment.save();
         res.json({ equipment: await newEquipment.toJSON() });
@@ -108,8 +119,9 @@ class EquipmentsController implements IController {
 
     private changeOrAddEquipment = async (req: express.Request, res: express.Response) => {
         const { body: { equipment } } = req;
+        const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
 
-        let existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        let existingEquipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
         if (!existingEquipment) {
             this.addEquipment(req, res);
             return;
@@ -122,12 +134,13 @@ class EquipmentsController implements IController {
     }
 
     private deleteEquipment = async (req: express.Request, res: express.Response) => {
-        const existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
+        const existingEquipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
         if (!existingEquipment) {
-            return res.sendStatus(400);
+            return res.status(400).json({ errors: { entity: "notfound" } });
         }
 
-        deleteEquipmentModel(existingEquipment);
+        await deleteEquipmentModel(existingEquipment);
 
         return res.json({ equipment: await existingEquipment.toJSON() });
     }

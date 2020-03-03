@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import {getUser} from "../utils/requestContext";
 
 import { deleteEntriesFromParent } from "./Entries";
 import {deleteExistingImages} from "./Images";
@@ -16,11 +15,13 @@ export const EquipmentsSchema = new mongoose.Schema({
     age: Number,
     ageAcquisitionType: Number,
     ageUrl: String,
+    assetId: mongoose.Schema.Types.ObjectId,
     brand: String,
     installation: Date,
     model: String,
     name: String,
-    ownerId: mongoose.Schema.Types.ObjectId
+    // deprecated
+    ownerId: mongoose.Schema.Types.ObjectId,
 });
 
 EquipmentsSchema.methods.toJSON = async function() {
@@ -43,7 +44,9 @@ export interface IEquipments extends mongoose.Document {
     ageUrl: string;
     brand: string;
     installation: Date;
-    ownerId: mongoose.Types.ObjectId;
+    assetId?: mongoose.Types.ObjectId;
+    // deprecated
+    ownerId?: mongoose.Types.ObjectId;
     name: string;
 
     toJSON(): any;
@@ -53,20 +56,33 @@ export const getEquipment =  async (equipmentId: mongoose.Types.ObjectId): Promi
     return await Equipments.findById(equipmentId);
 };
 
-export const getEquipmentByUiId = async (equipmentUiId: string): Promise<IEquipments> => {
-    const user = getUser();
-
-    const query = { ownerId: user._id, _uiId: equipmentUiId };
+// tslint:disable-next-line:max-line-length
+export const getEquipmentByUiId = async (assetId: mongoose.Types.ObjectId, equipmentUiId: string): Promise<IEquipments> => {
+    const query = { assetId, _uiId: equipmentUiId };
     return await Equipments.findOne(query);
 };
 
 export const deleteEquipmentModel = async (equipment: IEquipments): Promise<void> => {
-    const promises = [];
+    const deletions: Array<PromiseLike<void>> = [];
 
-    promises.push(deleteExistingImages(equipment._uiId));
-    promises.push(deleteTasks(equipment._id));
-    promises.push(deleteEntriesFromParent({equipmentId: equipment._id, taskId: undefined}));
-    promises.push(equipment.remove());
+    const removeEquipmentPromise = async () => {
+        await equipment.remove();
+        return;
+    };
+
+    deletions.push(deleteExistingImages(equipment._uiId));
+    deletions.push(deleteTasks(equipment._id));
+    deletions.push(deleteEntriesFromParent({equipmentId: equipment._id, taskId: undefined}));
+    deletions.push(removeEquipmentPromise());
+
+    await Promise.all(deletions);
+};
+
+export const deleteEquipments = async (assetId: mongoose.Types.ObjectId) => {
+    const equipments = await Equipments.find({ assetId });
+    const promises = equipments.map((equipment) => {
+        return deleteEquipmentModel(equipment);
+    });
 
     await Promise.all(promises);
 };
