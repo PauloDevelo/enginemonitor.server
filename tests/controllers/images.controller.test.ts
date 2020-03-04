@@ -29,6 +29,7 @@ import AssetUser from '../../src/models/AssetUser';
 
 describe('Images', () => {
     let user: IUser;
+    let userJWT: string;
 
     let roUser: IUser;
     let roUserJWT: string;
@@ -52,6 +53,7 @@ describe('Images', () => {
         user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
         user.setPassword("test");
         user = await user.save();
+        userJWT = `Token ${user.generateJWT()}`;
 
         roUser = new Users({ name: "read", firstname: "only", email: "read.only@gmail.com", forbidUploadingImage: true });
         roUser.setPassword("test");
@@ -375,11 +377,14 @@ describe('Images', () => {
             .field('name', 'my first image added')
             .field('_uiId', "image_added_01")
             .field('parentUiId', engine._uiId)
-            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), engine._uiId + ".jpeg")
-            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), "thumbnail_" + engine._uiId + ".jpeg")
-            .set("Authorization", "Token " + user.generateJWT());
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), `${engine._uiId}.jpeg`)
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), `thumbnail_${engine._uiId}.jpeg`)
+            .set("Authorization", userJWT);
 
             // Assert
+            const images = await Images.find({});
+            expect(images.length).equal(1);
+
             res.should.have.status(200);
             res.body.should.have.property("image");
             res.body.image.should.be.a("object");
@@ -389,14 +394,57 @@ describe('Images', () => {
             res.body.image.parentUiId.should.be.eql(engine._uiId);
             res.body.image.sizeInByte.should.be.eql(221607);
 
-            chai.string.startsWith(res.body.image.thumbnailUrl, "http://localhost:8000/api/uploads/" + user._id.toString()).should.be.true;
-            chai.string.endsWith(res.body.image.thumbnailUrl, "thumbnail_" + engine._uiId + ".jpeg").should.be.true;
+            chai.string.startsWith(res.body.image.thumbnailUrl, `http://localhost:8000/api/uploads/${user._id.toString()}`).should.be.true;
+            chai.string.endsWith(res.body.image.thumbnailUrl, `thumbnail_${engine._uiId}.jpeg`).should.be.true;
 
-            chai.string.startsWith(res.body.image.url, "http://localhost:8000/api/uploads/" + user._id.toString()).should.be.true;
-            chai.string.endsWith(res.body.image.url, engine._uiId + ".jpeg").should.be.true;
+            chai.string.startsWith(res.body.image.url, `http://localhost:8000/api/uploads/${user._id.toString()}`).should.be.true;
+            chai.string.endsWith(res.body.image.url, `${engine._uiId}.jpeg`).should.be.true;
 
-            const imageFilename = res.body.image.url.replace("http://localhost:8000/api/uploads/" + user._id.toString() + "/", "");
-            const thumbnailFilename = res.body.image.thumbnailUrl.replace("http://localhost:8000/api/uploads/" + user._id.toString() + "/", "");
+            const imageFilename = res.body.image.url.replace(`http://localhost:8000/api/uploads/${user._id.toString()}/`, "");
+            const thumbnailFilename = res.body.image.thumbnailUrl.replace(`http://localhost:8000/api/uploads/${user._id.toString()}/`, "");
+            expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().with.files([imageFilename, thumbnailFilename]);
+        });
+
+        it('it should not add the image a second time because it was already added.', async () => {
+            // Arrange
+            let res = await chai.request(app).post('/api/images/' + engine._uiId.toString())
+            .field('name', 'my first image added')
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', engine._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), `${engine._uiId}.jpeg`)
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), `thumbnail_${engine._uiId}.jpeg`)
+            .set("Authorization", userJWT);
+
+            // Act
+            res = await chai.request(app).post('/api/images/' + engine._uiId.toString())
+            .field('name', 'my first image added')
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', engine._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), `${engine._uiId}.jpeg`)
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), `thumbnail_${engine._uiId}.jpeg`)
+            .set("Authorization", userJWT);
+
+            // Assert
+            const images = await Images.find({});
+            expect(images.length).equal(1);
+
+            res.should.have.status(200);
+            res.body.should.have.property("image");
+            res.body.image.should.be.a("object");
+
+            res.body.image._uiId.should.be.eql("image_added_01");
+            res.body.image.name.should.be.eql("my first image added");
+            res.body.image.parentUiId.should.be.eql(engine._uiId);
+            res.body.image.sizeInByte.should.be.eql(221607);
+
+            chai.string.startsWith(res.body.image.thumbnailUrl, `http://localhost:8000/api/uploads/${user._id.toString()}`).should.be.true;
+            chai.string.endsWith(res.body.image.thumbnailUrl, `thumbnail_${engine._uiId}.jpeg`).should.be.true;
+
+            chai.string.startsWith(res.body.image.url, `http://localhost:8000/api/uploads/${user._id.toString()}`).should.be.true;
+            chai.string.endsWith(res.body.image.url, `${engine._uiId}.jpeg`).should.be.true;
+
+            const imageFilename = res.body.image.url.replace(`http://localhost:8000/api/uploads/${user._id.toString()}/`, "");
+            const thumbnailFilename = res.body.image.thumbnailUrl.replace(`http://localhost:8000/api/uploads/${user._id.toString()}/`, "");
             expect(config.get("ImageFolder")+user._id.toString()).to.be.a.directory().with.files([imageFilename, thumbnailFilename]);
         });
 

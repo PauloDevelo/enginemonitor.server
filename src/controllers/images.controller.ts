@@ -35,7 +35,8 @@ class ImagesController implements IController {
         // tslint:disable-next-line:max-line-length
         .use(   this.path + "/:parentUiId", auth.required, wrapAsync(this.checkOwnershipFromParams), wrapAsync(this.checkCredentials))
         .get(   this.path + "/:parentUiId", wrapAsync(this.getImages))
-        .post(  this.path + "/:parentUiId", wrapAsync(checkImageQuota), this.cpUpload, wrapAsync(this.addImage))
+        // tslint:disable-next-line:max-line-length
+        .post(  this.path + "/:parentUiId", wrapAsync(checkImageQuota), this.cpUpload, wrapAsync(this.checkImageDoesNotExistAlready), wrapAsync(this.addImage))
         // tslint:disable-next-line:max-line-length
         .post(  this.path + "/:parentUiId/:imageUiId", wrapAsync(this.checkParentBelongsImage), wrapAsync(this.updateImage))
         .delete(this.path + "/:parentUiId/:imageUiId", wrapAsync(this.deleteImage));
@@ -75,6 +76,20 @@ class ImagesController implements IController {
         const userId = user._id;
         if (await this.checkOwnership(userId, req.params.parentUiId) === false) {
             res.status(400).json({ errors: { authentication: "error" } });
+            return;
+        }
+
+        next();
+    }
+
+    // tslint:disable-next-line:max-line-length
+    private checkImageDoesNotExistAlready = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+        const { body: { _uiId, parentUiId } } = req;
+
+        const existingImages = await Images.find({ _uiId, parentUiId });
+
+        if (existingImages.length > 0) {
+            res.json({ image: await existingImages[0].toJSON() });
             return;
         }
 
