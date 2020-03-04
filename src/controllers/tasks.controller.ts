@@ -99,13 +99,13 @@ class TasksController implements IController {
 
         const errors = this.checkTaskProperties(equipment, task);
         if (errors) {
-            throw res.status(422).json(errors);
+            return res.status(422).json(errors);
         }
 
         const query = { name: task.name, equipmentId: equipment._id };
         const taskCounter = await Tasks.countDocuments(query);
         if (taskCounter > 0) {
-            throw res.status(422).json({
+            return res.status(422).json({
                 errors: {
                     name: "alreadyexisting",
                 },
@@ -134,7 +134,7 @@ class TasksController implements IController {
                 const tasks = await Tasks.find(query);
                 const taskWithSameNameIndex = tasks.findIndex((t) => t._uiId !== req.params.taskUiId);
                 if (taskWithSameNameIndex !== -1) {
-                    throw res.status(422).json({
+                    return res.status(422).json({
                         errors: {
                             name: "alreadyexisting",
                         },
@@ -153,7 +153,7 @@ class TasksController implements IController {
         const existingTask = await getTaskByUiId(equipmentId, req.params.taskUiId);
 
         if (!existingTask) {
-            throw res.sendStatus(400);
+            return res.sendStatus(400);
         }
 
         await deleteTask(existingTask);

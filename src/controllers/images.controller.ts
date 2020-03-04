@@ -155,7 +155,7 @@ class ImagesController implements IController {
                 async (errors) => {
                     fs.unlinkSync(req.files.imageData[0].path);
                     fs.unlinkSync(req.files.thumbnail[0].path);
-                    throw res.status(422).json({errors});
+                    res.status(422).json({errors});
                 });
         }
     }

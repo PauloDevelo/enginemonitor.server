@@ -128,7 +128,7 @@ class EntriesController implements IController {
 
         const errors = this.checkEntryProperties(entry);
         if (errors) {
-            throw res.status(422).json(errors);
+            return res.status(422).json(errors);
         }
 
         let newEntry = new Entries(entry);
