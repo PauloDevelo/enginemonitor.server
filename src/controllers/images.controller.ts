@@ -145,34 +145,26 @@ class ImagesController implements IController {
     private addImage = async (req: any, res: express.Response): Promise<void> => {
         const { body: { _uiId, name, parentUiId } } = req;
 
-        const userId = getUser()._id;
+        const newImage = new Images({
+            _uiId,
+            description: "",
+            name,
+            parentUiId,
+            path: req.files.imageData[0].path,
+            thumbnailPath: req.files.thumbnail[0].path,
+            title: ""
+        });
 
-        if (await this.checkOwnership(userId, parentUiId) === false) {
-            fs.unlinkSync(req.files.imageData[0].path);
-            fs.unlinkSync(req.files.thumbnail[0].path);
-            res.status(400).json({ errors: { authentication: "error" } });
-        } else {
-            const newImage = new Images({
-                _uiId,
-                description: "",
-                name,
-                parentUiId,
-                path: req.files.imageData[0].path,
-                thumbnailPath: req.files.thumbnail[0].path,
-                title: ""
+        this.checkImageProperties(newImage, res,
+            async () => {
+                const result = await newImage.save();
+                res.json({ image: await result.toJSON() });
+            },
+            async (errors) => {
+                fs.unlinkSync(req.files.imageData[0].path);
+                fs.unlinkSync(req.files.thumbnail[0].path);
+                res.status(422).json({errors});
             });
-
-            this.checkImageProperties(newImage, res,
-                async () => {
-                    const result = await newImage.save();
-                    res.json({ image: await result.toJSON() });
-                },
-                async (errors) => {
-                    fs.unlinkSync(req.files.imageData[0].path);
-                    fs.unlinkSync(req.files.thumbnail[0].path);
-                    res.status(422).json({errors});
-                });
-        }
     }
 
     private updateImage = async (req: express.Request, res: express.Response): Promise<void> => {
