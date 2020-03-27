@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 import auth from "../security/auth";
 
+import { getAssetByUiId, IAssets } from "../models/Assets";
 import Entries, { deleteEntry, getEntryByUiId, IEntries } from "../models/Entries";
 import { getEquipmentByUiId } from "../models/Equipments";
 import { getTaskByUiId } from "../models/Tasks";
@@ -10,6 +11,7 @@ import { getTaskByUiId } from "../models/Tasks";
 import wrapAsync from "../utils/expressHelpers";
 import {getUser} from "../utils/requestContext";
 
+import { checkCredentials } from "./controller.helper";
 import IController from "./IController";
 
 class EntriesController implements IController {
@@ -25,11 +27,17 @@ class EntriesController implements IController {
     }
 
     private intializeRoutes() {
-        this.router.use(this.path + "/:equipmentUiId", auth.required, wrapAsync(this.checkAuthAndOwnership))
-        .get(this.path + "/:equipmentUiId", auth.required, wrapAsync(this.getAllEntries))
-        .get(this.path + "/:equipmentUiId/:taskUiId",             auth.required, wrapAsync(this.getEntries))
-        .post(this.path + "/:equipmentUiId/:taskUiId/:entryUiId",   auth.required, wrapAsync(this.changeOrCreateEntry))
-        .delete(this.path + "/:equipmentUiId/:taskUiId/:entryUiId", auth.required, wrapAsync(this.deleteEntry));
+        this.router
+        // tslint:disable-next-line:max-line-length
+        .use(this.path + "/:assetUiId/:equipmentUiId",                          auth.required, wrapAsync(this.checkAuthAndOwnership), wrapAsync(checkCredentials))
+        // tslint:disable-next-line:max-line-length
+        .get(this.path + "/:assetUiId/:equipmentUiId",                          auth.required, wrapAsync(this.getAllEntries))
+        // tslint:disable-next-line:max-line-length
+        .get(this.path + "/:assetUiId/:equipmentUiId/:taskUiId",                auth.required, wrapAsync(this.getEntries))
+        // tslint:disable-next-line:max-line-length
+        .post(this.path + "/:assetUiId/:equipmentUiId/:taskUiId/:entryUiId",    auth.required, wrapAsync(this.changeOrCreateEntry))
+        // tslint:disable-next-line:max-line-length
+        .delete(this.path + "/:assetUiId/:equipmentUiId/:taskUiId/:entryUiId",  auth.required, wrapAsync(this.deleteEntry));
     }
 
     private checkEntryProperties = (entry: IEntries) => {
@@ -69,13 +77,14 @@ class EntriesController implements IController {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
-        const existingEquipment = await getEquipmentByUiId(req.params.equipmentUiId);
-        if (!existingEquipment) {
-            return res.sendStatus(400);
+        const asset = await getAssetByUiId(req.params.assetUiId);
+        if (!asset) {
+            return res.status(400).json({ errors: { asset: "notfound" } });
         }
 
-        if (existingEquipment.ownerId.toString() !== user._id.toString()) {
-            return res.sendStatus(401);
+        const existingEquipment = await getEquipmentByUiId(asset._id, req.params.equipmentUiId);
+        if (!existingEquipment) {
+            return res.sendStatus(400);
         }
 
         next();
@@ -119,7 +128,7 @@ class EntriesController implements IController {
 
         const errors = this.checkEntryProperties(entry);
         if (errors) {
-            throw res.status(422).json(errors);
+            return res.status(422).json(errors);
         }
 
         let newEntry = new Entries(entry);
@@ -159,7 +168,7 @@ class EntriesController implements IController {
         const existingEntry = await getEntryByUiId(equipmentId, req.params.entryUiId);
 
         if (!existingEntry) {
-            return res.sendStatus(400);
+            return res.status(400).json({ errors: { entity: "notfound" } });
         }
 
         if ((!(existingEntry.taskId)  && taskId) ||
@@ -174,7 +183,8 @@ class EntriesController implements IController {
     }
 
     private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {
-        const equipment = await getEquipmentByUiId(req.params.equipmentUiId);
+        const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
+        const equipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
 
         if (equipment) {
             return equipment._id;

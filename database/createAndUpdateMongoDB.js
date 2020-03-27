@@ -1,4 +1,4 @@
-const newVersion = 0.5;
+const newVersion = 0.6;
 
 db = connect("localhost/" + databaseName);
 
@@ -56,6 +56,16 @@ if(dbMetadata.version < 0.5){
     while (myCursor.hasNext()) {
         const entry = myCursor.next();
         db.entries.update({ _id: entry._id }, {$set : { ack: true }}, {upsert:false, multi:true});
+    }
+}
+
+if(dbMetadata.version < 0.6){
+    print('Updating Database to the version 0.6');
+
+    const myCursor = db.users.find();
+    while (myCursor.hasNext()) {
+        const user = myCursor.next();
+        db.users.update({ _id: user._id }, {$set : { forbidCreatingAsset: false, forbidUploadingImage: false }}, {upsert:false, multi:true});
     }
 }
 

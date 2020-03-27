@@ -11,6 +11,8 @@ export const UsersSchema = new mongoose.Schema({
   _uiId: String,
   email: String,
   firstname: String,
+  forbidCreatingAsset: Boolean,
+  forbidUploadingImage: Boolean,
   hash: String,
   isVerified: Boolean,
   name: String,
@@ -26,7 +28,6 @@ UsersSchema.methods.setPassword = function(password: string) {
 };
 
 UsersSchema.methods.setNewPassword = function(newPassword: INewPassword) {
-  this.isVerified = true;
   this.salt = newPassword.salt;
   this.hash = newPassword.hash;
   this.changeVerificationToken();
@@ -59,6 +60,8 @@ UsersSchema.methods.toAuthJSON = async function() {
     _uiId: this._uiId,
     email: this.email,
     firstname: this.firstname,
+    forbidCreatingAsset: this.forbidCreatingAsset,
+    forbidUploadingImage: this.forbidUploadingImage,
     imageFolder: this.getUserImageFolder(),
     imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
     imageFolderSizeLimitInByte: this.getUserImageFolderSizeLimitInByte(),
@@ -68,7 +71,6 @@ UsersSchema.methods.toAuthJSON = async function() {
 };
 
 UsersSchema.methods.getUserImageFolder = function(): string {
-
   return config.get("ImageFolder") + this._id;
 };
 
@@ -96,6 +98,8 @@ export interface IUser extends mongoose.Document {
   verificationToken: string;
   salt: string;
   isVerified: boolean;
+  forbidUploadingImage?: boolean;
+  forbidCreatingAsset?: boolean;
 
   setPassword(password: string): void;
   setNewPassword(password: INewPassword): void;
