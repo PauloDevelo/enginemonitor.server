@@ -1,0 +1,6 @@
+git checkout master
+git pull
+npm run build
+forever stop EquipmentMaintenanceServer
+forever start forever/production.json
+
