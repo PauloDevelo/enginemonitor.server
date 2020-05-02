@@ -234,6 +234,41 @@ describe('Tasks', () => {
             res.body.tasks[0].level.should.be.eql(1);
         });
 
+        it('it should get a task with a level 1 because the task were performed less than 12 months and the usagePeriodInHour is not a number', async () => {
+            // Arrange
+            engine.age = 12345;
+            engine = await engine.save();
+
+            task.usagePeriodInHour = null;
+            task = await task.save();
+
+            let now1 = moment();
+            now1.subtract(2, 'years');
+            let entry1 = new Entries({ name: "My first entry", date: now1.toDate().toString(), age: 1, remarks: "RAS", _uiId:"entry_01", ack: true });
+            entry1.equipmentId = engine._id;
+            entry1.taskId = task._id;
+            entry1 = await entry1.save();
+
+            let now2 = moment();
+            now2.subtract(2, 'month');
+            let entry2 = new Entries({ name: "My second entry", date: now2.toDate().toString(), age: 100, remarks: "RAS", _uiId:"entry_02", ack: true });
+            entry2.equipmentId = engine._id;
+            entry2.taskId = task._id;
+            entry2 = await entry2.save();
+
+            let now3 = moment();
+            let entry3 = new Entries({ name: "My third entry", date: now3.toDate().toString(), age: 12253, remarks: "RAS", _uiId:"entry_03", ack: false });
+            entry3.equipmentId = engine._id;
+            entry3.taskId = task._id;
+            entry3 = await entry3.save();
+
+            // Act
+            let res = await chai.request(app).get(getTasksUrl).set("Authorization", userJWT);
+
+            // Assert
+            res.body.tasks[0].level.should.be.eql(1);
+        });
+
         it('it should get a task with a level 2 because the task as to be performed in less than 20 hours of usage', async () => {
             // Arrange
             engine.age = 12345;
