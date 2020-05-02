@@ -77,7 +77,8 @@ TasksSchema.methods.getLevel = async function(): Promise<number> {
 
     const equipment = await Equipments.findById(this.equipmentId);
 
-    if (equipment.ageAcquisitionType !== AgeAcquisitionType.time && isNaN(this.usagePeriodInHour) === false && this.usagePeriodInHour > 0) {
+    if (equipment.ageAcquisitionType !== AgeAcquisitionType.time &&
+        isNaN(this.usagePeriodInHour) === false && this.usagePeriodInHour > 0) {
         const usageHourLeft = await this.getTimeInHourLeft();
 
         if (usageHourLeft <= 0 || nextDueDate <= now) {
