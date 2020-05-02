@@ -86,7 +86,7 @@ class TasksController implements IController {
         const query = { equipmentId };
         const tasks = await Tasks.find(query);
 
-        const jsonTasks: any[] = [];
+        const jsonTasks: ITasks[] = [];
         for (const task of tasks) {
             jsonTasks.push(await task.toJSON());
         }
