@@ -27,6 +27,4 @@ const localStrategy = new LocalStrategy.Strategy(
     }
 });
 
-passport.use("local", localStrategy);
-
-export default passport;
+export default localStrategy;

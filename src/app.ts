@@ -87,11 +87,11 @@ class App {
 
     private clientErrorHandler(err, req, res, next) {
         if (req.xhr) {
-          res.status(500).send({ error: "Something failed!" });
+            res.status(500).send({ error: "Something failed!" });
         } else {
-          next(err);
+            next(err);
         }
-      }
+    }
 
     private errorHandler(err: any, req: express.Request, res: express.Response, next: any) {
         if (!(err instanceof ServerResponse)) {
