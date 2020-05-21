@@ -9,6 +9,7 @@ import { INewPassword } from "./NewPasswords";
 
 export const UsersSchema = new mongoose.Schema({
   _uiId: String,
+  authStrategy: String,
   email: String,
   firstname: String,
   forbidCreatingAsset: Boolean,
@@ -91,6 +92,7 @@ const getUserImageFolderSizeInByte = async (user: IUser): Promise<number> => {
 export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
   _uiId: string;
+  authStrategy: "google" | "local";
   name: string;
   firstname: string;
   email: string;

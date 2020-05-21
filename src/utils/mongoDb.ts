@@ -1,6 +1,6 @@
 import {isTest} from "./configUtils";
 
-export const expectedVersion = 0.6;
+export const expectedVersion = 0.7;
 
 import { rejects } from "assert";
 import DbMetadatas from "../models/Metadata";

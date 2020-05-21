@@ -1,7 +1,7 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import passport from '../security/strategies';
+import passport from "../security/strategies";
 
 import config from "../utils/configUtils";
 import wrapAsync from "../utils/expressHelpers";
@@ -117,7 +117,7 @@ class UsersController implements IController {
     private createUser = async (req: express.Request, res: express.Response) => {
         const { body: { user } } = req;
 
-        let finalUser = new Users({ ...user, isVerified: false });
+        let finalUser = new Users({ ...user, isVerified: false, authStrategy: "local" });
         finalUser.setPassword(user.password);
         finalUser = await finalUser.save();
 
@@ -294,10 +294,10 @@ class UsersController implements IController {
     }
 
     private loginGoogle = (req: express.Request, res: express.Response, next: any) => {
-        passport.authenticate('google', {
+        passport.authenticate("google", {
             scope: [
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'https://www.googleapis.com/auth/userinfo.email'
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email"
             ]
         })(req, res, next);
 
@@ -305,15 +305,15 @@ class UsersController implements IController {
     }
 
     private loginGoogleCallback = (req: express.Request, res: express.Response, next: any) => {
-        passport.authenticate('google', { failureRedirect: '/login' }, async (error, user: IUser) => {
+        passport.authenticate("google", { failureRedirect: "/login" }, async (error, user: IUser) => {
             const authUser = JSON.stringify(await user.toAuthJSON());
-            
+
             return res
                 .status(200)
-                .cookie('authUser', authUser, {
+                .cookie("authUser", authUser, {
                     httpOnly: false
                 })
-                .redirect(config.get("frontEndUrl"))
+                .redirect(config.get("frontEndUrl"));
         })(req, res, next);
 
         return res;
