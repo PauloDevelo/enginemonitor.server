@@ -17,8 +17,9 @@ export const UsersSchema = new mongoose.Schema({
   hash: String,
   isVerified: Boolean,
   name: String,
+  privacyPolicyAccepted: Boolean,
   salt: String,
-  verificationToken: String
+  verificationToken: String,
 });
 
 UsersSchema.methods.setPassword = function(password: string) {
@@ -67,6 +68,7 @@ UsersSchema.methods.toAuthJSON = async function() {
     imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
     imageFolderSizeLimitInByte: this.getUserImageFolderSizeLimitInByte(),
     name: this.name,
+    privacyPolicyAccepted: this.privacyPolicyAccepted,
     token: this.generateJWT(),
   };
 };
@@ -102,6 +104,7 @@ export interface IUser extends mongoose.Document {
   isVerified: boolean;
   forbidUploadingImage?: boolean;
   forbidCreatingAsset?: boolean;
+  privacyPolicyAccepted: boolean;
 
   setPassword(password: string): void;
   setNewPassword(password: INewPassword): void;

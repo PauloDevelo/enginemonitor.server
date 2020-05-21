@@ -77,7 +77,17 @@ class GuestLinksController implements IController {
             const niceKey = shortid.generate();
 
             // tslint:disable-next-line:max-line-length
-            let guestUser = new Users({ _uiId: guestUiId, name: "Guest", firstname: "Guest", email: "", isVerified: true, forbidUploadingImage: true, forbidCreatingAsset: true, authStrategy: "local" });
+            let guestUser = new Users({
+                _uiId: guestUiId,
+                authStrategy: "local",
+                email: "",
+                firstname: "Guest",
+                forbidCreatingAsset: true,
+                forbidUploadingImage: true,
+                isVerified: true,
+                name: "Guest",
+                privacyPolicyAccepted: false
+            });
             guestUser.setPassword(niceKey);
             guestUser = await guestUser.save();
 
