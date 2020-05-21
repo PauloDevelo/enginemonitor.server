@@ -1,7 +1,8 @@
 import * as express from "express";
 import auth from "../security/auth";
 
-import passport from "../security/passport";
+import passport from '../security/strategies';
+
 import config from "../utils/configUtils";
 import wrapAsync from "../utils/expressHelpers";
 import sendGridHelper from "../utils/sendGridEmailHelper";
@@ -32,6 +33,8 @@ class UsersController implements IController {
         // tslint:disable-next-line:max-line-length
         .post(this.path,                        auth.optional, this.checkUserProperties, wrapAsync(this.checkIfEmailAlreadyExist), wrapAsync(this.createUser))
         .post(this.path + "/login",             auth.optional, this.checkLoginBody, wrapAsync(this.login))
+        .get(this.path + "/login/google",       auth.optional, this.loginGoogle)
+        .get(this.path + "/login/google/callback",       auth.optional, this.loginGoogleCallback)
         // tslint:disable-next-line:max-line-length
         .post(this.path + "/resetpassword",     auth.optional, wrapAsync(this.checkResetPasswordBody), wrapAsync(this.resetPassword))
         // tslint:disable-next-line:max-line-length
@@ -288,6 +291,32 @@ class UsersController implements IController {
 
             return res.status(400).json(info);
         })(req, res, next);
+    }
+
+    private loginGoogle = (req: express.Request, res: express.Response, next: any) => {
+        passport.authenticate('google', {
+            scope: [
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email'
+            ]
+        })(req, res, next);
+
+        return res;
+    }
+
+    private loginGoogleCallback = (req: express.Request, res: express.Response, next: any) => {
+        passport.authenticate('google', { failureRedirect: '/login' }, async (error, user: IUser) => {
+            const authUser = JSON.stringify(await user.toAuthJSON());
+            
+            return res
+                .status(200)
+                .cookie('authUser', authUser, {
+                    httpOnly: false
+                })
+                .redirect(config.get("frontEndUrl"))
+        })(req, res, next);
+
+        return res;
     }
 
     // GET current route (required, only authenticated users have access)

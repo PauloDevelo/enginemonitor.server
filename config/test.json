@@ -16,5 +16,8 @@
 
     // Size limit of the image folder for one user
     "userImageFolderLimitInByte": 400000,
-    "ImageFolder": "tests/uploads/"
+    "ImageFolder": "tests/uploads/",
+
+    "GOOGLE_CLIENT_ID": "something_like_a_guid.apps.googleusercontent.com",
+    "GOOGLE_CLIENT_SECRET": "anothersecret"
  }
