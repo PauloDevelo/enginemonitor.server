@@ -88,6 +88,7 @@ class GuestLinksController implements IController {
                 name: "Guest",
                 privacyPolicyAccepted: false
             });
+
             guestUser.setPassword(niceKey);
             guestUser = await guestUser.save();
 

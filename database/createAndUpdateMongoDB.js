@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const newVersion = 0.8;
+=======
+const newVersion = 0.7;
+>>>>>>> integration
 
 db = connect("localhost/" + databaseName);
 
