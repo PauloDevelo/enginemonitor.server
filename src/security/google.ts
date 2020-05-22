@@ -34,6 +34,7 @@ const verifyCallback = async (accessToken, refreshToken, profile, done) => {
         hash: null,
         isVerified: true,
         name: profile.name.familyName,
+        privacyPolicyAccepted: false,
         salt: null,
         verificationToken: crypto.randomBytes(16).toString("hex")
       });
