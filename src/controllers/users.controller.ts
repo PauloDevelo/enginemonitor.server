@@ -9,10 +9,10 @@ import sendGridHelper from "../utils/sendGridEmailHelper";
 
 import IController from "./IController";
 
-import NewPasswords from "../models/NewPasswords";
-import Users, { IUser, deleteUserModel } from "../models/Users";
 import { getAssetByUiId } from "../models/Assets";
 import AssetUser from "../models/AssetUser";
+import NewPasswords from "../models/NewPasswords";
+import Users, { deleteUserModel, IUser } from "../models/Users";
 import getUser from "../utils/requestContext";
 
 class UsersController implements IController {
@@ -54,7 +54,7 @@ class UsersController implements IController {
             return res.status(400).json({ errors: { authentication: "error" } });
         }
 
-        if(user.forbidSelfDelete){
+        if (user.forbidSelfDelete) {
             return res.status(400).json({ errors: "credentialError" });
         }
 

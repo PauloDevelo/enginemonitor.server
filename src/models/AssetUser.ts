@@ -52,7 +52,7 @@ export const getUserAssets =  async (): Promise<IAssets[]> => {
 
 export const deleteAssetUserModel = async (assetId: mongoose.Types.ObjectId): Promise<IAssetUser[]> => {
     const assetUserModels = await AssetUser.find({ assetId });
-    return Promise.all(assetUserModels.map(assetUserModel => assetUserModel.remove()));
+    return Promise.all(assetUserModels.map((assetUserModel) => assetUserModel.remove()));
 };
 
 const AssetUser = mongoose.model<IAssetUser>("AssetUser", AssetUserSchema);

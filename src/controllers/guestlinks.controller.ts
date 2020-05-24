@@ -83,8 +83,8 @@ class GuestLinksController implements IController {
                 email: "",
                 firstname: "Guest",
                 forbidCreatingAsset: true,
-                forbidUploadingImage: true,
                 forbidSelfDelete: true,
+                forbidUploadingImage: true,
                 isVerified: true,
                 name: "Guest",
                 privacyPolicyAccepted: false
