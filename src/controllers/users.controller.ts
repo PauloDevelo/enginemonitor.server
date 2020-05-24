@@ -1,17 +1,16 @@
 import * as express from "express";
-import auth from "../security/auth";
 
+import auth from "../security/auth";
 import passport from "../security/strategies";
 
 import config from "../utils/configUtils";
 import wrapAsync from "../utils/expressHelpers";
 import sendGridHelper from "../utils/sendGridEmailHelper";
 
-import NewPasswords from "../models/NewPasswords";
-import Users, { IUser } from "../models/Users";
-
 import IController from "./IController";
 
+import NewPasswords from "../models/NewPasswords";
+import Users, { IUser, deleteUserModel } from "../models/Users";
 import { getAssetByUiId } from "../models/Assets";
 import AssetUser from "../models/AssetUser";
 import getUser from "../utils/requestContext";
@@ -45,7 +44,21 @@ class UsersController implements IController {
         .get(this.path + "/verification",       auth.optional, wrapAsync(this.checkCheckEmailQuery), wrapAsync(this.checkEmail))
         .get(this.path + "/current",            auth.required, wrapAsync(this.getCurrent))
         // tslint:disable-next-line:max-line-length
-        .get(`${this.path}/credentials/:assetUiId`, auth.required, wrapAsync(this.checkAssetOwnership), wrapAsync(this.getUserCredentials));
+        .get(`${this.path}/credentials/:assetUiId`, auth.required, wrapAsync(this.checkAssetOwnership), wrapAsync(this.getUserCredentials))
+        .delete(this.path,                      auth.required, this.checkUserCanSelfDelete, wrapAsync(this.deleteUser));
+    }
+
+    private checkUserCanSelfDelete = (req: express.Request, res: express.Response, credentialOk: any) => {
+        const user = getUser();
+        if (!user) {
+            return res.status(400).json({ errors: { authentication: "error" } });
+        }
+
+        if(user.forbidSelfDelete){
+            return res.status(400).json({ errors: "credentialError" });
+        }
+
+        return credentialOk();
     }
 
     private checkAssetOwnership = async (req: express.Request, res: express.Response, authSucceed: any) => {
@@ -117,7 +130,7 @@ class UsersController implements IController {
     private createUser = async (req: express.Request, res: express.Response) => {
         const { body: { user } } = req;
 
-        let finalUser = new Users({ ...user, isVerified: false, authStrategy: "local" });
+        let finalUser = new Users({ ...user, isVerified: false, authStrategy: "local", forbidSelfDelete: false });
         finalUser.setPassword(user.password);
         finalUser = await finalUser.save();
 
@@ -337,6 +350,12 @@ class UsersController implements IController {
         }
 
         return res.json({ user: await user.toAuthJSON() });
+    }
+
+    private deleteUser = async (req: express.Request, res: express.Response) => {
+        const currentUser = getUser();
+        await deleteUserModel(currentUser);
+        return res.json({ user: await currentUser.toJSON() });
     }
 }
 

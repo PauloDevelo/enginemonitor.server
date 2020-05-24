@@ -6,6 +6,8 @@ import config from "../utils/configUtils";
 import getFolderSize from "../utils/fileHelpers";
 
 import { INewPassword } from "./NewPasswords";
+import { getAssetsOwnedByUser } from "./AssetUser";
+import { deleteAssetModel } from './Assets'
 
 export const UsersSchema = new mongoose.Schema({
   _uiId: String,
@@ -13,6 +15,7 @@ export const UsersSchema = new mongoose.Schema({
   email: String,
   firstname: String,
   forbidCreatingAsset: Boolean,
+  forbidSelfDelete: Boolean,
   forbidUploadingImage: Boolean,
   hash: String,
   isVerified: Boolean,
@@ -63,6 +66,7 @@ UsersSchema.methods.toAuthJSON = async function() {
     email: this.email,
     firstname: this.firstname,
     forbidCreatingAsset: this.forbidCreatingAsset,
+    forbidSelfDelete: this.forbidSelfDelete,
     forbidUploadingImage: this.forbidUploadingImage,
     imageFolder: this.getUserImageFolder(),
     imageFolderSizeInByte: await getUserImageFolderSizeInByte(this),
@@ -91,6 +95,17 @@ const getUserImageFolderSizeInByte = async (user: IUser): Promise<number> => {
   }
 };
 
+export const deleteUserModel = async (user: IUser): Promise<void> => {
+  const assetsOwned = await getAssetsOwnedByUser(user);
+  const assetDeletion = assetsOwned.map(assetOwned => {
+      return deleteAssetModel(assetOwned);
+  });
+
+  await Promise.all(assetDeletion);
+
+  await user.remove();
+}
+
 export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
   _uiId: string;
@@ -103,6 +118,7 @@ export interface IUser extends mongoose.Document {
   salt: string;
   isVerified: boolean;
   forbidUploadingImage?: boolean;
+  forbidSelfDelete: boolean,
   forbidCreatingAsset?: boolean;
   privacyPolicyAccepted: boolean;
 

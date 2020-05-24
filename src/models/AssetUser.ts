@@ -30,6 +30,16 @@ export const createUserAssetLink = async ({ user, asset, readonly }: { user: IUs
   return await newAssetUserLink.save();
 };
 
+export const getAssetsOwnedByUser =  async (owner: IUser): Promise<IAssets[]> => {
+  const userAssetIds = await AssetUser.find({ userId: owner._id, readonly: false });
+
+  const assets = userAssetIds.map((userAsset) => {
+    return Assets.findOne({ _id: userAsset.assetId });
+  });
+
+  return Promise.all(assets);
+};
+
 export const getUserAssets =  async (): Promise<IAssets[]> => {
   const userAssetIds = await AssetUser.find({ userId: getUser()._id });
 
@@ -40,9 +50,9 @@ export const getUserAssets =  async (): Promise<IAssets[]> => {
   return Promise.all(assets);
 };
 
-export const deleteAssetUserModel = async (assetId: mongoose.Types.ObjectId): Promise<IAssetUser> => {
-    const assetUserModel = await AssetUser.findOne({ assetId });
-    return assetUserModel.remove();
+export const deleteAssetUserModel = async (assetId: mongoose.Types.ObjectId): Promise<IAssetUser[]> => {
+    const assetUserModels = await AssetUser.find({ assetId });
+    return Promise.all(assetUserModels.map(assetUserModel => assetUserModel.remove()));
 };
 
 const AssetUser = mongoose.model<IAssetUser>("AssetUser", AssetUserSchema);

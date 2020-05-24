@@ -1,4 +1,4 @@
-const newVersion = 0.8;
+const newVersion = 0.9;
 
 db = connect("localhost/" + databaseName);
 
@@ -80,12 +80,23 @@ if(dbMetadata.version < 0.7){
 }
 
 if(dbMetadata.version < 0.8){
-    print('Updating Database to the version 0.7');
+    print('Updating Database to the version 0.8');
 
     const myCursor = db.users.find();
     while (myCursor.hasNext()) {
         const user = myCursor.next();
         db.users.update({ _id: user._id }, {$set : { privacyPolicyAccepted: false }}, {upsert:false, multi:true});
+    }
+}
+
+if(dbMetadata.version < 0.9){
+    print('Updating Database to the version 0.9');
+
+    const myCursor = db.users.find();
+    while (myCursor.hasNext()) {
+        const user = myCursor.next();
+        const forbidSelfDelete = user.name === 'Guest';
+        db.users.update({ _id: user._id }, {$set : { forbidSelfDelete }}, {upsert:false, multi:true});
     }
 }
 

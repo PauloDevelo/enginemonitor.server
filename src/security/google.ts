@@ -30,6 +30,7 @@ const verifyCallback = async (accessToken, refreshToken, profile, done) => {
         email: verifiedEmail.value,
         firstname: profile.name.givenName,
         forbidCreatingAsset: false,
+        forbidSelfDelete: false,
         forbidUploadingImage: false,
         hash: null,
         isVerified: true,

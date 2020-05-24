@@ -193,7 +193,7 @@ class AssetsController implements IController {
         }
 
         return;
-      }
+    }
 }
 
 export default AssetsController;
