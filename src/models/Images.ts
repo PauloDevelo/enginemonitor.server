@@ -61,8 +61,6 @@ export const deleteImage = async (image: IImages): Promise<void> => {
         if (fs.existsSync(image.thumbnailPath)) {
             fs.unlinkSync(image.thumbnailPath);
         }
-
-        await image.remove();
     } catch (err) {
         logger.error(err);
     } finally {
