@@ -1,7 +1,8 @@
 import crypto from "crypto";
+import fs from "fs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
-import fs from "fs";
+import timeService from "../services/TimeService";
 
 import config from "../utils/configUtils";
 import getFolderSize from "../utils/fileHelpers";
@@ -20,6 +21,7 @@ export const UsersSchema = new mongoose.Schema({
   forbidUploadingImage: Boolean,
   hash: String,
   isVerified: Boolean,
+  lastAuth: Date,
   name: String,
   privacyPolicyAccepted: Boolean,
   salt: String,
@@ -62,6 +64,9 @@ UsersSchema.methods.generateJWT = function() {
 };
 
 UsersSchema.methods.toAuthJSON = async function() {
+  this.lastAuth = timeService.getUTCDateTime();
+  this.save();
+
   return {
     _uiId: this._uiId,
     email: this.email,
@@ -117,6 +122,7 @@ export interface IUser extends mongoose.Document {
   firstname: string;
   email: string;
   hash: string;
+  lastAuth: Date;
   verificationToken: string;
   salt: string;
   isVerified: boolean;
@@ -130,7 +136,7 @@ export interface IUser extends mongoose.Document {
   validatePassword(password: string): boolean;
   changeVerificationToken(): void;
   generateJWT(): string;
-  toAuthJSON(): any;
+  toAuthJSON(): Promise<object>;
   getUserImageFolder(): string;
   getUserImageFolderSizeLimitInByte(): number;
 }
