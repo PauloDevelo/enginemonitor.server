@@ -14,12 +14,19 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 const should = chai.should();
 
+import fs from 'fs';
 import sinon from 'sinon';
 
 import Users from '../../src/models/Users';
 import NewPasswords from '../../src/models/NewPasswords';
 
 import ignoredErrorMessages, {restoreLogger, mockLogger} from '../MockLogger';
+import Assets from '../../src/models/Assets';
+import AssetUser from '../../src/models/AssetUser';
+import Equipments from '../../src/models/Equipments';
+import Images from '../../src/models/Images';
+import Tasks from '../../src/models/Tasks';
+import Entries from '../../src/models/Entries';
 
 describe('Users', () => {
     before(() => {
@@ -34,6 +41,11 @@ describe('Users', () => {
 
     afterEach(async () => {
         await Users.deleteMany({});
+        await Assets.deleteMany({});
+        await AssetUser.deleteMany({});
+        await Equipments.deleteMany({});
+        await Tasks.deleteMany({});
+        await Entries.deleteMany({});
         await NewPasswords.deleteMany({});
         sinon.restore();        
     });
@@ -688,5 +700,55 @@ describe('Users', () => {
             const nbNewPassword = await NewPasswords.countDocuments({email: user.email});
             nbNewPassword.should.be.eq(1);
         });
+    });
+
+    describe('/DELETE deleteUser', () => {
+        it('Should remove the asset, all the equipments, tasks, entries, and orphan entries, images and user folder', async() => {
+            // Arrange
+            let user = new Users({ name: "r", firstname: "p", email: "r@gmail.com" });
+            user.setPassword("test");
+            user = await user.save();
+            const userJWT = `Token ${user.generateJWT()}`;
+
+            let boat = new Assets({_uiId: 'sailboat_01', brand: 'aluminium & techniques', manufactureDate: '1979/01/01', modelName: 'heliotrope', name: 'Arbutus',});
+            boat = await boat.save();
+
+            let assetUserLink = new AssetUser({ assetId: boat._id, userId: user._id, readonly: false });
+            assetUserLink = await assetUserLink.save();
+
+            let engine = new Equipments({name: "Engine", brand:"Nanni", model:"N3.30", age:1234, installation:"2018/01/20", _uiId:"engine_01"});
+            engine.assetId = boat._id;
+            engine = await  engine.save();
+
+            let res = await chai.request(app).post('/api/images/' + engine._uiId.toString())
+            .field('name', 'my first image added')
+            .field('_uiId', "image_added_01")
+            .field('parentUiId', engine._uiId)
+            .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), `${engine._uiId}.jpeg`)
+            .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), `thumbnail_${engine._uiId}.jpeg`)
+            .set("Authorization", userJWT);
+
+            // Act
+            await chai.request(app).delete('/api/users').set("Authorization", userJWT);
+
+            // Assert
+            const nbUser = await Users.countDocuments();
+            nbUser.should.be.eql(0);
+
+            const nbAsset = await Assets.countDocuments();
+            nbAsset.should.be.eql(0);
+
+            const nbAssetUser = await AssetUser.countDocuments();
+            nbAssetUser.should.be.eql(0);
+
+            const nbEquipment = await Equipments.countDocuments();
+            nbEquipment.should.be.eql(0);
+
+            const nbImages = await Images.countDocuments();
+            nbImages.should.be.eql(0);
+
+            fs.existsSync(user.getUserImageFolder()).should.eql(false);
+        })
+
     });
 });
