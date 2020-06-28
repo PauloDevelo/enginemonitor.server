@@ -103,7 +103,7 @@ if(dbMetadata.version < 0.9){
 if(dbMetadata.version < 1.0){
     print('Updating Database to the version 1.0');
 
-    const now = Date.now();
+    const now = new Date();
     const myCursor = db.users.find();
     while (myCursor.hasNext()) {
         const user = myCursor.next();
