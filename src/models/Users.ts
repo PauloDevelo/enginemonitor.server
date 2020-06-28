@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import fs from "fs";
 
 import config from "../utils/configUtils";
 import getFolderSize from "../utils/fileHelpers";
@@ -104,6 +105,8 @@ export const deleteUserModel = async (user: IUser): Promise<void> => {
   await Promise.all(assetDeletion);
 
   await user.remove();
+
+  fs.rmdirSync(user.getUserImageFolder());
 };
 
 export interface IUser extends mongoose.Document {
