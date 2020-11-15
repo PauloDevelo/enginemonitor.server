@@ -4,7 +4,7 @@ export interface ITimeService {
 
 class TimeService implements ITimeService {
   // eslint-disable-next-line class-methods-use-this
-  getUTCDateTime():Date {
+  public getUTCDateTime(): Date {
     return new Date();
   }
 }
