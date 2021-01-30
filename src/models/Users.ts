@@ -111,7 +111,10 @@ export const deleteUserModel = async (user: IUser): Promise<void> => {
 
   await user.remove();
 
-  fs.rmdirSync(user.getUserImageFolder());
+  const userImageFolder = user.getUserImageFolder();
+  if (fs.existsSync(userImageFolder)){
+    fs.rmdirSync(userImageFolder);
+  }
 };
 
 export interface IUser extends mongoose.Document {
