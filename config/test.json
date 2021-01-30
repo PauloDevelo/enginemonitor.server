@@ -8,7 +8,8 @@
 
     "frontEndUrl": "https://www.google.com/",
 
-    "SENDGRID_API_KEY": "Send grid API key",
+    //gmail app password for the account my.equipment.maintenance@gmail.com
+    "gmailAppPassword": "an application specific password for my.equipment.maintenance@gmail.com",
 
     "JWT_PrivateKey": "secret",
 
