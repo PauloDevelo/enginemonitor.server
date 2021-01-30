@@ -5,7 +5,7 @@ import passport from "../security/strategies";
 
 import config from "../utils/configUtils";
 import wrapAsync from "../utils/expressHelpers";
-import sendGridHelper from "../utils/sendGridEmailHelper";
+import sendEmailHelper from "../utils/sendEmailHelper";
 
 import IController from "./IController";
 
@@ -134,7 +134,7 @@ class UsersController implements IController {
         finalUser.setPassword(user.password);
         finalUser = await finalUser.save();
 
-        await sendGridHelper.sendVerificationEmail(finalUser.email, finalUser.verificationToken);
+        await sendEmailHelper.sendVerificationEmail(finalUser.email, finalUser.verificationToken);
 
         res.status(200).json({});
     }
@@ -239,7 +239,7 @@ class UsersController implements IController {
         newPasswords.initNewPassword(email, newPassword);
         newPasswords = await newPasswords.save();
 
-        await sendGridHelper.sendChangePasswordEmail(newPasswords.email, newPasswords.verificationToken);
+        await sendEmailHelper.sendChangePasswordEmail(newPasswords.email, newPasswords.verificationToken);
 
         return res.status(200).json({});
     }
@@ -268,7 +268,7 @@ class UsersController implements IController {
             userInDb.changeVerificationToken();
             userInDb = await userInDb.save();
 
-            await sendGridHelper.sendVerificationEmail(userInDb.email, userInDb.verificationToken);
+            await sendEmailHelper.sendVerificationEmail(userInDb.email, userInDb.verificationToken);
             return res.status(200).json({});
         } else {
             return res.status(400).json({ errors: { email: "alreadyverified" } });
