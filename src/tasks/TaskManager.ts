@@ -1,6 +1,5 @@
 import cron, { ScheduledTask } from "node-cron";
 
-import config, {isDev, isProd} from "../utils/configUtils";
 import logger from "../utils/logger";
 
 export interface ITask {action: () => void; cronTabConfig?: string; }
