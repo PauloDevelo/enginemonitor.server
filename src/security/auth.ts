@@ -6,12 +6,12 @@ export const getTokenFromHeaders = (req: IncomingMessage): string => {
   const { headers: { authorization } } = req;
 
   if (!authorization) {
-    throw new Error('The authorization token cannot be found in the header');
+    return '';
   }
 
   const authorizationFields = authorization.split(' ');
   if (authorizationFields.length !== 2 || authorizationFields[0] !== 'Token') {
-    throw new Error('The authorization is not well formed. It should be something like "Token xxxxxxx"');
+    return '';
   }
 
   return authorizationFields[1];

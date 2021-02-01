@@ -40,7 +40,7 @@ describe('GuestLinks', () => {
   });
 
   describe('/GET guest user from a nice key', () => {
-    it('it should GET a 400 http code as a result because the niceKey cannot be find', async () => {
+    it('it should GET a 400 http code as a result because the niceKey cannot be found', async () => {
       // Arrange
 
       // Act

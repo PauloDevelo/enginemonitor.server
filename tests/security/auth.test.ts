@@ -43,22 +43,7 @@ describe('auth', () => {
       token.should.eql('abc');
     });
 
-    it('Should return the expected token when the authorization property is well formed', async () => {
-      // Arrange
-      const req = {
-        headers: {
-          authorization: 'Token abc',
-        },
-      };
-
-      // Act
-      const token = getTokenFromHeaders(req as IncomingMessage);
-
-      // Assert
-      token.should.eql('abc');
-    });
-
-    it('Should throw an exception when the authorization property is not well formed', async () => {
+    it('Should return an empty string when the authorization property is not well formed', async () => {
       // Arrange
       const req = {
         headers: {
@@ -67,12 +52,13 @@ describe('auth', () => {
       };
 
       // Act
+      const token = getTokenFromHeaders(req as IncomingMessage);
 
       // Assert
-      expect(() => getTokenFromHeaders(req as IncomingMessage)).to.throw('The authorization is not well formed. It should be something like "Token xxxxxxx"');
+      token.should.eql('');
     });
 
-    it('Should throw an exception when the authorization property is not well formed', async () => {
+    it('Should return an empty string when the authorization property is not well formed', async () => {
       // Arrange
       const req = {
         headers: {
@@ -81,12 +67,13 @@ describe('auth', () => {
       };
 
       // Act
+      const token = getTokenFromHeaders(req as IncomingMessage);
 
       // Assert
-      expect(() => getTokenFromHeaders(req as IncomingMessage)).to.throw('The authorization is not well formed. It should be something like "Token xxxxxxx"');
+      token.should.eql('');
     });
 
-    it('Should throw an exception when the authorization property is not well formed', async () => {
+    it('Should return an empty string when the authorization property is not well formed', async () => {
       // Arrange
       const req = {
         headers: {
@@ -95,12 +82,13 @@ describe('auth', () => {
       };
 
       // Act
+      const token = getTokenFromHeaders(req as IncomingMessage);
 
       // Assert
-      expect(() => getTokenFromHeaders(req as IncomingMessage)).to.throw('The authorization is not well formed. It should be something like "Token xxxxxxx"');
+      token.should.eql('');
     });
 
-    it('Should throw an exception when the authorization property is not well formed', async () => {
+    it('Should return an empty string when the authorization property is not well formed', async () => {
       // Arrange
       const req = {
         headers: {
@@ -109,9 +97,10 @@ describe('auth', () => {
       };
 
       // Act
+      const token = getTokenFromHeaders(req as IncomingMessage);
 
       // Assert
-      expect(() => getTokenFromHeaders(req as IncomingMessage)).to.throw('The authorization token cannot be found in the header');
+      token.should.eql('');
     });
   });
 });
