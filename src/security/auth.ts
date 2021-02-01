@@ -1,27 +1,33 @@
-import jwt from "express-jwt";
-import { IncomingMessage } from "http";
-import config from "../utils/configUtils";
+import jwt from 'express-jwt';
+import { IncomingMessage } from 'http';
+import config from '../utils/configUtils';
 
-const getTokenFromHeaders = (req: IncomingMessage): string => {
+export const getTokenFromHeaders = (req: IncomingMessage): string => {
   const { headers: { authorization } } = req;
 
-  if (authorization && authorization.split(" ")[0] === "Token") {
-    return authorization.split(" ")[1];
+  if (!authorization) {
+    throw new Error('The authorization token cannot be found in the header');
   }
 
+  const authorizationFields = authorization.split(' ');
+  if (authorizationFields.length !== 2 || authorizationFields[0] !== 'Token') {
+    throw new Error('The authorization is not well formed. It should be something like "Token xxxxxxx"');
+  }
+
+  return authorizationFields[1];
 };
 
 const auth = {
   optional: jwt({
     credentialsRequired: false,
     getToken: getTokenFromHeaders,
-    secret: config.get("JWT_PrivateKey"),
-    userProperty: "body.payload",
+    secret: config.get('JWT_PrivateKey'),
+    userProperty: 'body.payload',
   }),
   required: jwt({
     getToken: getTokenFromHeaders,
-    secret: config.get("JWT_PrivateKey"),
-    userProperty: "body.payload",
+    secret: config.get('JWT_PrivateKey'),
+    userProperty: 'body.payload',
   }),
 };
 

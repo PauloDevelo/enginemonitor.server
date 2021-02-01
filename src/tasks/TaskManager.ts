@@ -1,15 +1,16 @@
-import cron, { ScheduledTask } from "node-cron";
+import cron, { ScheduledTask } from 'node-cron';
 
-import logger from "../utils/logger";
+import logger from '../utils/logger';
 
 export interface ITask {action: () => void; cronTabConfig?: string; }
 
 class TaskManager {
   private readonly tasks: ITask[];
+
   private readonly jobs: ScheduledTask[] = [];
 
   constructor(tasks: ITask[]) {
-      this.tasks = tasks;
+    this.tasks = tasks;
   }
 
   public stop() {
@@ -24,7 +25,7 @@ class TaskManager {
 
       const options = {
         scheduled: true,
-        timezone: "Europe/Paris"
+        timezone: 'Europe/Paris',
       };
 
       const job = cron.schedule(task.cronTabConfig, task.action, options);

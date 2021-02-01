@@ -1,18 +1,18 @@
-import moment from "moment";
-import Users, { deleteUserModel } from "../models/Users";
-import AssetUser from "../models/AssetUser";
-import GuestLinks from "../models/GuestLinks";
-import {UsageAlertContext, sendUsageAlertBeforeAccountDeletion} from "../utils/sendEmailHelper";
-import logger from "../utils/logger";
-
+/* eslint-disable no-underscore-dangle */
+import moment from 'moment';
+import AssetUser from '../models/AssetUser';
+import GuestLinks from '../models/GuestLinks';
+import Users, { deleteUserModel } from '../models/Users';
+import logger from '../utils/logger';
+import { IUsageAlertContext, sendUsageAlertBeforeAccountDeletion } from '../utils/sendEmailHelper';
 
 const maxNumberOfDayWithoutUsingTheWebApp = 365;
 
 export async function sendEmailToUsersWhoAreGoingToBeDeleted(nbDayBeforeDeletion: number): Promise<void> {
   logger.info(`sendEmailToUsersWhoAreGoingToBeDeleted(${nbDayBeforeDeletion})`);
   const dateRangeMin = moment()
-                        .startOf('day')
-                        .subtract(maxNumberOfDayWithoutUsingTheWebApp - nbDayBeforeDeletion, 'day');
+    .startOf('day')
+    .subtract(maxNumberOfDayWithoutUsingTheWebApp - nbDayBeforeDeletion, 'day');
 
   const query = { forbidSelfDelete: false };
   let users = await Users.find(query);
@@ -23,10 +23,10 @@ export async function sendEmailToUsersWhoAreGoingToBeDeleted(nbDayBeforeDeletion
   });
 
   users.forEach((user) => {
-    const context: UsageAlertContext = {
+    const context: IUsageAlertContext = {
       MaxNumberDaysWithoutUsage: maxNumberOfDayWithoutUsingTheWebApp,
       NumberOfDayBeforeDeletion: nbDayBeforeDeletion,
-      User: user
+      User: user,
     };
 
     sendUsageAlertBeforeAccountDeletion(context);
@@ -34,11 +34,11 @@ export async function sendEmailToUsersWhoAreGoingToBeDeleted(nbDayBeforeDeletion
 }
 
 export async function deleteUserWhoDidNotUseTheWebApp(): Promise<void> {
-  logger.info("deleteUserWhoDidNotUseTheWebApp");
+  logger.info('deleteUserWhoDidNotUseTheWebApp');
 
   const dateRangeMax = moment()
-                        .endOf("day")
-                        .subtract(maxNumberOfDayWithoutUsingTheWebApp, "day");
+    .endOf('day')
+    .subtract(maxNumberOfDayWithoutUsingTheWebApp, 'day');
 
   const query = { forbidSelfDelete: false };
   let users = await Users.find(query);
@@ -48,26 +48,25 @@ export async function deleteUserWhoDidNotUseTheWebApp(): Promise<void> {
     return lastAuth.isBefore(dateRangeMax);
   });
 
-  const deletionPromises = users.map(user => deleteUserModel(user));
+  const deletionPromises = users.map((user) => deleteUserModel(user));
   await Promise.all(deletionPromises);
 }
 
 export async function deleteOrphanGuestUser(): Promise<void> {
-  logger.info("deleteOrphanGuestUser");
+  logger.info('deleteOrphanGuestUser');
 
-  const query = { name: 'Guest' };
-  const users = await Users.find(query);
+  const userQuery = { name: 'Guest' };
+  const users = await Users.find(userQuery);
 
-  const deletionPromises = users.map(async user => {
-    const query = { userId: user._id };
-    const assetUserLinks = await AssetUser.find(query);
+  const deletionPromises = users.map(async (user) => {
+    const assetUserQuery = { userId: user._id };
+    const assetUserLinks = await AssetUser.find(assetUserQuery);
 
-    if(assetUserLinks.length === 0){
+    if (assetUserLinks.length === 0) {
       const queryGuestLink = { guestUserId: user._id };
       const guestLinks = await GuestLinks.find(queryGuestLink);
 
-      const deletionPromises = guestLinks.map(guestLink => guestLink.remove())
-      await Promise.all(deletionPromises);
+      await Promise.all(guestLinks.map((guestLink) => guestLink.remove()));
 
       await deleteUserModel(user);
     }
