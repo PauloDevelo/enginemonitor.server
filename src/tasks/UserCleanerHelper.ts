@@ -4,7 +4,7 @@ import AssetUser from '../models/AssetUser';
 import GuestLinks from '../models/GuestLinks';
 import Users, { deleteUserModel } from '../models/Users';
 import logger from '../utils/logger';
-import { IUsageAlertContext, sendUsageAlertBeforeAccountDeletion } from '../utils/sendEmailHelper';
+import sendEmailHelper, { IUsageAlertContext } from '../utils/sendEmailHelper';
 
 const maxNumberOfDayWithoutUsingTheWebApp = 365;
 
@@ -29,7 +29,7 @@ export async function sendEmailToUsersWhoAreGoingToBeDeleted(nbDayBeforeDeletion
       User: user,
     };
 
-    sendUsageAlertBeforeAccountDeletion(context);
+    sendEmailHelper.sendUsageAlertBeforeAccountDeletion(context);
   });
 }
 
@@ -55,20 +55,20 @@ export async function deleteUserWhoDidNotUseTheWebApp(): Promise<void> {
 export async function deleteOrphanGuestUser(): Promise<void> {
   logger.info('deleteOrphanGuestUser');
 
-  const userQuery = { name: 'Guest' };
-  const users = await Users.find(userQuery);
+  const guestQuery = { name: 'Guest' };
+  const guests = await Users.find(guestQuery);
 
-  const deletionPromises = users.map(async (user) => {
-    const assetUserQuery = { userId: user._id };
+  const deletionPromises = guests.map(async (guest) => {
+    const assetUserQuery = { userId: guest._id };
     const assetUserLinks = await AssetUser.find(assetUserQuery);
 
     if (assetUserLinks.length === 0) {
-      const queryGuestLink = { guestUserId: user._id };
+      const queryGuestLink = { guestUserId: guest._id };
       const guestLinks = await GuestLinks.find(queryGuestLink);
 
       await Promise.all(guestLinks.map((guestLink) => guestLink.remove()));
 
-      await deleteUserModel(user);
+      await deleteUserModel(guest);
     }
   });
   await Promise.all(deletionPromises);
