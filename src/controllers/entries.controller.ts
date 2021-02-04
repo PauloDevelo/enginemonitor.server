@@ -173,10 +173,11 @@ class EntriesController implements IController {
       const assetId = (await getAssetByUiId(req.params.assetUiId))._id;
       const equipment = await getEquipmentByUiId(assetId, req.params.equipmentUiId);
 
-      if (equipment) {
-        return equipment._id;
+      if (!equipment) {
+        throw res.status(400).json('inexistingequipment');
       }
-      throw res.status(400).json('inexistingequipment');
+
+      return equipment._id;
     }
 
     private getTaskId = async (equipmentId: mongoose.Types.ObjectId, req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId | undefined> => {
