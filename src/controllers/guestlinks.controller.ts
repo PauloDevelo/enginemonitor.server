@@ -99,13 +99,13 @@ class GuestLinksController implements IController {
 
         await createUserAssetLink({ user: guestUser, asset, readonly: true });
 
-        const guestLink = new GuestLinks({
+        let guestLink = new GuestLinks({
           _uiId: guestLinkUiId,
           guestUserId: guestUser._id,
           name: nameGuestLink,
           niceKey,
         });
-        await guestLink.save();
+        guestLink = await guestLink.save();
 
         return res.json({ guestlink: await guestLink.toJSON() });
       };
