@@ -1,6 +1,5 @@
 import * as express from 'express';
 import fs from 'fs';
-import { Types } from 'mongoose';
 import auth from '../security/auth';
 
 import { getUserAssets } from '../models/AssetUser';
@@ -40,7 +39,8 @@ class ImagesController implements IController {
         .delete(`${this.path}/:parentUiId/:imageUiId`, wrapAsync(this.deleteImage));
     }
 
-    private checkImageProperties = (image: any, res: express.Response, next: express.NextFunction, reject: express.NextFunction): void => {
+    // eslint-disable-next-line no-unused-vars
+    private checkImageProperties = async (image: any, res: express.Response, next: () => Promise<express.Response>, reject: (_errors: any) => express.Response): Promise<express.Response> => {
       const errors: any = {};
 
       if (!image._uiId) {
@@ -56,42 +56,38 @@ class ImagesController implements IController {
       }
 
       if (Object.keys(errors).length === 0) {
-        next();
-      } else {
-        reject(errors);
+        return next();
       }
+
+      return reject(errors);
     }
 
-    private checkOwnershipFromParams = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+    private checkOwnershipFromParams = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void | express.Response> => {
       const user = getUser();
       if (user === null || user === undefined) {
-        res.status(400).json({ errors: { authentication: 'error' } });
-        return;
+        return res.status(400).json({ errors: { authentication: 'error' } });
       }
 
-      const userId = user._id;
-      if (await this.checkOwnership(userId, req.params.parentUiId) === false) {
-        res.status(400).json({ errors: { authentication: 'error' } });
-        return;
+      if (await this.checkOwnership(req.params.parentUiId) === false) {
+        return res.status(400).json({ errors: { authentication: 'error' } });
       }
 
-      next();
+      return next();
     }
 
-    private checkImageDoesNotExistAlready = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+    private checkImageDoesNotExistAlready = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void | express.Response> => {
       const { body: { _uiId, parentUiId } } = req;
 
       const existingImages = await Images.find({ _uiId, parentUiId });
 
       if (existingImages.length > 0) {
-        res.json({ image: await existingImages[0].toJSON() });
-        return;
+        return res.json({ image: await existingImages[0].toJSON() });
       }
 
-      next();
+      return next();
     }
 
-    private checkCredentials = async (req: express.Request, res: express.Response, next: any) => {
+    private checkCredentials = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
       switch (req.method) {
         case 'GET':
           return next();
@@ -109,19 +105,17 @@ class ImagesController implements IController {
       }
     }
 
-    private checkParentBelongsImage = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+    private checkParentBelongsImage = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void | express.Response> => {
       const existingImage = await getImageByUiId(req.params.imageUiId);
       if (!existingImage) {
-        res.status(400).json({ errors: { entity: 'notfound' } });
-        return;
+        return res.status(400).json({ errors: { entity: 'notfound' } });
       }
 
       if (existingImage.parentUiId !== req.params.parentUiId) {
-        res.status(400).json({ errors: { operation: 'invalid' } });
-        return;
+        return res.status(400).json({ errors: { operation: 'invalid' } });
       }
 
-      next();
+      return next();
     }
 
     private getImages = async (req: express.Request, res: express.Response) => {
@@ -129,10 +123,10 @@ class ImagesController implements IController {
 
       const jsonImages: any[] = await Promise.all(images.map((image) => image.toJSON()));
 
-      res.json({ images: jsonImages });
+      return res.json({ images: jsonImages });
     }
 
-    private addImage = async (req: any, res: express.Response): Promise<void> => {
+    private addImage = async (req: any, res: express.Response): Promise<express.Response> => {
       const { body: { _uiId, name, parentUiId } } = req;
 
       const newImage = new Images({
@@ -145,48 +139,46 @@ class ImagesController implements IController {
         title: '',
       });
 
-      this.checkImageProperties(newImage, res,
+      return this.checkImageProperties(newImage, res,
         async () => {
           const result = await newImage.save();
-          res.json({ image: await result.toJSON() });
+          return res.json({ image: await result.toJSON() });
         },
-        async (errors) => {
+        (errors) => {
           fs.unlinkSync(req.files.imageData[0].path);
           fs.unlinkSync(req.files.thumbnail[0].path);
-          res.status(422).json({ errors });
+          return res.status(422).json({ errors });
         });
     }
 
-    private updateImage = async (req: express.Request, res: express.Response): Promise<void> => {
+    private updateImage = async (req: express.Request, res: express.Response): Promise<express.Response> => {
       const { body: { image } } = req;
 
       let existingImage = await getImageByUiId(req.params.imageUiId);
       if (!existingImage) {
-        res.status(400).json({ errors: { entity: 'notfound' } });
-        return;
+        return res.status(400).json({ errors: { entity: 'notfound' } });
       }
 
       existingImage = Object.assign(existingImage, image);
       existingImage = await existingImage.save();
 
-      res.json({ image: await existingImage.toJSON() });
+      return res.json({ image: await existingImage.toJSON() });
     }
 
-    private deleteImage = async (req: express.Request, res: express.Response): Promise<void> => {
+    private deleteImage = async (req: express.Request, res: express.Response): Promise<express.Response> => {
       const existingImage = await getImageByUiId(req.params.imageUiId);
       if (!existingImage) {
-        res.status(400).json({ errors: { entity: 'notfound' } });
-        return;
+        return res.status(400).json({ errors: { entity: 'notfound' } });
       }
 
       const imageJson = await existingImage.toJSON();
 
-      deleteImage(existingImage);
+      await deleteImage(existingImage);
 
-      res.json({ image: imageJson });
+      return res.json({ image: imageJson });
     }
 
-    private checkOwnership = async (userId: Types.ObjectId, parentUiId: string): Promise<boolean> => {
+    private checkOwnership = async (parentUiId: string): Promise<boolean> => {
       const assetsOwned = await getUserAssets();
 
       const query = { _uiId: parentUiId };
