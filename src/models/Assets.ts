@@ -3,18 +3,6 @@ import mongoose from 'mongoose';
 import { deleteAssetUserModel, getUserAssets } from './AssetUser';
 import { deleteEquipments } from './Equipments';
 
-// eslint-disable-next-line no-shadow
-export enum AssetType {
-    // eslint-disable-next-line no-unused-vars
-    sailboat = 0,
-    // eslint-disable-next-line no-unused-vars
-    camper= 1,
-    // eslint-disable-next-line no-unused-vars
-    car= 2,
-    // eslint-disable-next-line no-unused-vars
-    others= 3,
-}
-
 export const AssetsSchema = new mongoose.Schema({
   _uiId: String,
   brand: String,
