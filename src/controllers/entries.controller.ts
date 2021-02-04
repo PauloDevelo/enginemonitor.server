@@ -186,11 +186,11 @@ class EntriesController implements IController {
       }
 
       const task = (await getTaskByUiId(equipmentId, req.params.taskUiId));
-      if (task) {
-        return task._id;
+      if (!task) {
+        throw res.status(400).json('inexistingtask');
       }
 
-      throw res.status(400).json('inexistingtask');
+      return task._id;
     }
 }
 
