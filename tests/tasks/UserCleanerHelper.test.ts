@@ -66,7 +66,7 @@ describe('UserCleanerHelper', () => {
         lastAuthInDays: 365 - 12, nbDayBeforeDeletion: 12, forbidSelfDelete: false, expectAnEmail: true,
       },
       {
-        lastAuthInDays: 365 - 12, nbDayBeforeDeletion: 12, forbidSelfDelete: true, expectAnEmail: false,
+        lastAuthInDays: 365 - 12, nbDayBeforeDeletion: 12, forbidSelfDelete: true, expectAnEmail: true,
       },
       {
         lastAuthInDays: 365 - 13, nbDayBeforeDeletion: 12, forbidSelfDelete: false, expectAnEmail: false,
@@ -130,11 +130,17 @@ describe('UserCleanerHelper', () => {
         user2.forbidSelfDelete = false;
         user2 = await user2.save();
 
-        let user3 = new Users({ name: 'r', firstname: 'h', email: 'h@gmail.com' });
+        let user3 = new Users({ name: 'r', firstname: 'h', email: 'i@gmail.com' });
         user3.setPassword('test');
-        user3.lastAuth = moment().subtract(600, 'day').toDate();
+        user3.lastAuth = moment().subtract(365 - dataFor2UsersRow.nbDayBeforeDeletion, 'day').toDate();
         user3.forbidSelfDelete = true;
         user3 = await user3.save();
+
+        let userGuest = new Users({ name: 'Guest', firstname: 'h', email: 'h@gmail.com' });
+        userGuest.setPassword('test');
+        userGuest.lastAuth = moment().subtract(600, 'day').toDate();
+        userGuest.forbidSelfDelete = true;
+        userGuest = await userGuest.save();
 
         // Act
         await sendEmailToUsersWhoAreGoingToBeDeleted(dataFor2UsersRow.nbDayBeforeDeletion);
@@ -158,7 +164,16 @@ describe('UserCleanerHelper', () => {
           sinon.match(isUser2),
         ).calledOnce).to.be.eql(dataFor2UsersRow.expectAnEmailForUser2);
 
-        expect(sendUsageAlertBeforeAccountDeletionSpy.callCount).to.be.eql((dataFor2UsersRow.expectAnEmailForUser1 ? 1 : 0) + (dataFor2UsersRow.expectAnEmailForUser2 ? 1 : 0));
+        const isUser3 = sinon.match((usageAlertContext: IUsageAlertContext) => usageAlertContext.User._id.equals(user3._id));
+        expect(sendUsageAlertBeforeAccountDeletionSpy.withArgs(
+          sinon.match.hasOwn('MaxNumberDaysWithoutUsage', 365),
+        ).withArgs(
+          sinon.match.hasOwn('NumberOfDayBeforeDeletion', dataFor2UsersRow.nbDayBeforeDeletion),
+        ).withArgs(
+          sinon.match(isUser3),
+        ).calledOnce).to.be.eql(true);
+
+        expect(sendUsageAlertBeforeAccountDeletionSpy.callCount).to.be.eql((dataFor2UsersRow.expectAnEmailForUser1 ? 1 : 0) + (dataFor2UsersRow.expectAnEmailForUser2 ? 1 : 0) + 1);
       });
     });
   });
@@ -205,6 +220,12 @@ describe('UserCleanerHelper', () => {
       userToDelete.lastAuth = moment().subtract(366, 'day').toDate();
       userToDelete.forbidSelfDelete = false;
       userToDelete = await userToDelete.save();
+
+      let userToDelete2 = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
+      userToDelete2.setPassword('test');
+      userToDelete2.lastAuth = moment().subtract(366, 'day').toDate();
+      userToDelete2.forbidSelfDelete = true;
+      userToDelete2 = await userToDelete.save();
 
       let userToNotDelete = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
       userToNotDelete.setPassword('test');

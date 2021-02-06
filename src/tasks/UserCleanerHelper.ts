@@ -14,7 +14,7 @@ export async function sendEmailToUsersWhoAreGoingToBeDeleted(nbDayBeforeDeletion
     .startOf('day')
     .subtract(maxNumberOfDayWithoutUsingTheWebApp - nbDayBeforeDeletion, 'day');
 
-  const query = { forbidSelfDelete: false };
+  const query = { name: { $ne: 'Guest' } };
   let users = await Users.find(query);
 
   users = users.filter((user) => {
@@ -40,7 +40,7 @@ export async function deleteUserWhoDidNotUseTheWebApp(): Promise<void> {
     .endOf('day')
     .subtract(maxNumberOfDayWithoutUsingTheWebApp, 'day');
 
-  const query = { forbidSelfDelete: false };
+  const query = { name: { $ne: 'Guest' } };
   let users = await Users.find(query);
 
   users = users.filter((user) => {
