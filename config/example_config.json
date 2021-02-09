@@ -11,11 +11,14 @@
 
     "frontEndUrl": "http://localhost:8080/",
 
-    "SENDGRID_API_KEY": "Send grid API key",
+    "gmailAppPassword": "an application specific password for my.equipment.maintenance@gmail.com",
 
     "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT",
 
     // Size limit of the image folder for one user
     "userImageFolderLimitInByte": 20971520,
-    "ImageFolder": "uploads"
+    "ImageFolder": "uploads",
+
+    "GOOGLE_CLIENT_ID": "something_like_a_guid.apps.googleusercontent.com",
+    "GOOGLE_CLIENT_SECRET": "anothersecret"
  }
