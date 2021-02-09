@@ -11,7 +11,7 @@
 
     "frontEndUrl": "http://localhost:8080/",
 
-    "SENDGRID_API_KEY": "Send grid API key",
+    "gmailAppPassword": "an application specific password for my.equipment.maintenance@gmail.com",
 
     "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT",
 

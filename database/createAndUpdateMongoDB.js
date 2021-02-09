@@ -1,4 +1,4 @@
-const newVersion = 0.8;
+const newVersion = 1.0;
 
 db = connect("localhost/" + databaseName);
 
@@ -80,7 +80,7 @@ if(dbMetadata.version < 0.7){
 }
 
 if(dbMetadata.version < 0.8){
-    print('Updating Database to the version 0.7');
+    print('Updating Database to the version 0.8');
 
     const myCursor = db.users.find();
     while (myCursor.hasNext()) {
@@ -89,7 +89,29 @@ if(dbMetadata.version < 0.8){
     }
 }
 
-// Write the new pdates on top of this line
+if(dbMetadata.version < 0.9){
+    print('Updating Database to the version 0.9');
+
+    const myCursor = db.users.find();
+    while (myCursor.hasNext()) {
+        const user = myCursor.next();
+        const forbidSelfDelete = user.name === 'Guest';
+        db.users.update({ _id: user._id }, {$set : { forbidSelfDelete }}, {upsert:false, multi:true});
+    }
+}
+
+if(dbMetadata.version < 1.0){
+    print('Updating Database to the version 1.0');
+
+    const now = new Date();
+    const myCursor = db.users.find();
+    while (myCursor.hasNext()) {
+        const user = myCursor.next();
+        db.users.update({ _id: user._id }, {$set : { lastAuth: now }}, {upsert:false, multi:true});
+    }
+}
+
+// Write the new updates on top of this line
 // Finish by inserting the new version of the database
 db.dbmetadatas.insert({version:newVersion});
 print('Database updated to the version ' + newVersion);

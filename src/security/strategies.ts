@@ -1,8 +1,8 @@
-import passport from "passport";
-import googleStrategy from "./google";
-import localStrategy from "./passport";
+import passport from 'passport';
+import googleStrategy from './google';
+import localStrategy from './passport';
 
-passport.use("google", googleStrategy);
-passport.use("local", localStrategy);
+passport.use('google', googleStrategy);
+passport.use('local', localStrategy);
 
 export default passport;

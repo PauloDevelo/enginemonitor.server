@@ -1,5 +1,7 @@
-import * as express from "express";
+import * as express from 'express';
 
-export default interface IController {
+interface IController {
     getRouter(): express.Router;
 }
+
+export default IController;

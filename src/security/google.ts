@@ -1,18 +1,17 @@
-import crypto from "crypto";
-import passport from "passport";
-import passportGoogle from "passport-google-oauth";
-import logger from "../utils/logger";
+import crypto from 'crypto';
+import passportGoogle from 'passport-google-oauth';
+import logger from '../utils/logger';
 
-import Users from "../models/Users";
+import Users from '../models/Users';
 
-import config from "../utils/configUtils";
+import config from '../utils/configUtils';
 
 const GoogleStrategy = passportGoogle.OAuth2Strategy;
 
 const strategyOptions = {
-  callbackURL: `${config.get("hostURL")}users/login/google/callback`,
-  clientID: config.get("GOOGLE_CLIENT_ID"),
-  clientSecret: config.get("GOOGLE_CLIENT_SECRET"),
+  callbackURL: `${config.get('hostURL')}users/login/google/callback`,
+  clientID: config.get('GOOGLE_CLIENT_ID'),
+  clientSecret: config.get('GOOGLE_CLIENT_SECRET'),
 };
 
 const verifyCallback = async (accessToken, refreshToken, profile, done) => {
@@ -21,29 +20,29 @@ const verifyCallback = async (accessToken, refreshToken, profile, done) => {
 
     if (user) {
       return done(null, user);
-    } else {
-      const verifiedEmail = profile.emails.find((email) => email.verified) || profile.emails[0];
-
-      let createdUser = new Users({
-        _uiId: profile.id,
-        authStrategy: "google",
-        email: verifiedEmail.value,
-        firstname: profile.name.givenName,
-        forbidCreatingAsset: false,
-        forbidUploadingImage: false,
-        hash: null,
-        isVerified: true,
-        name: profile.name.familyName,
-        privacyPolicyAccepted: false,
-        salt: null,
-        verificationToken: crypto.randomBytes(16).toString("hex")
-      });
-      createdUser = await createdUser.save();
-
-      return done(null, createdUser);
     }
+    const verifiedEmail = profile.emails.find((email) => email.verified) || profile.emails[0];
+
+    let createdUser = new Users({
+      _uiId: profile.id,
+      authStrategy: 'google',
+      email: verifiedEmail.value,
+      firstname: profile.name.givenName,
+      forbidCreatingAsset: false,
+      forbidSelfDelete: false,
+      forbidUploadingImage: false,
+      hash: null,
+      isVerified: true,
+      name: profile.name.familyName,
+      privacyPolicyAccepted: false,
+      salt: null,
+      verificationToken: crypto.randomBytes(16).toString('hex'),
+    });
+    createdUser = await createdUser.save();
+
+    return done(null, createdUser);
   } catch (err) {
-    logger.log("error", "Authentification error", err);
+    logger.log('error', 'Authentification error', err);
     return done(err);
   }
 };
