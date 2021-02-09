@@ -1,30 +1,39 @@
-import config = require("config");
-import fs from "fs";
-import mongoose from "mongoose";
-import {getFileSizeInBytes} from "../utils/fileHelpers";
-import logger from "../utils/logger";
+import fs from 'fs';
+import mongoose from 'mongoose';
+import config from 'config';
+import { getFileSizeInBytes } from '../utils/fileHelpers';
+import logger from '../utils/logger';
+
+const buildURL = (path: string): string => {
+  let newPath = path.replace(/\\/g, '/');
+  const imageFolder = (config.get('ImageFolder') as string).replace(/\\/g, '/');
+
+  newPath = newPath.replace(imageFolder, '');
+
+  return `${config.get('hostURL')}uploads/${newPath}`;
+};
 
 export const ImagesSchema = new mongoose.Schema({
-    _uiId: String,
-    description: String,
-    name: String,
-    parentUiId: String,
-    path: String,
-    thumbnailPath: String,
-    title: String,
+  _uiId: String,
+  description: String,
+  name: String,
+  parentUiId: String,
+  path: String,
+  thumbnailPath: String,
+  title: String,
 });
 
-ImagesSchema.methods.toJSON = async function() {
-    return {
-        _uiId: this._uiId,
-        description: this.description,
-        name: this.name,
-        parentUiId: this.parentUiId,
-        sizeInByte: getFileSizeInBytes(this.path) + getFileSizeInBytes(this.thumbnailPath),
-        thumbnailUrl: buildURL(this.thumbnailPath),
-        title: this.title,
-        url: buildURL(this.path),
-    };
+ImagesSchema.methods.toJSON = async function () {
+  return {
+    _uiId: this._uiId,
+    description: this.description,
+    name: this.name,
+    parentUiId: this.parentUiId,
+    sizeInByte: getFileSizeInBytes(this.path) + getFileSizeInBytes(this.thumbnailPath),
+    thumbnailUrl: buildURL(this.thumbnailPath),
+    title: this.title,
+    url: buildURL(this.path),
+  };
 };
 
 export interface IImages extends mongoose.Document {
@@ -36,48 +45,35 @@ export interface IImages extends mongoose.Document {
     toJSON(): any;
 }
 
-export const deleteExistingImages = async (parentUiId: string): Promise<void> => {
-    const imagesToDelete = await getImagesByParentUiId(parentUiId);
-
-    const deletion = imagesToDelete.map((imageToDelete) => deleteImage(imageToDelete));
-
-    await Promise.all(deletion);
-};
+const Images = mongoose.model<IImages>('Images', ImagesSchema);
+export default Images;
 
 export const getImagesByParentUiId = async (parentUiId: string): Promise<IImages[]> => {
-    const query = { parentUiId };
-    return await Images.find(query);
-};
-
-export const getImageByUiId = async (uiId: string): Promise<IImages> => {
-    return await Images.findOne({_uiId: uiId});
+  const query = { parentUiId };
+  return Images.find(query);
 };
 
 export const deleteImage = async (image: IImages): Promise<void> => {
-    try {
-        if (fs.existsSync(image.path)) {
-            fs.unlinkSync(image.path);
-        }
-        if (fs.existsSync(image.thumbnailPath)) {
-            fs.unlinkSync(image.thumbnailPath);
-        }
-
-        await image.remove();
-    } catch (err) {
-        logger.error(err);
-    } finally {
-        await image.remove();
+  try {
+    if (fs.existsSync(image.path)) {
+      fs.unlinkSync(image.path);
     }
+    if (fs.existsSync(image.thumbnailPath)) {
+      fs.unlinkSync(image.thumbnailPath);
+    }
+  } catch (err) {
+    logger.error(err);
+  } finally {
+    await image.remove();
+  }
 };
 
-const buildURL = (path: string): string => {
-    let newPath = path.replace(/\\/g, "/");
-    const imageFolder = (config.get("ImageFolder") as string).replace(/\\/g, "/");
+export const deleteExistingImages = async (parentUiId: string): Promise<void> => {
+  const imagesToDelete = await getImagesByParentUiId(parentUiId);
 
-    newPath = newPath.replace(imageFolder, "");
+  const deletion = imagesToDelete.map((imageToDelete) => deleteImage(imageToDelete));
 
-    return config.get("hostURL") + "uploads/" + newPath;
+  await Promise.all(deletion);
 };
 
-const Images = mongoose.model<IImages>("Images", ImagesSchema);
-export default Images;
+export const getImageByUiId = async (uiId: string): Promise<IImages> => Images.findOne({ _uiId: uiId });
