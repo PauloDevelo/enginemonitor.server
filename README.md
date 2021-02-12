@@ -1,10 +1,10 @@
-This project is the back end side for the Equipment maintenance project.
-It runs using Node.js. I currently use Node 12.16.1
-The database is MongoDB. I currently use Mongo 4.0.10.
-This project is coded using TypeScript + ESLint
-Unit tests are coded using Mocha and Chai
-Continuous Integration ![integration environment for github](https://github.com/PauloDevelo/enginemonitor.server/workflows/CI/badge.svg?branch=integration)
-
+This project is the back end side for the Equipment maintenance project.<br>
+It runs using Node.js. I currently use Node 12.16.1<br>
+The database is MongoDB. I currently use Mongo 4.0.10<br>
+This project is coded using TypeScript + ESLint<br>
+Unit tests are coded using Mocha and Chai<br>
+Continuous Integration ![integration environment for github](https://github.com/PauloDevelo/enginemonitor.server/workflows/CI/badge.svg?branch=integration)<br>
+<br>
 ## Available Scripts
 
 In the project directory, you can run:
