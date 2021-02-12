@@ -22,7 +22,7 @@ jobs:
     - name: Create mongoDB Docker container for API testing
       uses: DigiPie/mongo-action@v1.0.1
       with:
-          image-version: 4.0
+          image_version: 4.0
     - name: Initialize mongo
       run: "mongo --eval \"const databaseName = 'enginemaintenancetest'\" ./database/createAndUpdateMongoDB.js"
     - name: Install npm packages
