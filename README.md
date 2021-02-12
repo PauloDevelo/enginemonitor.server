@@ -4,6 +4,8 @@ The database is MongoDB. I currently use Mongo 4.0.10.
 This project is coded using TypeScript + ESLint
 Unit tests are coded using Mocha and Chai
 
+Continuous Integration ![integration environment for github](https://github.com/PauloDevelo/enginemonitor.server/workflows/CI/badge.svg?branch=integration)
+
 ## Available Scripts
 
 In the project directory, you can run:
