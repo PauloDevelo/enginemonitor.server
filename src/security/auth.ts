@@ -23,11 +23,13 @@ const auth = {
     getToken: getTokenFromHeaders,
     secret: config.get('JWT_PrivateKey'),
     userProperty: 'body.payload',
+    algorithms: ['HS256'],
   }),
   required: jwt({
     getToken: getTokenFromHeaders,
     secret: config.get('JWT_PrivateKey'),
     userProperty: 'body.payload',
+    algorithms: ['HS256'],
   }),
 };
 
