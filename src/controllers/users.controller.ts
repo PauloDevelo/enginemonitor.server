@@ -147,7 +147,7 @@ class UsersController implements IController {
         return res.status(422).json({ errors: { token: 'isrequired' } });
       }
 
-      const user = await Users.find({ email });
+      const user = await Users.find({ email: email as string });
 
       if (!user[0]) {
         return res.status(400).json({ errors: { email: 'isinvalid' } });
@@ -164,7 +164,7 @@ class UsersController implements IController {
     private checkEmail = async (req: express.Request, res: express.Response) => {
       const { query: { email } } = req;
 
-      const user = await Users.findOne({ email });
+      const user = await Users.findOne({ email: email as string });
       user.isVerified = true;
       await user.save();
 
@@ -178,7 +178,7 @@ class UsersController implements IController {
         return res.status(422).json({ errors: { token: 'isrequired' } });
       }
 
-      const newPassword = await NewPasswords.find({ verificationToken: token });
+      const newPassword = await NewPasswords.find({ verificationToken: token as string });
       if (!newPassword[0]) {
         return res.status(400).json({ errors: { token: 'isinvalid' } });
       }
@@ -195,7 +195,7 @@ class UsersController implements IController {
     private changePassword = async (req: express.Request, res: express.Response) => {
       const { query: { token } } = req;
 
-      const newPassword = await NewPasswords.findOne({ verificationToken: token });
+      const newPassword = await NewPasswords.findOne({ verificationToken: token as string });
       const user = await Users.findOne({ email: newPassword.email });
 
       user.setNewPassword(newPassword);
