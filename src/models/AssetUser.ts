@@ -4,25 +4,25 @@ import { getUser } from '../utils/requestContext';
 import Assets, { IAssets } from './Assets';
 import { IUser } from './Users';
 
-export const AssetUserSchema = new mongoose.Schema({
-  assetId: mongoose.Types.ObjectId,
-  readonly: Boolean,
-  userId: mongoose.Types.ObjectId,
-});
-
-AssetUserSchema.methods.toJSON = async function () {
-  return {
-    readonly: this.readonly,
-  };
-};
-
 export interface IAssetUser extends mongoose.Document {
   assetId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   readonly?: boolean;
 
-  toJSON(): any;
+  exportToJSON(): any;
 }
+
+export const AssetUserSchema = new mongoose.Schema<IAssetUser>({
+  assetId: mongoose.Types.ObjectId,
+  readonly: Boolean,
+  userId: mongoose.Types.ObjectId,
+});
+
+AssetUserSchema.methods.exportToJSON = async function () {
+  return {
+    readonly: this.readonly,
+  };
+};
 
 const AssetUser = mongoose.model<IAssetUser>('AssetUser', AssetUserSchema);
 export default AssetUser;

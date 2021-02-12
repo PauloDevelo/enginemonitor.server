@@ -84,7 +84,7 @@ class EquipmentsController implements IController {
       const query = { assetId: asset._id };
       const equipments = await Equipments.find(query);
 
-      const jsonEquipments: any[] = await Promise.all(equipments.map((equipment) => equipment.toJSON()));
+      const jsonEquipments: any[] = await Promise.all(equipments.map((equipment) => equipment.exportToJSON()));
 
       return res.json({ equipments: jsonEquipments });
     }
@@ -108,7 +108,7 @@ class EquipmentsController implements IController {
       newEquipment.assetId = assetId;
 
       newEquipment = await newEquipment.save();
-      return res.json({ equipment: await newEquipment.toJSON() });
+      return res.json({ equipment: await newEquipment.exportToJSON() });
     }
 
     private changeOrAddEquipment = async (req: express.Request, res: express.Response) => {
@@ -123,7 +123,7 @@ class EquipmentsController implements IController {
       existingEquipment = Object.assign(existingEquipment, equipment);
       existingEquipment = await existingEquipment.save();
 
-      return res.json({ equipment: await existingEquipment.toJSON() });
+      return res.json({ equipment: await existingEquipment.exportToJSON() });
     }
 
     private deleteEquipment = async (req: express.Request, res: express.Response) => {
@@ -135,7 +135,7 @@ class EquipmentsController implements IController {
 
       await deleteEquipmentModel(existingEquipment);
 
-      return res.json({ equipment: await existingEquipment.toJSON() });
+      return res.json({ equipment: await existingEquipment.exportToJSON() });
     }
 }
 

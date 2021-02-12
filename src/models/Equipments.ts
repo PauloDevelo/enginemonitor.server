@@ -14,7 +14,22 @@ export enum AgeAcquisitionType {
     tracker= 2
 }
 
-export const EquipmentsSchema = new mongoose.Schema({
+export interface IEquipments extends mongoose.Document {
+  _uiId: string;
+  age: number;
+  ageAcquisitionType: number;
+  ageUrl: string;
+  brand: string;
+  installation: Date;
+  assetId?: mongoose.Types.ObjectId;
+  // deprecated
+  ownerId?: mongoose.Types.ObjectId;
+  name: string;
+
+  exportToJSON(): any;
+}
+
+export const EquipmentsSchema = new mongoose.Schema<IEquipments>({
   _uiId: String,
   age: Number,
   ageAcquisitionType: Number,
@@ -28,7 +43,7 @@ export const EquipmentsSchema = new mongoose.Schema({
   ownerId: mongoose.Schema.Types.ObjectId,
 });
 
-EquipmentsSchema.methods.toJSON = async function () {
+EquipmentsSchema.methods.exportToJSON = async function () {
   return {
     _uiId: this._uiId,
     age: this.age,
@@ -40,21 +55,6 @@ EquipmentsSchema.methods.toJSON = async function () {
     name: this.name,
   };
 };
-
-export interface IEquipments extends mongoose.Document {
-    _uiId: string;
-    age: number;
-    ageAcquisitionType: number;
-    ageUrl: string;
-    brand: string;
-    installation: Date;
-    assetId?: mongoose.Types.ObjectId;
-    // deprecated
-    ownerId?: mongoose.Types.ObjectId;
-    name: string;
-
-    toJSON(): any;
-}
 
 const Equipments = mongoose.model<IEquipments>('Equipments', EquipmentsSchema);
 export default Equipments;

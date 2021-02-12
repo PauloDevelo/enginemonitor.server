@@ -107,7 +107,7 @@ class GuestLinksController implements IController {
         });
         guestLink = await guestLink.save();
 
-        return res.json({ guestlink: await guestLink.toJSON() });
+        return res.json({ guestlink: await guestLink.exportToJSON() });
       };
 
       return checkUserCredentials(req.method, assetUiId, res, next);
@@ -121,7 +121,7 @@ class GuestLinksController implements IController {
 
       const guestLinks = await this.getGuestLinksForAnAsset(asset);
 
-      const jsonGuestLinkPromises = guestLinks.map(async (guestLink) => guestLink.toJSON());
+      const jsonGuestLinkPromises = guestLinks.map(async (guestLink) => guestLink.exportToJSON());
       const jsonGuestLinks = await Promise.all(jsonGuestLinkPromises);
 
       return res.json({ guestlinks: jsonGuestLinks });
@@ -157,7 +157,7 @@ class GuestLinksController implements IController {
         await guestUser.remove();
         guestLinkToRemove = await guestLinkToRemove.remove();
 
-        return res.json({ guestlink: await guestLinkToRemove.toJSON() });
+        return res.json({ guestlink: await guestLinkToRemove.exportToJSON() });
       };
 
       return checkUserCredentials(req.method, asset._uiId, res, next);

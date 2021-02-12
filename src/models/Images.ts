@@ -13,7 +13,19 @@ const buildURL = (path: string): string => {
   return `${config.get('hostURL')}uploads/${newPath}`;
 };
 
-export const ImagesSchema = new mongoose.Schema({
+export interface IImages extends mongoose.Document {
+  _uiId: string;
+  description: String,
+  name: String,
+  parentUiId: string;
+  path: string;
+  thumbnailPath: string;
+  title: String,
+
+  exportToJSON(): any;
+}
+
+export const ImagesSchema = new mongoose.Schema<IImages>({
   _uiId: String,
   description: String,
   name: String,
@@ -23,7 +35,7 @@ export const ImagesSchema = new mongoose.Schema({
   title: String,
 });
 
-ImagesSchema.methods.toJSON = async function () {
+ImagesSchema.methods.exportToJSON = async function () {
   return {
     _uiId: this._uiId,
     description: this.description,
@@ -35,15 +47,6 @@ ImagesSchema.methods.toJSON = async function () {
     url: buildURL(this.path),
   };
 };
-
-export interface IImages extends mongoose.Document {
-    _uiId: string;
-    parentUiId: string;
-    path: string;
-    thumbnailPath: string;
-
-    toJSON(): any;
-}
 
 const Images = mongoose.model<IImages>('Images', ImagesSchema);
 export default Images;

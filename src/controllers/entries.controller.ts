@@ -104,7 +104,7 @@ class EntriesController implements IController {
 
     private sortAndConvertToJson = async (entries: IEntries[]) => {
       entries.sort((entryA, entryB) => entryA.date.getTime() - entryB.date.getTime());
-      return Promise.all(entries.map((entry) => entry.toJSON()));
+      return Promise.all(entries.map((entry) => entry.exportToJSON()));
     }
 
     private createEntry = async (equipmentId: mongoose.Types.ObjectId, taskId: mongoose.Types.ObjectId, req: express.Request, res: express.Response) => {
@@ -124,7 +124,7 @@ class EntriesController implements IController {
       newEntry.taskId = taskId;
 
       newEntry = await newEntry.save();
-      return res.json({ entry: await newEntry.toJSON() });
+      return res.json({ entry: await newEntry.exportToJSON() });
     }
 
     private changeOrCreateEntry = async (req: express.Request, res: express.Response) => {
@@ -143,7 +143,7 @@ class EntriesController implements IController {
         existingEntry = Object.assign(existingEntry, entry);
 
         existingEntry = await existingEntry.save();
-        return res.json({ entry: await existingEntry.toJSON() });
+        return res.json({ entry: await existingEntry.exportToJSON() });
       }
       return this.createEntry(equipmentId, taskId, req, res);
     }
@@ -166,7 +166,7 @@ class EntriesController implements IController {
 
       await deleteEntry(existingEntry);
 
-      return res.json({ entry: await existingEntry.toJSON() });
+      return res.json({ entry: await existingEntry.exportToJSON() });
     }
 
     private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {

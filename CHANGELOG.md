@@ -6,11 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
--Add a changelog
--Add a licence
--Add a readme
--Add the CI setup for GitHub ![integration environment for github](https://github.com/PauloDevelo/enginemonitor.server/workflows/CI/badge.svg?branch=integration)
-
+-Add a changelog<br>
+-Add a licence<br>
+-Add a readme<br>
+-Add the CI setup for GitHub ![integration environment for github](https://github.com/PauloDevelo/enginemonitor.server/workflows/CI/badge.svg?branch=integration)<br>
+-Upgrade all the dependencies<br>
 
 ## [v2.14] - 2021-02-09
 ## Changed
