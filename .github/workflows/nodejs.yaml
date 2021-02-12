@@ -12,26 +12,24 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [12.x]
-
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 12.x
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 12.x
     - name: Create mongoDB Docker container for API testing
       uses: DigiPie/mongo-action@v1.0.1
       with:
           image-version: 4.0
     - name: Initialize mongo
-      run: "sudo mongo --eval \"const databaseName = 'enginemaintenancetest'\" ./database/createAndUpdateMongoDB.js"
+      run: "mongo --eval \"const databaseName = 'enginemaintenancetest'\" ./database/createAndUpdateMongoDB.js"
     - name: Install npm packages
       run: npm install
     - name: Build
       run: npm run tsc
+    - name: Create the directory where to upload the images to
+      run: mkdir tests/uploads 
     - name: Test
       run: npm run test
