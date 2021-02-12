@@ -10,10 +10,11 @@ if (isDev) {
   mongoose.set('debug', true);
 }
 
-const DbMetadaSchema = new mongoose.Schema({ version: Number });
 export interface IDbMetada extends mongoose.Document {
-    version: number;
+  version: number;
 }
+
+const DbMetadaSchema = new mongoose.Schema<IDbMetada>({ version: Number });
 
 const DbMetadatas = mongoose.model<IDbMetada>('DbMetadatas', DbMetadaSchema);
 export default DbMetadatas;

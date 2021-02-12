@@ -81,7 +81,7 @@ class ImagesController implements IController {
       const existingImages = await Images.find({ _uiId, parentUiId });
 
       if (existingImages.length > 0) {
-        return res.json({ image: await existingImages[0].toJSON() });
+        return res.json({ image: await existingImages[0].exportToJSON() });
       }
 
       return next();
@@ -121,7 +121,7 @@ class ImagesController implements IController {
     private getImages = async (req: express.Request, res: express.Response) => {
       const images = await getImagesByParentUiId(req.params.parentUiId);
 
-      const jsonImages: any[] = await Promise.all(images.map((image) => image.toJSON()));
+      const jsonImages: any[] = await Promise.all(images.map((image) => image.exportToJSON()));
 
       return res.json({ images: jsonImages });
     }
@@ -142,7 +142,7 @@ class ImagesController implements IController {
       return this.checkImageProperties(newImage, res,
         async () => {
           const result = await newImage.save();
-          return res.json({ image: await result.toJSON() });
+          return res.json({ image: await result.exportToJSON() });
         },
         (errors) => {
           fs.unlinkSync(req.files.imageData[0].path);
@@ -162,7 +162,7 @@ class ImagesController implements IController {
       existingImage = Object.assign(existingImage, image);
       existingImage = await existingImage.save();
 
-      return res.json({ image: await existingImage.toJSON() });
+      return res.json({ image: await existingImage.exportToJSON() });
     }
 
     private deleteImage = async (req: express.Request, res: express.Response): Promise<express.Response> => {
@@ -171,7 +171,7 @@ class ImagesController implements IController {
         return res.status(400).json({ errors: { entity: 'notfound' } });
       }
 
-      const imageJson = await existingImage.toJSON();
+      const imageJson = await existingImage.exportToJSON();
 
       await deleteImage(existingImage);
 

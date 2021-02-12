@@ -85,7 +85,7 @@ class TasksController implements IController {
       const query = { equipmentId };
       const tasks = await Tasks.find(query);
 
-      const jsonTasks: ITasks[] = await Promise.all(tasks.map((task) => task.toJSON()));
+      const jsonTasks: ITasks[] = await Promise.all(tasks.map((task) => task.exportToJSON()));
 
       return res.json({ tasks: jsonTasks });
     }
@@ -111,7 +111,7 @@ class TasksController implements IController {
       newTask.equipmentId = equipment._id;
 
       newTask = await newTask.save();
-      return res.json({ task: await newTask.toJSON() });
+      return res.json({ task: await newTask.exportToJSON() });
     }
 
     private changeOrCreateTask = async (req: express.Request, res: express.Response) => {
@@ -139,7 +139,7 @@ class TasksController implements IController {
 
       existingTask = Object.assign(existingTask, task);
       existingTask = await existingTask.save();
-      return res.json({ task: await existingTask.toJSON() });
+      return res.json({ task: await existingTask.exportToJSON() });
     }
 
     private deleteTask = async (req: express.Request, res: express.Response) => {
@@ -152,7 +152,7 @@ class TasksController implements IController {
 
       await deleteTask(existingTask);
 
-      return res.json({ task: await existingTask.toJSON() });
+      return res.json({ task: await existingTask.exportToJSON() });
     }
 
     private getEquipmentId = async (req: express.Request, res: express.Response): Promise<mongoose.Types.ObjectId> => {

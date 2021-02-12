@@ -3,7 +3,18 @@ import mongoose from 'mongoose';
 import { deleteAssetUserModel, getUserAssets } from './AssetUser';
 import { deleteEquipments } from './Equipments';
 
-export const AssetsSchema = new mongoose.Schema({
+export interface IAssets extends mongoose.Document {
+  _uiId: string;
+  brand: string;
+  manufactureDate: Date;
+  modelBrand: string;
+  name: string;
+
+  isOwnedByCurrentUser(): Promise<boolean>;
+  exportToJSON(): Promise<object>;
+}
+
+export const AssetsSchema = new mongoose.Schema<IAssets>({
   _uiId: String,
   brand: String,
   manufactureDate: Date,
@@ -11,7 +22,7 @@ export const AssetsSchema = new mongoose.Schema({
   name: String,
 });
 
-AssetsSchema.methods.toJSON = async function () {
+AssetsSchema.methods.exportToJSON = async function () {
   return {
     _uiId: this._uiId,
     brand: this.brand,
@@ -25,17 +36,6 @@ AssetsSchema.methods.isOwnedByCurrentUser = async function () {
   const assets = await getUserAssets();
   return assets.findIndex((asset) => asset.id === this.id) !== -1;
 };
-
-export interface IAssets extends mongoose.Document {
-    _uiId: string;
-    brand: string;
-    manufactureDate: Date;
-    modelBrand: string;
-    name: string;
-
-    isOwnedByCurrentUser(): Promise<boolean>;
-    toJSON(): Promise<object>;
-}
 
 const Assets = mongoose.model<IAssets>('Assets', AssetsSchema);
 export default Assets;

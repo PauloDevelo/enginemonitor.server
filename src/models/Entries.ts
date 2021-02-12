@@ -3,7 +3,20 @@ import { getEquipment } from './Equipments';
 import { deleteExistingImages } from './Images';
 import { getTask } from './Tasks';
 
-export const EntriesSchema = new mongoose.Schema({
+export interface IEntries extends mongoose.Document {
+  _uiId: string;
+  ack: boolean;
+  equipmentId: mongoose.Types.ObjectId;
+  taskId: mongoose.Types.ObjectId | undefined;
+  name: string;
+  date: Date;
+  age: number;
+  remarks: string;
+
+  exportToJSON(): any;
+}
+
+export const EntriesSchema = new mongoose.Schema<IEntries>({
   _uiId: String,
   ack: Boolean,
   age: Number,
@@ -14,7 +27,7 @@ export const EntriesSchema = new mongoose.Schema({
   taskId: mongoose.Schema.Types.ObjectId,
 });
 
-EntriesSchema.methods.toJSON = async function () {
+EntriesSchema.methods.exportToJSON = async function () {
   return {
     _uiId: this._uiId,
     ack: this.ack,
@@ -26,19 +39,6 @@ EntriesSchema.methods.toJSON = async function () {
     taskUiId: this.taskId ? (await getTask(this.taskId))._uiId : undefined,
   };
 };
-
-export interface IEntries extends mongoose.Document {
-    _uiId: string;
-    ack: boolean;
-    equipmentId: mongoose.Types.ObjectId;
-    taskId: mongoose.Types.ObjectId | undefined;
-    name: string;
-    date: Date;
-    age: number;
-    remarks: string;
-
-    toJSON(): any;
-}
 
 const Entries = mongoose.model<IEntries>('Entries', EntriesSchema);
 export default Entries;

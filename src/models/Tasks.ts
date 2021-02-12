@@ -5,7 +5,24 @@ import Entries, { deleteEntriesFromParent, IEntries } from './Entries';
 import Equipments, { AgeAcquisitionType } from './Equipments';
 import { deleteExistingImages } from './Images';
 
-export const TasksSchema = new mongoose.Schema({
+export interface ITasks extends mongoose.Document {
+  _uiId: string;
+  equipmentId: mongoose.Types.ObjectId;
+  name: string;
+  usagePeriodInHour: number;
+  periodInMonth: number;
+  description: string;
+
+  getLastAckEntry(): Promise<IEntries>;
+  getLastAckEntryAge(): Promise<number>;
+  getTimeInHourLeft(): Promise<number>;
+  getLastAckEntryDate(): Promise<Date>;
+  getNextDueDate(): Promise<Date>;
+  getLevel(): Promise<number>;
+  exportToJSON(): Promise<any>;
+}
+
+export const TasksSchema = new mongoose.Schema<ITasks>({
   _uiId: String,
   description: String,
   equipmentId: mongoose.Schema.Types.ObjectId,
@@ -93,7 +110,7 @@ TasksSchema.methods.getLevel = async function (): Promise<number> {
   return 1;
 };
 
-TasksSchema.methods.toJSON = async function (): Promise<any> {
+TasksSchema.methods.exportToJSON = async function (): Promise<any> {
   const level = await this.getLevel();
   const nextDueDate = await this.getNextDueDate();
   const usageInHourLeft = await this.getTimeInHourLeft();
@@ -109,23 +126,6 @@ TasksSchema.methods.toJSON = async function (): Promise<any> {
     usagePeriodInHour: this.usagePeriodInHour,
   };
 };
-
-export interface ITasks extends mongoose.Document {
-    _uiId: string;
-    equipmentId: mongoose.Types.ObjectId;
-    name: string;
-    usagePeriodInHour: number;
-    periodInMonth: number;
-    description: string;
-
-    getLastAckEntry(): Promise<IEntries>;
-    getLastAckEntryAge(): Promise<number>;
-    getTimeInHourLeft(): Promise<number>;
-    getLastAckEntryDate(): Promise<Date>;
-    getNextDueDate(): Promise<Date>;
-    getLevel(): Promise<number>;
-    toJSON(): Promise<any>;
-}
 
 const Tasks = mongoose.model<ITasks>('Tasks', TasksSchema);
 export default Tasks;

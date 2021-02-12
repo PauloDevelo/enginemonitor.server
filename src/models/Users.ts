@@ -11,23 +11,6 @@ import { deleteAssetModel } from './Assets';
 import { getAssetsOwnedByUser } from './AssetUser';
 import { INewPassword } from './NewPasswords';
 
-export const UsersSchema = new mongoose.Schema({
-  _uiId: String,
-  authStrategy: String,
-  email: String,
-  firstname: String,
-  forbidCreatingAsset: Boolean,
-  forbidSelfDelete: Boolean,
-  forbidUploadingImage: Boolean,
-  hash: String,
-  isVerified: Boolean,
-  lastAuth: Date,
-  name: String,
-  privacyPolicyAccepted: Boolean,
-  salt: String,
-  verificationToken: String,
-});
-
 export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
   _uiId: string;
@@ -57,6 +40,23 @@ export interface IUser extends mongoose.Document {
   getUserImageFolder(): string;
   getUserImageFolderSizeLimitInByte(): number;
 }
+
+export const UsersSchema = new mongoose.Schema<IUser>({
+  _uiId: String,
+  authStrategy: String,
+  email: String,
+  firstname: String,
+  forbidCreatingAsset: Boolean,
+  forbidSelfDelete: Boolean,
+  forbidUploadingImage: Boolean,
+  hash: String,
+  isVerified: Boolean,
+  lastAuth: Date,
+  name: String,
+  privacyPolicyAccepted: Boolean,
+  salt: String,
+  verificationToken: String,
+});
 
 const getUserImageFolderSizeInByte = async (user: IUser): Promise<number> => {
   const imageFolder = user.getUserImageFolder();
@@ -128,7 +128,7 @@ UsersSchema.methods.toAuthJSON = async function () {
 };
 
 UsersSchema.methods.getUserImageFolder = function (): string {
-  return config.get('ImageFolder') + this._id;
+  return `${config.get('ImageFolder')}${this._id}`;
 };
 
 UsersSchema.methods.getUserImageFolderSizeLimitInByte = (): number => config.get('userImageFolderLimitInByte');

@@ -101,7 +101,7 @@ class AssetsController implements IController {
 
     private getAssets = async (req: express.Request, res: express.Response) => {
       const assets = await getUserAssets();
-      const jsonAssets: any[] = await Promise.all(assets.map((asset) => asset.toJSON()));
+      const jsonAssets: any[] = await Promise.all(assets.map((asset) => asset.exportToJSON()));
 
       return res.json({ assets: jsonAssets });
     }
@@ -118,7 +118,7 @@ class AssetsController implements IController {
 
       await this.assignAssetInOrphanEquipment(user, newAsset);
 
-      res.json({ asset: await newAsset.toJSON() });
+      res.json({ asset: await newAsset.exportToJSON() });
     }
 
     private changeOrAddAsset = async (req: express.Request, res: express.Response) => {
@@ -131,7 +131,7 @@ class AssetsController implements IController {
         const updateExistingAsset = async () => {
           existingAsset = Object.assign(existingAsset, asset);
           existingAsset = await existingAsset.save();
-          res.json({ asset: await existingAsset.toJSON() });
+          res.json({ asset: await existingAsset.exportToJSON() });
         };
 
         checkCredentials(req, res, () => this.checkNameDoesNotExist(updateExistingAsset)(req, res));
@@ -143,7 +143,7 @@ class AssetsController implements IController {
 
       deleteAssetModel(existingAsset);
 
-      return res.json({ asset: await existingAsset.toJSON() });
+      return res.json({ asset: await existingAsset.exportToJSON() });
     }
 
     // This function needs to be removed since it was used for migrating the users

@@ -76,7 +76,7 @@ class UsersController implements IController {
       const user = getUser();
       const assetUser = await AssetUser.findOne({ assetId: asset._id, userId: user._id });
 
-      return res.json({ credentials: await assetUser.toJSON() });
+      return res.json({ credentials: await assetUser.exportToJSON() });
     }
 
     private checkUserProperties = (req: express.Request, res: express.Response, next: any) => {
