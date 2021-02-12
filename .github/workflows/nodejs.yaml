@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x]
+        node-version: [12.x]
 
     steps:
     - name: Checkout repo
@@ -25,11 +25,13 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Create mongoDB Docker container for API testing
       uses: DigiPie/mongo-action@v1.0.1
+      with:
+          image-version: 4.0
     - name: Initialize mongo
       run: "sudo mongo --eval \"const databaseName = 'enginemaintenancetest'\" ./database/createAndUpdateMongoDB.js"
     - name: Install npm packages
       run: npm install
     - name: Build
-      run: npm run build
+      run: npm run tsc
     - name: Test
       run: npm run test
