@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { IAssets } from '../models/Assets';
 import { IUser } from '../models/Users';
 import config, { isProd, isTest } from './configUtils';
 import logger from './logger';
@@ -7,6 +8,12 @@ export interface IUsageAlertContext {
   MaxNumberDaysWithoutUsage: number;
   NumberOfDayBeforeDeletion: number;
   User: IUser;
+}
+
+export interface IRegistrationInvitation{
+  newOwnerEmail: string,
+  previousOwner: IUser,
+  asset: IAssets
 }
 
 interface IMailData {
@@ -103,6 +110,41 @@ export const sendUsageAlertBeforeAccountDeletion = (context: IUsageAlertContext)
   return sendMsg(msg);
 };
 
+export const sendRegistrationInvitation = (context: IRegistrationInvitation) => {
+  const frontEndUrl = config.get('frontEndUrl');
+
+  const msg: IMailData = {
+    html: `<p>Hi,</p>
+          <div>
+          <div>You are invited by ${context.previousOwner.firstname} ${context.previousOwner.name} to register to <a href="${frontEndUrl}">Equipment maintenance</a>, a web application which helps owners to maintain their assets.</div>
+          <div>&nbsp;</div>
+          <div>${context.previousOwner.firstname} used <a href="${frontEndUrl}">Equipment maintenance</a> to track ${context.asset.name}'s maintenance and (s)he gave you the ownership.</div>
+          <div>&nbsp;</div>
+          <div>To proceed, you have to register to <a href="${frontEndUrl}">Equipment maintenance</a>, then you will become automatically the new owner of ${context.asset.name}.</div>
+          <div>&nbsp;</div>
+          <div>Hope to see you soon,</div>
+          <div>&nbsp;</div>
+          <div style="text-align: left;">The Equipment maintenance team</div>
+          </div>`,
+    subject: `[Equipment Maintenance] Invitation to take the ownership of ${context.asset.name}`,
+    text:
+`Hi,
+
+You are invited by ${context.previousOwner.firstname} ${context.previousOwner.name} to register to Equipment maintenance, a web application which helps owners to maintain their assets.
+${context.previousOwner.firstname} used Equipment maintenance</a> to track ${context.asset.name}'s maintenance and (s)he gave you the ownership.
+
+To proceed, you have to register to ${frontEndUrl}, then you will become automatically the new owner of ${context.asset.name}.
+
+Hope to see you soon,
+The Equipment maintenance team`,
+    to: context.newOwnerEmail,
+  };
+
+  return sendMsg(msg);
+};
+
 // eslint-disable-next-line max-len
-const sendEmailHelper = { sendVerificationEmail, sendChangePasswordEmail, sendUsageAlertBeforeAccountDeletion };
+const sendEmailHelper = {
+  sendVerificationEmail, sendChangePasswordEmail, sendUsageAlertBeforeAccountDeletion, sendRegistrationInvitation,
+};
 export default sendEmailHelper;
