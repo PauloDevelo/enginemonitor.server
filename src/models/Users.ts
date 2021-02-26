@@ -8,8 +8,9 @@ import config from '../utils/configUtils';
 import getFolderSize from '../utils/fileHelpers';
 
 import { deleteAssetModel } from './Assets';
-import { getAssetsOwnedByUser } from './AssetUser';
+import AssetUser, { getAssetsOwnedByUser } from './AssetUser';
 import { INewPassword } from './NewPasswords';
+import PendingRegistrations from './PendingRegistrations';
 
 export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
@@ -132,6 +133,23 @@ UsersSchema.methods.getUserImageFolder = function (): string {
 };
 
 UsersSchema.methods.getUserImageFolderSizeLimitInByte = (): number => config.get('userImageFolderLimitInByte');
+
+UsersSchema.post<IUser>('save', async (savedUser, next) => {
+  const newUser = savedUser as IUser;
+
+  const pendingInvitations = await PendingRegistrations.find({ newOwnerEmail: newUser.email });
+  if (pendingInvitations.length > 0) {
+    const pendingInvitation = pendingInvitations[0];
+
+    const assetUser = await AssetUser.findOne({ assetId: pendingInvitation.assetId, readonly: false });
+    assetUser.userId = newUser._id;
+    await assetUser.save();
+
+    await PendingRegistrations.deleteMany({ newOwnerEmail: newUser.email });
+  }
+
+  next();
+});
 
 export const deleteUserModel = async (user: IUser): Promise<void> => {
   const assetsOwned = await getAssetsOwnedByUser(user);
