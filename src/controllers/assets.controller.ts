@@ -88,7 +88,7 @@ class AssetsController implements IController {
 
       const users = await Users.find({ email: newOwnerEmail });
       if (users.length > 0) {
-        return res.status(422).json({ errors: { newOwnerEmail: 'alreadyexisting' } });
+        return res.status(422).json({ errors: { newOwnerEmail: 'alreadyregistered' } });
       }
 
       return next(req, res);
