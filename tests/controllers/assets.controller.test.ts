@@ -7,6 +7,7 @@ process.env.NODE_ENV = 'test';
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
+import sinon from 'sinon';
 
 import ignoredErrorMessages, { restoreLogger, mockLogger } from '../MockLogger';
 
@@ -14,6 +15,9 @@ import server from '../../src/server';
 import Users, { IUser } from '../../src/models/Users';
 import Assets from '../../src/models/Assets';
 import AssetUser from '../../src/models/AssetUser';
+import PendingRegistrations from '../../src/models/PendingRegistrations';
+
+import sendEmailHelper, { IRegistrationInvitation } from '../../src/utils/sendEmailHelper';
 
 const { app } = server;
 
@@ -59,6 +63,9 @@ describe('Assets', () => {
     await Assets.deleteMany({});
     await AssetUser.deleteMany({});
     await Users.deleteMany({});
+    await PendingRegistrations.deleteMany({});
+
+    sinon.restore();
   });
 
   describe('/GET assets', () => {
@@ -461,6 +468,157 @@ describe('Assets', () => {
       res.should.have.status(400);
       res.body.should.have.property('errors');
       res.body.errors.should.be.eql('credentialError');
+    });
+  });
+
+  describe('POST/changeownership/:assetUiId', () => {
+    const newOwnerEmail = 'paul.torruella@lovestreet.org';
+
+    const sailboat = {
+      _uiId: 'sailboat_01', brand: 'Aluminum & Technics', manufactureDate: new Date('1979-01-01T00:00:00.000Z'), modelBrand: 'Heliotrope', name: 'Arbutus',
+    };
+
+    let sendRegistrationInvitationSpy: sinon.SinonSpy;
+
+    beforeEach(async () => {
+      sendRegistrationInvitationSpy = sinon.spy(sendEmailHelper, 'sendRegistrationInvitation');
+      await chai.request(app).post(`/api/assets/${sailboat._uiId}`).send({ asset: sailboat }).set('Authorization', userJWT);
+    });
+
+    it('should return an error when the user doesn\'t have enough credentials to transfer the ownership.', async () => {
+      // Arrange
+      const asset = await Assets.findOne({ _uiId: 'sailboat_01' });
+
+      let readOnlyUserAssetLink = new AssetUser({ assetId: asset._id, userId: readonlyUser._id, readonly: true });
+      readOnlyUserAssetLink = await readOnlyUserAssetLink.save();
+
+      // Act
+      const res = await chai.request(app).post(`/api/assets/changeownership/${sailboat._uiId}`).send({ newOwnerEmail }).set('Authorization', roUserJWT);
+
+      // Assert
+      res.should.have.status(400);
+      res.body.should.have.property('errors');
+      res.body.errors.should.be.eql('credentialError');
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(0);
+
+      expect(sendRegistrationInvitationSpy.notCalled).to.be.true;
+    });
+
+    it('should return an error when the asset doesn\'t exist', async () => {
+      // Arrange
+
+      // Act
+      const res = await chai.request(app).post('/api/assets/changeownership/sailboat_02').send({ newOwnerEmail }).set('Authorization', userJWT);
+
+      // Assert
+      res.should.have.status(400);
+      res.body.should.have.property('errors');
+      res.body.errors.should.have.property('authentication');
+      res.body.errors.authentication.should.eq('error');
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(0);
+
+      expect(sendRegistrationInvitationSpy.notCalled).to.be.true;
+    });
+
+    it('should return an error when current user is not linked to the asset.', async () => {
+      // Arrange
+      let anotherUser = new Users({ name: 'r', firstname: 'p', email: 'toto@gmail.com' });
+      anotherUser.setPassword('test');
+      anotherUser = await anotherUser.save();
+      const anotherUserJWT = `Token ${anotherUser.generateJWT()}`;
+
+      // Act
+      const res = await chai.request(app).post(`/api/assets/changeownership/${sailboat._uiId}`).send({ newOwnerEmail }).set('Authorization', anotherUserJWT);
+
+      // Assert
+      res.should.have.status(400);
+      res.body.should.have.property('errors');
+      res.body.errors.should.have.property('authentication');
+      res.body.errors.authentication.should.eq('error');
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(0);
+
+      expect(sendRegistrationInvitationSpy.notCalled).to.be.true;
+    });
+
+    it('should return an error when the new owner email is already used.', async () => {
+      // Arrange
+      let newOwnerUser = new Users({ name: 'r', firstname: 'p', email: newOwnerEmail });
+      newOwnerUser.setPassword('newOwnerUser');
+      newOwnerUser = await newOwnerUser.save();
+
+      // Act
+      const res = await chai.request(app).post(`/api/assets/changeownership/${sailboat._uiId}`).send({ newOwnerEmail }).set('Authorization', userJWT);
+
+      // Assert
+      res.should.have.status(422);
+      res.body.should.have.property('errors');
+      res.body.errors.should.have.property('newOwnerEmail');
+      res.body.errors.newOwnerEmail.should.eq('alreadyregistered');
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(0);
+
+      expect(sendRegistrationInvitationSpy.called).to.be.false;
+    });
+
+    it('should send an email, create a pending registration document and return a 200 response.', async () => {
+      // Arrange
+      const asset = await Assets.findOne({ _uiId: 'sailboat_01' });
+
+      // Act
+      const res = await chai.request(app).post(`/api/assets/changeownership/${sailboat._uiId}`).send({ newOwnerEmail }).set('Authorization', userJWT);
+
+      // Assert
+      res.should.have.status(200);
+      res.body.should.have.property('newOwnerEmail');
+      res.body.newOwnerEmail.should.eq(newOwnerEmail);
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(1);
+      const pendingInvitation = await PendingRegistrations.findOne({});
+      pendingInvitation.newOwnerEmail.should.equal(newOwnerEmail);
+      pendingInvitation.assetId.equals(asset._id).should.be.true;
+
+      expect(sendRegistrationInvitationSpy.calledOnce).to.be.true;
+
+      const matchInvitationContext = sinon.match((value: IRegistrationInvitation) => !!value && asset._uiId === value.asset._uiId && newOwnerEmail === value.newOwnerEmail && user._uiId === value.previousOwner._uiId,
+        'Because the value passed in parameter of sendRegistrationInvitationSpy should be the one expected.');
+
+      expect(sendRegistrationInvitationSpy.withArgs(matchInvitationContext).calledOnce).to.be.true;
+    });
+
+    it('should remove all the previous pending registration before creating a new one.', async () => {
+      // Arrange
+      const correctNewOwnerEmail = 'paul.torruella@correctemail.fr';
+      const asset = await Assets.findOne({ _uiId: 'sailboat_01' });
+      await chai.request(app).post(`/api/assets/changeownership/${sailboat._uiId}`).send({ newOwnerEmail }).set('Authorization', userJWT);
+
+      // Act
+      const res = await chai.request(app).post(`/api/assets/changeownership/${sailboat._uiId}`).send({ newOwnerEmail: correctNewOwnerEmail }).set('Authorization', userJWT);
+
+      // Assert
+      res.should.have.status(200);
+      res.body.should.have.property('newOwnerEmail');
+      res.body.newOwnerEmail.should.eq(correctNewOwnerEmail);
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(1);
+      const pendingInvitation = await PendingRegistrations.findOne({});
+      pendingInvitation.newOwnerEmail.should.equal(correctNewOwnerEmail);
+      pendingInvitation.assetId.equals(asset._id).should.be.true;
+
+      expect(sendRegistrationInvitationSpy.calledTwice).to.be.true;
+
+      const matchInvitationContext = sinon.match((value: IRegistrationInvitation) => !!value && asset._uiId === value.asset._uiId && correctNewOwnerEmail === value.newOwnerEmail && user._uiId === value.previousOwner._uiId,
+        'Because the value passed in parameter of sendRegistrationInvitationSpy should be the one expected.');
+
+      expect(sendRegistrationInvitationSpy.withArgs(matchInvitationContext).calledOnce).to.be.true;
     });
   });
 });

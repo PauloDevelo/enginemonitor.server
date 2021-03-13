@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import * as express from 'express';
-import { sendRegistrationInvitation } from '../utils/sendEmailHelper';
+import sendEmailHelper from '../utils/sendEmailHelper';
 import PendingRegistrations from '../models/PendingRegistrations';
 import auth from '../security/auth';
 
@@ -163,28 +163,30 @@ class AssetsController implements IController {
     private changeOwnership = async (req: express.Request, res: express.Response) => {
       const { body: { newOwnerEmail } } = req;
 
-      // We check that the asset exists
+      // We check that the asset exists and it is linked to the current user.
       const existingAsset = await getAssetByUiId(req.params.assetUiId);
       if (!existingAsset) {
         return res.status(400).json({ errors: { authentication: 'error' } });
       }
 
       const startOwnershipTransaction = async () => {
-        // We delete previous invitations
+        // We delete previous new owner invitations if there was some (because for now, a user can only have one asset)
         await PendingRegistrations.deleteMany({ newOwnerEmail });
+        // We also delete all the previous invitation related to this asset
+        await PendingRegistrations.deleteMany({ assetId: existingAsset._id });
 
         // Then, we create the invitation
         const pendingRegistration = new PendingRegistrations({ assetId: existingAsset._id, newOwnerEmail });
         await pendingRegistration.save();
 
         // And finally, we send the invitation by email
-        sendRegistrationInvitation({ newOwnerEmail, previousOwner: getUser(), asset: existingAsset });
+        sendEmailHelper.sendRegistrationInvitation({ newOwnerEmail, previousOwner: getUser(), asset: existingAsset });
         return res.json({ newOwnerEmail });
       };
 
-      // Before, we check that the current user is the current asset's owner,
+      // Before, we check that the current user has enough credentials,
       // and we check that the new owner is not already using Equipment maintenance (because currently, an owner can have only one asset)
-      checkCredentials(req, res, () => this.checkNewOwnerDoesNotExist(startOwnershipTransaction)(req, res));
+      return checkCredentials(req, res, () => this.checkNewOwnerDoesNotExist(startOwnershipTransaction)(req, res));
     }
 
     // This function needs to be removed since it was used for migrating the users
