@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import auth from '../security/auth';
 
 import { getAssetByUiId } from '../models/Assets';
-import Entries, { deleteEntry, getEntryByUiId, IEntries } from '../models/Entries';
+import Entries, { getEntryByUiId, IEntries } from '../models/Entries';
 import { getEquipmentByUiId } from '../models/Equipments';
 import { getTaskByUiId } from '../models/Tasks';
 
@@ -164,7 +164,7 @@ class EntriesController implements IController {
         return res.sendStatus(401);
       }
 
-      await deleteEntry(existingEntry);
+      await existingEntry.deleteOne();
 
       return res.json({ entry: await existingEntry.exportToJSON() });
     }

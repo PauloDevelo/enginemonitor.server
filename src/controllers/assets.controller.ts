@@ -4,7 +4,7 @@ import sendEmailHelper from '../utils/sendEmailHelper';
 import PendingRegistrations from '../models/PendingRegistrations';
 import auth from '../security/auth';
 
-import Assets, { deleteAssetModel, getAssetByUiId, IAssets } from '../models/Assets';
+import Assets, { getAssetByUiId, IAssets } from '../models/Assets';
 import AssetUser, { createUserAssetLink, getUserAssets } from '../models/AssetUser';
 import Equipments from '../models/Equipments';
 import Users, { IUser } from '../models/Users';
@@ -153,10 +153,8 @@ class AssetsController implements IController {
     }
 
     private deleteAsset = async (req: express.Request, res: express.Response) => {
-      const existingAsset = await getAssetByUiId(req.params.assetUiId);
-
-      deleteAssetModel(existingAsset);
-
+      let existingAsset = await getAssetByUiId(req.params.assetUiId);
+      existingAsset = await existingAsset.deleteOne();
       return res.json({ asset: await existingAsset.exportToJSON() });
     }
 

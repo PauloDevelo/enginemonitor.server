@@ -40,24 +40,14 @@ EntriesSchema.methods.exportToJSON = async function () {
   };
 };
 
+EntriesSchema.pre('deleteOne', { document: true, query: false }, async function () {
+  await deleteExistingImages(this._uiId);
+});
+
 const Entries = mongoose.model<IEntries>('Entries', EntriesSchema);
 export default Entries;
 
 export const getEntryByUiId = async (equipmentId: mongoose.Types.ObjectId, entryUiId: string): Promise<IEntries> => {
   const query = { equipmentId, _uiId: entryUiId };
   return Entries.findOne(query);
-};
-
-export const deleteEntry = async (entry: IEntries): Promise<void> => {
-  const promises = [];
-  promises.push(deleteExistingImages(entry._uiId));
-  promises.push(entry.remove());
-
-  await Promise.all(promises);
-};
-
-export const deleteEntriesFromParent = async (conditions: any): Promise<void> => {
-  const entries = await Entries.find(conditions);
-  const promises = entries.map((entry) => deleteEntry(entry));
-  Promise.all(promises);
 };

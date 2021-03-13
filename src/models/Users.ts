@@ -7,7 +7,6 @@ import timeService from '../services/TimeService';
 import config from '../utils/configUtils';
 import getFolderSize from '../utils/fileHelpers';
 
-import { deleteAssetModel } from './Assets';
 import AssetUser, { getAssetsOwnedByUser } from './AssetUser';
 import { INewPassword } from './NewPasswords';
 import PendingRegistrations from './PendingRegistrations';
@@ -146,21 +145,25 @@ UsersSchema.methods.checkPendingInvitation = async function () {
     await PendingRegistrations.findByIdAndDelete(pendingInvitation._id);
   }
 };
+
+/**
+ * This is called after a new IUser document is created
+ */
 UsersSchema.queue('checkPendingInvitation', []);
 
-export const deleteUserModel = async (user: IUser): Promise<void> => {
-  const assetsOwned = await getAssetsOwnedByUser(user);
-  const assetDeletion = assetsOwned.map((assetOwned) => deleteAssetModel(assetOwned));
+UsersSchema.pre('deleteOne', { document: true, query: false }, async function () {
+  const assetsOwned = await getAssetsOwnedByUser(this);
+  const assetDeletion = assetsOwned.map((assetOwned) => assetOwned.deleteOne());
 
   await Promise.all(assetDeletion);
+});
 
-  await user.remove();
-
-  const userImageFolder = user.getUserImageFolder();
+UsersSchema.post('deleteOne', { document: true, query: false }, function () {
+  const userImageFolder = this.getUserImageFolder();
   if (fs.existsSync(userImageFolder)) {
     fs.rmdirSync(userImageFolder);
   }
-};
+});
 
 const Users = mongoose.model<IUser>('Users', UsersSchema);
 export default Users;

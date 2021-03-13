@@ -8,7 +8,7 @@ import { getUser } from '../utils/requestContext';
 
 import { getAssetByUiId } from '../models/Assets';
 import { getEquipmentByUiId, IEquipments } from '../models/Equipments';
-import Tasks, { deleteTask, getTaskByUiId, ITasks } from '../models/Tasks';
+import Tasks, { getTaskByUiId, ITasks } from '../models/Tasks';
 
 import { checkCredentials } from './controller.helper';
 import IController from './IController';
@@ -150,7 +150,7 @@ class TasksController implements IController {
         return res.sendStatus(400);
       }
 
-      await deleteTask(existingTask);
+      await existingTask.deleteOne();
 
       return res.json({ task: await existingTask.exportToJSON() });
     }

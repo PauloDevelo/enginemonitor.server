@@ -1,7 +1,7 @@
 import moment from 'moment';
 import mongoose from 'mongoose';
 
-import Entries, { deleteEntriesFromParent, IEntries } from './Entries';
+import Entries, { IEntries } from './Entries';
 import Equipments, { AgeAcquisitionType } from './Equipments';
 import { deleteExistingImages } from './Images';
 
@@ -127,6 +127,14 @@ TasksSchema.methods.exportToJSON = async function (): Promise<any> {
   };
 };
 
+TasksSchema.pre('deleteOne', { document: true, query: false }, async function () {
+  await deleteExistingImages(this._uiId);
+
+  const entriesToDelete = await Entries.find({ taskId: this._id });
+  const entryDeletionPromises = entriesToDelete.map((entry) => entry.deleteOne());
+  await Promise.all(entryDeletionPromises);
+});
+
 const Tasks = mongoose.model<ITasks>('Tasks', TasksSchema);
 export default Tasks;
 
@@ -136,19 +144,3 @@ export const getTaskByUiId = async (equipmentId: mongoose.Types.ObjectId, taskUi
 };
 
 export const getTask = async (taskId: mongoose.Types.ObjectId): Promise<ITasks> => Tasks.findById(taskId);
-
-export const deleteTask = async (task: ITasks): Promise<void> => {
-  const promises = [];
-  promises.push(deleteExistingImages(task._uiId));
-  promises.push(deleteEntriesFromParent({ taskId: task._id }));
-  promises.push(task.remove());
-
-  await Promise.all(promises);
-};
-
-export const deleteTasks = async (equipmentId: mongoose.Types.ObjectId): Promise<void> => {
-  const tasks = await Tasks.find({ equipmentId });
-  const promises = tasks.map((task) => deleteTask(task));
-
-  await Promise.all(promises);
-};

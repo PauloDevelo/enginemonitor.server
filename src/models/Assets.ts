@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
-import { deleteAssetUserModel, getUserAssets } from './AssetUser';
-import { deleteEquipments } from './Equipments';
+import AssetUser, { getUserAssets } from './AssetUser';
+import Equipments from './Equipments';
 
 export interface IAssets extends mongoose.Document {
   _uiId: string;
@@ -37,6 +37,14 @@ AssetsSchema.methods.isOwnedByCurrentUser = async function () {
   return assets.findIndex((asset) => asset.id === this.id) !== -1;
 };
 
+AssetsSchema.pre('deleteOne', { document: true, query: false }, async function () {
+  const equipments = await Equipments.find({ assetId: this._id });
+  const equipmentDeletionPromises = equipments.map((equipment) => equipment.deleteOne());
+  await Promise.all(equipmentDeletionPromises);
+
+  await AssetUser.deleteMany({ assetId: this._id });
+});
+
 const Assets = mongoose.model<IAssets>('Assets', AssetsSchema);
 export default Assets;
 
@@ -45,22 +53,4 @@ export const getAsset = async (assetId: mongoose.Types.ObjectId): Promise<IAsset
 export const getAssetByUiId = async (assetUiId: string): Promise<IAssets | undefined> => {
   const assetsAccessible = await getUserAssets();
   return assetsAccessible.find((asset) => asset._uiId === assetUiId);
-};
-
-export const deleteAssetModel = async (asset: IAssets): Promise<void> => {
-  const promises: Array<PromiseLike<void>> = [];
-
-  const deleteAssetUserModelPromise = async () => {
-    await deleteAssetUserModel(asset._id);
-  };
-
-  const deleteAssetPromise = async () => {
-    await asset.remove();
-  };
-
-  promises.push(deleteEquipments(asset._id));
-  promises.push(deleteAssetUserModelPromise());
-  promises.push(deleteAssetPromise());
-
-  await Promise.all(promises);
 };
