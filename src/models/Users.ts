@@ -145,7 +145,7 @@ UsersSchema.post<IUser>('save', async (savedUser, next) => {
     assetUser.userId = newUser._id;
     await assetUser.save();
 
-    await PendingRegistrations.deleteMany({ newOwnerEmail: newUser.email });
+    await PendingRegistrations.findByIdAndDelete(pendingInvitation._id);
   }
 
   next();
