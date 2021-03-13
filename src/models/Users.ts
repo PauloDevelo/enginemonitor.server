@@ -134,22 +134,19 @@ UsersSchema.methods.getUserImageFolder = function (): string {
 
 UsersSchema.methods.getUserImageFolderSizeLimitInByte = (): number => config.get('userImageFolderLimitInByte');
 
-UsersSchema.post<IUser>('save', async (savedUser, next) => {
-  const newUser = savedUser as IUser;
-
-  const pendingInvitations = await PendingRegistrations.find({ newOwnerEmail: newUser.email });
+UsersSchema.methods.checkPendingInvitation = async function () {
+  const pendingInvitations = await PendingRegistrations.find({ newOwnerEmail: this.email });
   if (pendingInvitations.length > 0) {
     const pendingInvitation = pendingInvitations[0];
 
     const assetUser = await AssetUser.findOne({ assetId: pendingInvitation.assetId, readonly: false });
-    assetUser.userId = newUser._id;
+    assetUser.userId = this._id;
     await assetUser.save();
 
     await PendingRegistrations.findByIdAndDelete(pendingInvitation._id);
   }
-
-  next();
-});
+};
+UsersSchema.queue('checkPendingInvitation', []);
 
 export const deleteUserModel = async (user: IUser): Promise<void> => {
   const assetsOwned = await getAssetsOwnedByUser(user);
