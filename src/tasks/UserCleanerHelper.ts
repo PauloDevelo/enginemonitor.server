@@ -48,7 +48,7 @@ export async function deleteUserWhoDidNotUseTheWebApp(): Promise<void> {
     return lastAuth.isBefore(dateRangeMax);
   });
 
-  const deletionPromises = users.map((user) => user.remove());
+  const deletionPromises = users.map((user) => user.deleteOne());
   await Promise.all(deletionPromises);
 }
 
