@@ -22,7 +22,9 @@ export interface IImages extends mongoose.Document {
   thumbnailPath: string;
   title: String,
 
-  exportToJSON(): any;
+  exportToJSON(): any,
+  // eslint-disable-next-line no-unused-vars
+  changePath(previousOwnerDir: string, newOwnerDir: string): Promise<IImages>
 }
 
 export const ImagesSchema = new mongoose.Schema<IImages>({
@@ -35,6 +37,7 @@ export const ImagesSchema = new mongoose.Schema<IImages>({
   title: String,
 });
 
+// eslint-disable-next-line func-names
 ImagesSchema.methods.exportToJSON = async function () {
   return {
     _uiId: this._uiId,
@@ -48,6 +51,41 @@ ImagesSchema.methods.exportToJSON = async function () {
   };
 };
 
+// eslint-disable-next-line func-names
+ImagesSchema.methods.changePath = async function (previousOwnerDir: string, newOwnerDir: string): Promise<IImages> {
+  {
+    const oldPath = this.path;
+    // eslint-disable-next-line no-param-reassign
+    this.path = this.path.replace(previousOwnerDir, newOwnerDir);
+    const newPath = this.path;
+    fs.renameSync(oldPath, newPath);
+  }
+
+  {
+    const oldPath = this.thumbnailPath;
+    // eslint-disable-next-line no-param-reassign
+    this.thumbnailPath = this.thumbnailPath.replace(previousOwnerDir, newOwnerDir);
+    const newPath = this.thumbnailPath;
+    fs.renameSync(oldPath, newPath);
+  }
+
+  return this.save();
+};
+
+// eslint-disable-next-line func-names
+ImagesSchema.pre('deleteOne', { document: true, query: false }, async function () {
+  try {
+    if (fs.existsSync(this.path)) {
+      fs.unlinkSync(this.path);
+    }
+    if (fs.existsSync(this.thumbnailPath)) {
+      fs.unlinkSync(this.thumbnailPath);
+    }
+  } catch (err) {
+    logger.error(err);
+  }
+});
+
 const Images = mongoose.model<IImages>('Images', ImagesSchema);
 export default Images;
 
@@ -56,25 +94,10 @@ export const getImagesByParentUiId = async (parentUiId: string): Promise<IImages
   return Images.find(query);
 };
 
-export const deleteImage = async (image: IImages): Promise<void> => {
-  try {
-    if (fs.existsSync(image.path)) {
-      fs.unlinkSync(image.path);
-    }
-    if (fs.existsSync(image.thumbnailPath)) {
-      fs.unlinkSync(image.thumbnailPath);
-    }
-  } catch (err) {
-    logger.error(err);
-  } finally {
-    await image.remove();
-  }
-};
-
 export const deleteExistingImages = async (parentUiId: string): Promise<void> => {
   const imagesToDelete = await getImagesByParentUiId(parentUiId);
 
-  const deletion = imagesToDelete.map((imageToDelete) => deleteImage(imageToDelete));
+  const deletion = imagesToDelete.map((imageToDelete) => imageToDelete.deleteOne());
 
   await Promise.all(deletion);
 };

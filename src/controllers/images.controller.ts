@@ -5,7 +5,7 @@ import auth from '../security/auth';
 import { getUserAssets } from '../models/AssetUser';
 import Entries from '../models/Entries';
 import Equipments from '../models/Equipments';
-import Images, { deleteImage, getImageByUiId, getImagesByParentUiId } from '../models/Images';
+import Images, { getImageByUiId, getImagesByParentUiId } from '../models/Images';
 import Tasks from '../models/Tasks';
 
 import { getUser } from '../utils/requestContext';
@@ -173,7 +173,7 @@ class ImagesController implements IController {
 
       const imageJson = await existingImage.exportToJSON();
 
-      await deleteImage(existingImage);
+      await existingImage.deleteOne();
 
       return res.json({ image: imageJson });
     }
