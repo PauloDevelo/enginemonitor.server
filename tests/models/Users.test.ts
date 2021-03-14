@@ -10,6 +10,7 @@ import server from '../../src/server';
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
+import chaiFs from 'chai-fs';
 import sinon from 'sinon';
 import timeService from '../../src/services/TimeService';
 
@@ -19,6 +20,7 @@ import { restoreLogger, mockLogger } from '../MockLogger';
 
 const { app } = server;
 chai.use(chaiHttp);
+chai.use(chaiFs);
 const { expect } = chai;
 const should = chai.should();
 
@@ -28,19 +30,34 @@ describe('Users model', () => {
   let stubGetUTCDateTime: sinon.SinonStub<[], Date>;
 
   before(() => {
-    stubGetUTCDateTime = sinon.stub(timeService, 'getUTCDateTime').callsFake(() => currentTime);
-
     mockLogger();
   });
 
   after(() => {
     restoreLogger();
-    stubGetUTCDateTime.restore();
+  });
+
+  beforeEach(() => {
+    stubGetUTCDateTime = sinon.stub(timeService, 'getUTCDateTime').callsFake(() => currentTime);
   });
 
   afterEach(async () => {
     await Users.deleteMany({});
     sinon.restore();
+  });
+
+  describe('new User', () => {
+    it('should create the image folder', async () => {
+      // Arrange
+
+      // Act
+      const user = new Users({
+        name: 'r', firstname: 'p', email: 'rg@gmail.com', _uiId: 'test',
+      });
+
+      // Assert
+      expect(user.getUserImageFolder()).to.be.a.directory().and.empty;
+    });
   });
 
   describe('toAuthJSON', () => {

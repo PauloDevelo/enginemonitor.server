@@ -28,7 +28,11 @@ const currentTime = new Date('2020-06-28T09:47:00');
 describe('Images model', () => {
   let stubGetUTCDateTime: sinon.SinonStub<[], Date>;
 
-  before(() => {
+  before(async () => {
+    await new Promise((resolve, reject) => {
+      rimraf('./tests/uploads/*', resolve, reject);
+    });
+
     mockLogger();
   });
 

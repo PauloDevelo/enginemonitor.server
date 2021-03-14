@@ -597,7 +597,7 @@ describe('Images', () => {
 
       // Assert
       res.should.have.status(400);
-      expect(config.get('ImageFolder')).to.be.a.directory().and.empty;
+      expect(fakeUser.getUserImageFolder()).to.be.a.directory().and.empty;
     });
 
     it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {
@@ -617,7 +617,7 @@ describe('Images', () => {
 
       // Assert
       res.should.have.status(400);
-      expect(config.get('ImageFolder')).to.be.a.directory().and.empty;
+      expect(fakeUser.getUserImageFolder()).to.be.a.directory().and.empty;
     });
   });
 
@@ -824,7 +824,8 @@ describe('Images', () => {
       res.body.image.should.have.property('_uiId');
       res.body.image._uiId.should.be.eql(image1._uiId.toString());
 
-      expect(config.get('ImageFolder')).to.be.a.directory().and.empty;
+      expect(`${config.get('ImageFolder')}image1.jpeg`).to.not.be.a.path();
+      expect(`${config.get('ImageFolder')}thumbnail1.jpeg`).to.not.be.a.path();
     });
 
     it('it should get a 200 http code as a result because the image was deleted successfully', async () => {
@@ -850,7 +851,8 @@ describe('Images', () => {
       res.body.image.should.have.property('_uiId');
       res.body.image._uiId.should.be.eql(image1._uiId.toString());
 
-      expect(config.get('ImageFolder')).to.be.a.directory().and.empty;
+      expect(`${config.get('ImageFolder')}image1.jpeg`).to.not.be.a.path();
+      expect(`${config.get('ImageFolder')}thumbnail1.jpeg`).to.not.be.a.path();
     });
 
     it('it should get a 400 http code and a credential error because the read only user does not have credential', async () => {

@@ -53,6 +53,7 @@ describe('Users', () => {
     await Tasks.deleteMany({});
     await Entries.deleteMany({});
     await NewPasswords.deleteMany({});
+    await Images.deleteMany({});
     sinon.restore();
   });
 
