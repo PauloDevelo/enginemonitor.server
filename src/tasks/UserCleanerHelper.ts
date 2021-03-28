@@ -6,7 +6,7 @@ import Users from '../models/Users';
 import logger from '../utils/logger';
 import sendEmailHelper, { IUsageAlertContext } from '../utils/sendEmailHelper';
 
-const maxNumberOfDayWithoutUsingTheWebApp = 366;
+const maxNumberOfDayWithoutUsingTheWebApp = 365;
 
 export async function sendEmailToUsersWhoAreGoingToBeDeleted(nbDayBeforeDeletion: number): Promise<void> {
   logger.info(`sendEmailToUsersWhoAreGoingToBeDeleted(${nbDayBeforeDeletion})`);
