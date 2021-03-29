@@ -25,6 +25,7 @@ import Equipments from '../../src/models/Equipments';
 import Images from '../../src/models/Images';
 import Tasks from '../../src/models/Tasks';
 import Entries from '../../src/models/Entries';
+import PendingRegistrations from '../../src/models/PendingRegistrations';
 
 chai.use(chaiHttp);
 const { expect } = chai;
@@ -52,6 +53,7 @@ describe('Users', () => {
     await Tasks.deleteMany({});
     await Entries.deleteMany({});
     await NewPasswords.deleteMany({});
+    await Images.deleteMany({});
     sinon.restore();
   });
 
@@ -558,6 +560,44 @@ describe('Users', () => {
   });
 
   describe('/GET Check email', () => {
+    it('should attached the asset linked to the pending registration and the pending registration should be removed', async () => {
+      // Arrange
+      let previousOwner = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
+      previousOwner.setPassword('test');
+      previousOwner = await previousOwner.save();
+      const previousOwnerJWT = `Token ${previousOwner.generateJWT()}`;
+
+      let boat = new Assets({
+        _uiId: 'sailboat_01', brand: 'aluminium & techniques', manufactureDate: '1979/01/01', modelName: 'heliotrope', name: 'Arbutus',
+      });
+      boat = await boat.save();
+
+      let assetUserLink = new AssetUser({ assetId: boat._id, userId: previousOwner._id, readonly: false });
+      assetUserLink = await assetUserLink.save();
+
+      const newOwnerEmail = 'newOwner@gmail.com';
+      await chai.request(app).post(`/api/assets/changeownership/${boat._uiId}`).send({ newOwnerEmail }).set('Authorization', previousOwnerJWT);
+
+      let newOwnerUser = new Users({ name: 'r', firstname: 'p', email: newOwnerEmail });
+      newOwnerUser.setPassword('test');
+      newOwnerUser = await newOwnerUser.save();
+
+      // Act
+      const res = await chai.request(app).get('/api/users/verification').query({ email: newOwnerUser.email, token: newOwnerUser.verificationToken });
+
+      // Assert
+      res.status.should.be.eq(200);
+      expect(res).to.redirectTo(config.get('frontEndUrl'));
+      newOwnerUser = await Users.findById(newOwnerUser._id);
+      newOwnerUser.isVerified.should.be.true;
+
+      const pendingInvitationsCounter = await PendingRegistrations.countDocuments();
+      pendingInvitationsCounter.should.equal(0);
+
+      assetUserLink = await AssetUser.findById(assetUserLink._id);
+      assetUserLink.userId.equals(newOwnerUser._id).should.be.true;
+    });
+
     it('should change the flag isVerified', async () => {
       // Arrange
       let user = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });

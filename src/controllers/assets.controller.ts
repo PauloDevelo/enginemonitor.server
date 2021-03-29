@@ -1,11 +1,13 @@
 /* eslint-disable no-unused-vars */
 import * as express from 'express';
+import sendEmailHelper from '../utils/sendEmailHelper';
+import PendingRegistrations from '../models/PendingRegistrations';
 import auth from '../security/auth';
 
-import Assets, { deleteAssetModel, getAssetByUiId, IAssets } from '../models/Assets';
+import Assets, { getAssetByUiId, IAssets } from '../models/Assets';
 import AssetUser, { createUserAssetLink, getUserAssets } from '../models/AssetUser';
 import Equipments from '../models/Equipments';
-import { IUser } from '../models/Users';
+import Users, { IUser } from '../models/Users';
 
 import wrapAsync from '../utils/expressHelpers';
 import { getUser } from '../utils/requestContext';
@@ -30,6 +32,7 @@ class AssetsController implements IController {
       this.router
         .use(this.path, auth.required, wrapAsync(this.checkAuth))
         .get(this.path, auth.required, wrapAsync(this.getAssets))
+        .post(`${this.path}/changeownership/:assetUiId`, auth.required, wrapAsync(this.changeOwnership))
         .post(`${this.path}/:assetUiId`, auth.required, wrapAsync(this.changeOrAddAsset))
         .delete(`${this.path}/:assetUiId`, auth.required, wrapAsync(this.checkDeleteCredentials), wrapAsync(this.deleteAsset));
     }
@@ -75,6 +78,17 @@ class AssetsController implements IController {
         if (assetWithSimilarNameIndex !== -1) {
           return res.status(422).json({ errors: { name: 'alreadyexisting' } });
         }
+      }
+
+      return next(req, res);
+    }
+
+    private checkNewOwnerDoesNotExist = (next: (req: express.Request, res: express.Response) => void) => async (req: express.Request, res: express.Response) => {
+      const { body: { newOwnerEmail } } = req;
+
+      const users = await Users.find({ email: newOwnerEmail });
+      if (users.length > 0) {
+        return res.status(422).json({ errors: { newOwnerEmail: 'alreadyregistered' } });
       }
 
       return next(req, res);
@@ -139,11 +153,38 @@ class AssetsController implements IController {
     }
 
     private deleteAsset = async (req: express.Request, res: express.Response) => {
-      const existingAsset = await getAssetByUiId(req.params.assetUiId);
-
-      deleteAssetModel(existingAsset);
-
+      let existingAsset = await getAssetByUiId(req.params.assetUiId);
+      existingAsset = await existingAsset.deleteOne();
       return res.json({ asset: await existingAsset.exportToJSON() });
+    }
+
+    private changeOwnership = async (req: express.Request, res: express.Response) => {
+      const { body: { newOwnerEmail } } = req;
+
+      // We check that the asset exists and it is linked to the current user.
+      const existingAsset = await getAssetByUiId(req.params.assetUiId);
+      if (!existingAsset) {
+        return res.status(400).json({ errors: { authentication: 'error' } });
+      }
+
+      const startOwnershipTransaction = async () => {
+        // We delete previous new owner invitations if there was some (because for now, a user can only have one asset)
+        await PendingRegistrations.deleteMany({ newOwnerEmail });
+        // We also delete all the previous invitation related to this asset
+        await PendingRegistrations.deleteMany({ assetId: existingAsset._id });
+
+        // Then, we create the invitation
+        const pendingRegistration = new PendingRegistrations({ assetId: existingAsset._id, newOwnerEmail });
+        await pendingRegistration.save();
+
+        // And finally, we send the invitation by email
+        sendEmailHelper.sendRegistrationInvitation({ newOwnerEmail, previousOwner: getUser(), asset: existingAsset });
+        return res.json({ newOwnerEmail });
+      };
+
+      // Before, we check that the current user has enough credentials,
+      // and we check that the new owner is not already using Equipment maintenance (because currently, an owner can have only one asset)
+      return checkCredentials(req, res, () => this.checkNewOwnerDoesNotExist(startOwnershipTransaction)(req, res));
     }
 
     // This function needs to be removed since it was used for migrating the users

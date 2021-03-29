@@ -12,7 +12,7 @@ import IController from './IController';
 import { getAssetByUiId } from '../models/Assets';
 import AssetUser from '../models/AssetUser';
 import NewPasswords from '../models/NewPasswords';
-import Users, { deleteUserModel, IUser } from '../models/Users';
+import Users, { IUser } from '../models/Users';
 import getUser from '../utils/requestContext';
 
 class UsersController implements IController {
@@ -347,9 +347,8 @@ class UsersController implements IController {
     }
 
     private deleteUser = async (req: express.Request, res: express.Response) => {
-      const currentUser = getUser();
-      await deleteUserModel(currentUser);
-      return res.json({ user: await currentUser.toJSON() });
+      const userRemoved = await getUser().deleteOne();
+      return res.json({ user: await userRemoved.toJSON() });
     }
 }
 

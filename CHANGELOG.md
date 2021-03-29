@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -Add a readme<br>
 -Add the CI setup for GitHub ![integration environment for github](https://github.com/PauloDevelo/enginemonitor.server/workflows/CI/badge.svg?branch=integration)<br>
 -Upgrade all the dependencies<br>
+-Implements the feature to transfer the asset ownership to an new owner<br>
 
 ## [v2.14] - 2021-02-09
 ## Changed

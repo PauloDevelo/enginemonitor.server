@@ -2,7 +2,7 @@ import * as express from 'express';
 import auth from '../security/auth';
 
 import { getAssetByUiId } from '../models/Assets';
-import Equipments, { deleteEquipmentModel, getEquipmentByUiId, IEquipments } from '../models/Equipments';
+import Equipments, { getEquipmentByUiId, IEquipments } from '../models/Equipments';
 
 import wrapAsync from '../utils/expressHelpers';
 import { getUser } from '../utils/requestContext';
@@ -133,7 +133,7 @@ class EquipmentsController implements IController {
         return res.status(400).json({ errors: { entity: 'notfound' } });
       }
 
-      await deleteEquipmentModel(existingEquipment);
+      await existingEquipment.deleteOne();
 
       return res.json({ equipment: await existingEquipment.exportToJSON() });
     }
