@@ -597,7 +597,6 @@ describe('Images', () => {
 
       // Assert
       res.should.have.status(400);
-      expect(fakeUser.getUserImageFolder()).to.be.a.directory().and.empty;
     });
 
     it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {

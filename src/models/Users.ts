@@ -8,7 +8,7 @@ import config from '../utils/configUtils';
 import getFolderSize from '../utils/fileHelpers';
 
 import AssetUser, { getAssetsOwnedByUser } from './AssetUser';
-import Images from './Images';
+import { getImagesRelatedToAsset } from './Images';
 import { INewPassword } from './NewPasswords';
 import PendingRegistrations from './PendingRegistrations';
 
@@ -40,6 +40,8 @@ export interface IUser extends mongoose.Document {
   toAuthJSON(): Promise<object>;
   getUserImageFolder(): string;
   getUserImageFolderSizeLimitInByte(): number;
+  checkAndProcessPendingInvitation(): Promise<void>;
+  createImageFolder(): Promise<void>;
 }
 
 export const UsersSchema = new mongoose.Schema<IUser>({
@@ -151,15 +153,13 @@ UsersSchema.methods.checkAndProcessPendingInvitation = async function () {
     const previousOwnerId = assetUser.userId;
     assetUser.userId = this._id;
     await assetUser.save();
-    await pendingInvitation.deleteOne();
 
     // eslint-disable-next-line no-use-before-define
-    const previousOwner = await Users.findById(previousOwnerId);
-    const previousOwnerDir = previousOwner.getUserImageFolder();
-    const newOwnerDir = this.getUserImageFolder();
-    const ownedImages = await Images.find({ path: { $regex: previousOwnerDir } });
-    const promises = ownedImages.map((ownedImage) => ownedImage.changePath(previousOwnerDir, newOwnerDir));
+    const ownedImages = await getImagesRelatedToAsset(pendingInvitation.assetId);
+    const promises = ownedImages.map((ownedImage) => ownedImage.changePath(previousOwnerId, this._id));
     await Promise.all(promises);
+
+    await pendingInvitation.deleteOne();
   }
 };
 
@@ -174,8 +174,11 @@ UsersSchema.methods.createImageFolder = async function () {
 /**
  * This is called after a new IUser document is created
  */
-UsersSchema.queue('createImageFolder', []);
-UsersSchema.queue('checkAndProcessPendingInvitation', []);
+// eslint-disable-next-line func-names
+UsersSchema.post('save', { document: true, query: false }, async function () {
+  await this.createImageFolder();
+  await this.checkAndProcessPendingInvitation();
+});
 
 // eslint-disable-next-line func-names
 UsersSchema.pre('deleteOne', { document: true, query: false }, async function () {

@@ -829,13 +829,6 @@ describe('Entries', () => {
       task2.equipmentId = engine2._id;
       task2 = await task2.save();
 
-      let entry = new Entries({
-        name: 'My first entry', date: new Date().toString(), age: 12345, remarks: 'RAS', _uiId: 'entry_01',
-      });
-      entry.equipmentId = engine2._id;
-      entry.taskId = task2._id;
-      entry = await entry.save();
-
       const jsonEntry = { name: "Vidange d'huile" };
 
       // Act

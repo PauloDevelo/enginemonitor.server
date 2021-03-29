@@ -3,6 +3,10 @@ import mongoose from 'mongoose';
 import config from 'config';
 import { getFileSizeInBytes } from '../utils/fileHelpers';
 import logger from '../utils/logger';
+import Assets from './Assets';
+import Tasks from './Tasks';
+import Equipments from './Equipments';
+import Entries from './Entries';
 
 const buildURL = (path: string): string => {
   let newPath = path.replace(/\\/g, '/');
@@ -24,7 +28,7 @@ export interface IImages extends mongoose.Document {
 
   exportToJSON(): any,
   // eslint-disable-next-line no-unused-vars
-  changePath(previousOwnerDir: string, newOwnerDir: string): Promise<IImages>
+  changePath(previousOwnerId: mongoose.Types.ObjectId, newOwnerId: mongoose.Types.ObjectId): Promise<IImages>
 }
 
 export const ImagesSchema = new mongoose.Schema<IImages>({
@@ -52,11 +56,11 @@ ImagesSchema.methods.exportToJSON = async function () {
 };
 
 // eslint-disable-next-line func-names
-ImagesSchema.methods.changePath = async function (previousOwnerDir: string, newOwnerDir: string): Promise<IImages> {
+ImagesSchema.methods.changePath = async function (previousOwnerId: mongoose.Types.ObjectId, newOwnerId: mongoose.Types.ObjectId): Promise<IImages> {
   {
     const oldPath = this.path;
     // eslint-disable-next-line no-param-reassign
-    this.path = this.path.replace(previousOwnerDir, newOwnerDir);
+    this.path = this.path.replace(previousOwnerId.toString(), newOwnerId.toString());
     const newPath = this.path;
     fs.renameSync(oldPath, newPath);
   }
@@ -64,7 +68,7 @@ ImagesSchema.methods.changePath = async function (previousOwnerDir: string, newO
   {
     const oldPath = this.thumbnailPath;
     // eslint-disable-next-line no-param-reassign
-    this.thumbnailPath = this.thumbnailPath.replace(previousOwnerDir, newOwnerDir);
+    this.thumbnailPath = this.thumbnailPath.replace(previousOwnerId.toString(), newOwnerId.toString());
     const newPath = this.thumbnailPath;
     fs.renameSync(oldPath, newPath);
   }
@@ -103,3 +107,23 @@ export const deleteExistingImages = async (parentUiId: string): Promise<void> =>
 };
 
 export const getImageByUiId = async (uiId: string): Promise<IImages> => Images.findOne({ _uiId: uiId });
+
+export const getImagesRelatedToAsset = async (assetId: mongoose.Types.ObjectId): Promise<IImages[]> => {
+  const asset = await Assets.findById(assetId);
+  const parentUiIds = [asset._uiId];
+
+  const equipments = await Equipments.find({ assetId: asset._id });
+  const entriesPromises = equipments.map((equipment) => {
+    parentUiIds.push(equipment._uiId);
+    return Entries.find({ equipmentId: equipment._id });
+  });
+
+  const entriesArray = await Promise.all(entriesPromises);
+  entriesArray.forEach((entries) => entries.forEach((entry) => parentUiIds.push(entry._uiId)));
+
+  const tasksPromises = equipments.map((equipment) => Tasks.find({ equipmentId: equipment._id }));
+  const tasksArray = await Promise.all(tasksPromises);
+  tasksArray.forEach((tasks) => tasks.forEach((task) => parentUiIds.push(task._uiId)));
+
+  return Images.find({ parentUiId: { $in: parentUiIds } });
+};

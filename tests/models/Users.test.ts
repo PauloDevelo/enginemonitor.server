@@ -7,20 +7,30 @@ process.env.NODE_ENV = 'test';
 
 // eslint-disable-next-line import/order
 import server from '../../src/server';
+import fs from 'fs';
+import rimraf from 'rimraf';
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import chaiFs from 'chai-fs';
+import chaiString from 'chai-string';
 import sinon from 'sinon';
 import timeService from '../../src/services/TimeService';
 
-import Users from '../../src/models/Users';
-
 import { restoreLogger, mockLogger } from '../MockLogger';
+
+import Users, { IUser } from '../../src/models/Users';
+import Assets, { IAssets } from '../../src/models/Assets';
+import AssetUser from '../../src/models/AssetUser';
+import Equipments, { IEquipments } from '../../src/models/Equipments';
+import PendingRegistrations from '../../src/models/PendingRegistrations';
+import config from '../../src/utils/configUtils';
+import Images from '../../src/models/Images';
 
 const { app } = server;
 chai.use(chaiHttp);
 chai.use(chaiFs);
+chai.use(chaiString);
 const { expect } = chai;
 const should = chai.should();
 
@@ -42,7 +52,17 @@ describe('Users model', () => {
   });
 
   afterEach(async () => {
+    await Images.deleteMany({});
     await Users.deleteMany({});
+    await AssetUser.deleteMany({});
+    await Assets.deleteMany({});
+    await Equipments.deleteMany({});
+    await PendingRegistrations.deleteMany({});
+
+    await new Promise((resolve, reject) => {
+      rimraf('./tests/uploads/*', resolve, reject);
+    });
+
     sinon.restore();
   });
 
@@ -54,6 +74,7 @@ describe('Users model', () => {
       const user = new Users({
         name: 'r', firstname: 'p', email: 'rg@gmail.com', _uiId: 'test',
       });
+      await user.save();
 
       // Assert
       expect(user.getUserImageFolder()).to.be.a.directory().and.empty;
@@ -75,6 +96,108 @@ describe('Users model', () => {
 
       const userInDb = await Users.findById(user._id);
       userInDb.lastAuth.should.eql(currentTime);
+    });
+  });
+
+  describe('checkAndProcessPendingInvitation', () => {
+    let previousOwner: IUser;
+    let boat: IAssets;
+    let engine: IEquipments;
+
+    beforeEach(async () => {
+      previousOwner = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
+      previousOwner.setPassword('test');
+      previousOwner = await previousOwner.save();
+      const userJWT = `Token ${previousOwner.generateJWT()}`;
+
+      boat = new Assets({
+        _uiId: 'sailboat_01', brand: 'aluminium & techniques', manufactureDate: '1979/01/01', modelName: 'heliotrope', name: 'Arbutus',
+      });
+      boat = await boat.save();
+
+      let assetUserLink = new AssetUser({ assetId: boat._id, userId: previousOwner._id, readonly: false });
+      assetUserLink = await assetUserLink.save();
+
+      engine = new Equipments({
+        name: 'Engine', brand: 'Nanni', model: 'N3.30', age: 1234, installation: '2018/01/20', _uiId: 'engine_01',
+      });
+      engine.assetId = boat._id;
+      engine = await engine.save();
+
+      const res = await chai.request(app).post(`/api/images/${engine._uiId.toString()}`)
+        .field('name', 'my first image added')
+        .field('_uiId', 'image_added_01')
+        .field('parentUiId', engine._uiId)
+        .attach('imageData', fs.readFileSync('tests/toUpload/image4.jpeg'), `${engine._uiId}.jpeg`)
+        .attach('thumbnail', fs.readFileSync('tests/toUpload/thumbnail4.jpeg'), `thumbnail_${engine._uiId}.jpeg`)
+        .set('Authorization', userJWT);
+
+      let pendingInvitation = new PendingRegistrations({ assetId: boat._id, newOwnerEmail: 'new@gmail.com' });
+      pendingInvitation = await pendingInvitation.save();
+    });
+
+    it('should change the path of all the images related to the previous owner', async () => {
+      // Arrange
+
+      // Act
+      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      newOwner = await newOwner.save();
+
+      // Assert
+      expect(config.get('ImageFolder') + previousOwner._id.toString()).to.be.a.directory().and.empty;
+
+      expect(config.get('ImageFolder') + newOwner._id.toString()).to.be.a.directory().and.not.empty;
+      expect(config.get('ImageFolder') + newOwner._id.toString()).to.be.a.directory().with.files(['engine_01.jpeg', 'thumbnail_engine_01.jpeg']);
+
+      const image = await Images.findOne({ parentUiId: engine._uiId });
+      expect(image.thumbnailPath).containIgnoreCase(newOwner._id.toString());
+      expect(image.path).containIgnoreCase(newOwner._id.toString());
+    });
+
+    it('should change the asset user link to link the asset to the new user', async () => {
+      // Arrange
+
+      // Act
+      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      newOwner = await newOwner.save();
+
+      // Assert
+      const assetUserLink = await AssetUser.findOne({ assetId: boat._id, readonly: false });
+      expect(assetUserLink.userId.toString()).to.be.eqls(newOwner._id.toString());
+    });
+
+    it('should remove the pending invitation document', async () => {
+      // Arrange
+
+      // Act
+      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      newOwner = await newOwner.save();
+
+      // Assert
+      const nbPendingInvitation = await PendingRegistrations.countDocuments();
+      expect(nbPendingInvitation).to.be.equal(0);
+    });
+
+    it('should do nothing if there isn\'t any pending registration', async () => {
+      // Arrange
+      await PendingRegistrations.deleteMany({});
+
+      // Act
+      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      newOwner = await newOwner.save();
+
+      // Assert
+      const assetUserLink = await AssetUser.findOne({ assetId: boat._id, readonly: false });
+      expect(assetUserLink.userId.toString()).to.be.equal(previousOwner._id.toString());
+
+      expect(config.get('ImageFolder') + newOwner._id.toString()).to.be.a.directory().and.empty;
+
+      expect(config.get('ImageFolder') + previousOwner._id.toString()).to.be.a.directory().and.not.empty;
+      expect(config.get('ImageFolder') + previousOwner._id.toString()).to.be.a.directory().with.files(['engine_01.jpeg', 'thumbnail_engine_01.jpeg']);
+
+      const image = await Images.findOne({ parentUiId: engine._uiId });
+      expect(image.thumbnailPath).containIgnoreSpaces(previousOwner._id.toString());
+      expect(image.path).containIgnoreSpaces(previousOwner._id.toString());
     });
   });
 });
