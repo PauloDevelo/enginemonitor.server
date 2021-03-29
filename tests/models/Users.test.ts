@@ -72,7 +72,7 @@ describe('Users model', () => {
 
       // Act
       const user = new Users({
-        name: 'r', firstname: 'p', email: 'rg@gmail.com', _uiId: 'test',
+        name: 'r', firstname: 'p', email: 'rg@gmail.com', _uiId: 'test', isVerified: true,
       });
       await user.save();
 
@@ -105,7 +105,9 @@ describe('Users model', () => {
     let engine: IEquipments;
 
     beforeEach(async () => {
-      previousOwner = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
+      previousOwner = new Users({
+        name: 'r', firstname: 'p', email: 'r@gmail.com', isVerified: true,
+      });
       previousOwner.setPassword('test');
       previousOwner = await previousOwner.save();
       const userJWT = `Token ${previousOwner.generateJWT()}`;
@@ -140,7 +142,9 @@ describe('Users model', () => {
       // Arrange
 
       // Act
-      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      let newOwner = new Users({
+        name: 'g', firstname: 't', email: 'new@gmail.com', isVerified: true,
+      });
       newOwner = await newOwner.save();
 
       // Assert
@@ -158,7 +162,9 @@ describe('Users model', () => {
       // Arrange
 
       // Act
-      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      let newOwner = new Users({
+        name: 'g', firstname: 't', email: 'new@gmail.com', isVerified: true,
+      });
       newOwner = await newOwner.save();
 
       // Assert
@@ -170,7 +176,9 @@ describe('Users model', () => {
       // Arrange
 
       // Act
-      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      let newOwner = new Users({
+        name: 'g', firstname: 't', email: 'new@gmail.com', isVerified: true,
+      });
       newOwner = await newOwner.save();
 
       // Assert
@@ -183,7 +191,9 @@ describe('Users model', () => {
       await PendingRegistrations.deleteMany({});
 
       // Act
-      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      let newOwner = new Users({
+        name: 'g', firstname: 't', email: 'new@gmail.com', isVerified: true,
+      });
       newOwner = await newOwner.save();
 
       // Assert

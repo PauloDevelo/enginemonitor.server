@@ -176,8 +176,10 @@ UsersSchema.methods.createImageFolder = async function () {
  */
 // eslint-disable-next-line func-names
 UsersSchema.post('save', { document: true, query: false }, async function () {
-  await this.createImageFolder();
-  await this.checkAndProcessPendingInvitation();
+  if (this.isVerified) {
+    await this.createImageFolder();
+    await this.checkAndProcessPendingInvitation();
+  }
 });
 
 // eslint-disable-next-line func-names

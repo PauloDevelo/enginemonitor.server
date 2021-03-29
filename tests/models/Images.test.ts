@@ -131,10 +131,14 @@ describe('Images model', () => {
   describe('changePath', () => {
     it('should change the path in the Image document and move the files', async () => {
       // Arrange
-      let previousOwner = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
+      let previousOwner = new Users({
+        name: 'r', firstname: 'p', email: 'r@gmail.com', isVerified: true,
+      });
       previousOwner = await previousOwner.save();
 
-      let newOwner = new Users({ name: 'g', firstname: 't', email: 'new@gmail.com' });
+      let newOwner = new Users({
+        name: 'g', firstname: 't', email: 'new@gmail.com', isVerified: true,
+      });
       newOwner = await newOwner.save();
 
       const image1Path = `${previousOwner.getUserImageFolder()}/image1.jpeg`;
@@ -164,8 +168,11 @@ describe('Images model', () => {
   describe('getImagesRelatedToAsset', () => {
     it('should return all the images related to an asset', async () => {
       // Arrange
-      let user = new Users({ name: 'r', firstname: 'p', email: 'r@gmail.com' });
+      let user = new Users({
+        name: 'r', firstname: 'p', email: 'r@gmail.com',
+      });
       user.setPassword('test');
+      user.isVerified = true;
       user = await user.save();
 
       let boat = new Assets({

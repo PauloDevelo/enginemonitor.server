@@ -601,8 +601,11 @@ describe('Images', () => {
 
     it('it should GET a 400 http code as a result because the current user is not the boat owner', async () => {
       // Arrange
-      let fakeUser = new Users({ name: 't', firstname: 'p', email: 'tp@gmail.com' });
+      let fakeUser = new Users({
+        name: 't', firstname: 'p', email: 'tp@gmail.com',
+      });
       fakeUser.setPassword('test');
+      fakeUser.isVerified = true;
       fakeUser = await fakeUser.save();
 
       // Act
