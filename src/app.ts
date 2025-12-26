@@ -33,24 +33,60 @@ class App {
 
     public listen() {
       if (config.get('ssl') === true) {
-        const privateKey = fs.readFileSync(config.get('privateKey'), 'utf8');
-        const certificate = fs.readFileSync(config.get('certificate'), 'utf8');
-        const ca = fs.readFileSync(config.get('ca'), 'utf8');
-
-        const credentials = {
-          ca,
-          cert: certificate,
-          key: privateKey,
+        const certPaths = {
+          key: config.get<string>('privateKey'),
+          cert: config.get<string>('certificate'),
+          ca: config.get<string>('ca'),
         };
 
-        const httpsServer = https.createServer(credentials, this.app);
+        // Function to load certificates from disk
+        const loadCertificates = () => ({
+          key: fs.readFileSync(certPaths.key, 'utf8'),
+          cert: fs.readFileSync(certPaths.cert, 'utf8'),
+          ca: fs.readFileSync(certPaths.ca, 'utf8'),
+        });
+
+        const httpsServer = https.createServer(loadCertificates(), this.app);
+
+        // Function to reload certificates into the running server
+        const reloadCertificates = () => {
+          try {
+            const newCerts = loadCertificates();
+            httpsServer.setSecureContext(newCerts);
+            logger.info('SSL certificates reloaded successfully');
+          } catch (error) {
+            logger.error('Failed to reload SSL certificates:', error);
+          }
+        };
+
+        // Watch the certificate directory for changes
+        // Let's Encrypt renews certificates and updates the symlinks
+        const certDir = path.dirname(certPaths.cert);
+        let reloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
+        fs.watch(certDir, (eventType, filename) => {
+          if (filename) {
+            logger.info(`Certificate file changed: ${filename}, scheduling reload...`);
+
+            // Debounce: wait 5 seconds to ensure all files are written
+            // and avoid multiple reloads for multiple file changes
+            if (reloadTimeout) {
+              clearTimeout(reloadTimeout);
+            }
+            reloadTimeout = setTimeout(() => {
+              reloadCertificates();
+              reloadTimeout = null;
+            }, 5000);
+          }
+        });
 
         httpsServer.listen(config.get('port'), () => {
-          logger.log('info', `Server running in https and listening on port ${config.get('port')}`);
+          logger.info(`Server running in https and listening on port ${config.get('port')}`);
+          logger.info(`Watching for certificate changes in: ${certDir}`);
         });
       } else {
         this.app.listen(config.get('port'), () => {
-          logger.log('info', `Server running and listening on port ${config.get('port')}`);
+          logger.info(`Server running and listening on port ${config.get('port')}`);
         });
       }
     }
