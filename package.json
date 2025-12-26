@@ -1,6 +1,6 @@
 {
   "name": "enginemonitor.server",
-  "version": "1.0.0",
+  "version": "2.15.0",
   "description": "Manage the task done around the engine",
   "main": "dist/server.js",
   "dependencies": {

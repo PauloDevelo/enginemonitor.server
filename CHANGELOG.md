@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - 2025-12-26
+### Fixed
+- SSL certificates are now automatically reloaded when renewed by Let's Encrypt, eliminating the need for monthly manual server restarts
 -Add a changelog<br>
 -Add a licence<br>
 -Add a readme<br>
@@ -50,7 +52,8 @@ version PWA
 
 Management of uiids for the PWA support
 
-[unreleased]: https://github.com/PauloDevelo/enginemonitor.reactfront/compare/v2.14...integration
+[unreleased]: https://github.com/PauloDevelo/enginemonitor.server/compare/v2.15...integration
+[v2.15]: https://github.com/PauloDevelo/enginemonitor.server/compare/v2.14...v2.15
 [v2.14]: https://github.com/PauloDevelo/enginemonitor.server/compare/v2.13.3...v2.14
 [v2.13.3]: https://github.com/PauloDevelo/enginemonitor.server/compare/v2.0.0...v2.13.3
 [v2.0.0]: https://github.com/PauloDevelo/enginemonitor.server/compare/v1.0...v2.0.0
