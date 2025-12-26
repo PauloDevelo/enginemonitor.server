@@ -12,19 +12,22 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:4.0
+        ports:
+          - 27017:27017
+
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Use Node.js 12.x
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: 12.x
-    - name: Create mongoDB Docker container for API testing
-      uses: DigiPie/mongo-action@v1.0.1
-      with:
-          image_version: 4.0
     - name: Initialize mongo
-      run: "mongo --eval \"const databaseName = 'enginemaintenancetest'\" ./database/createAndUpdateMongoDB.js"
+      run: |
+        docker exec -i $(docker ps -q -f ancestor=mongo:4.0) mongo --eval "const databaseName = 'enginemaintenancetest'" < ./database/createAndUpdateMongoDB.js
     - name: Install npm packages
       run: npm install
     - name: Build
