@@ -72,6 +72,5 @@
     "test": "mocha --no-timeouts -r ts-node/register tests/**/*.test.ts --exit"
   },
   "author": "Paul Torruella",
-  "license": "GPL-3.0-only",
-  "optionalDependencies": {}
+  "license": "GPL-3.0-only"
 }
