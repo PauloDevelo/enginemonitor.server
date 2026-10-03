@@ -1,3 +1,5 @@
+# OBSOLETE since Oct 2026: production moved to the snpdnd VPS (systemd + nginx).
+# Use deploy/deploy-backend.sh on snpdnd instead (see the workspace AGENTS.md).
 git checkout master
 git pull
 npm run build
