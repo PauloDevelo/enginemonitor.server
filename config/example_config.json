@@ -3,6 +3,10 @@
     "DBHost": "//localhost/enginemaintenancedev",
 
     "port": 8000,
+    // Host the API binds to. Optional, defaults to 127.0.0.1 (loopback only,
+    // reachable through the reverse proxy). Use "0.0.0.0" only for a
+    // deliberate LAN-exposed run.
+    "host": "127.0.0.1",
     "hostURL": "https://localhost:8000/api/",
     "ssl":true,
     "privateKey": "/etc/letsencrypt/live/www.ecogium.fr/privkey.pem",
