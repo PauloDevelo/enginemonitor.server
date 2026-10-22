@@ -1,9 +1,7 @@
 import winston, { createLogger, format, transports } from 'winston';
-import config from './configUtils';
+import { getLogLevel } from './configResolvers';
 
-winston.level = config.get('LogLevel');
-
-const logger = createLogger({
+export const createAppLogger = (level: string) => createLogger({
   format: format.combine(
     format.timestamp({
       format: 'YYYY-MM-DD HH:mm:ss',
@@ -12,17 +10,23 @@ const logger = createLogger({
     format.splat(),
     format.json(),
   ),
-  level: 'debug',
+  level,
   transports: [
     new transports.Console({
       format: format.combine(
         format.colorize(),
         format.simple(),
       ),
-      level: 'debug',
+      level,
     }),
   ],
 });
+
+const logLevel = getLogLevel();
+
+winston.level = logLevel;
+
+const logger = createAppLogger(logLevel);
 
 logger.log('info', `process.env.NODE_ENV=${process.env.NODE_ENV}`);
 

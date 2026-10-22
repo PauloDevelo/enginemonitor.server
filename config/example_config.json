@@ -3,6 +3,10 @@
     "DBHost": "//localhost/enginemaintenancedev",
 
     "port": 8000,
+    // Host the API binds to. Optional, defaults to 127.0.0.1 (loopback only,
+    // reachable through the reverse proxy). Use "0.0.0.0" only for a
+    // deliberate LAN-exposed run.
+    "host": "127.0.0.1",
     "hostURL": "https://localhost:8000/api/",
     "ssl":true,
     "privateKey": "/etc/letsencrypt/live/www.ecogium.fr/privkey.pem",
@@ -12,6 +16,10 @@
     "frontEndUrl": "http://localhost:8080/",
 
     "gmailAppPassword": "an application specific password for my.equipment.maintenance@gmail.com",
+
+    // Log level of the winston logger: error | warn | info | http | verbose | debug | silly.
+    // Optional, defaults to info. Use debug only for local development.
+    "LogLevel": "info",
 
     "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT",
 

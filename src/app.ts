@@ -1,6 +1,7 @@
 /* eslint-disable import/order */
 /* eslint-disable class-methods-use-this */
 import config, { isDev } from './utils/configUtils';
+import { getListenHost } from './utils/configResolvers';
 import logger from './utils/logger';
 import { requestContextBinder } from './utils/requestContext';
 
@@ -32,6 +33,8 @@ class App {
     }
 
     public listen() {
+      const host = getListenHost();
+
       if (config.get('ssl') === true) {
         const certPaths = {
           key: config.get<string>('privateKey'),
@@ -80,13 +83,13 @@ class App {
           }
         });
 
-        httpsServer.listen(config.get('port'), () => {
-          logger.info(`Server running in https and listening on port ${config.get('port')}`);
+        httpsServer.listen(config.get('port'), host, () => {
+          logger.info(`Server running in https and listening on ${host}:${config.get('port')}`);
           logger.info(`Watching for certificate changes in: ${certDir}`);
         });
       } else {
-        this.app.listen(config.get('port'), () => {
-          logger.info(`Server running and listening on port ${config.get('port')}`);
+        this.app.listen(config.get('port'), host, () => {
+          logger.info(`Server running and listening on ${host}:${config.get('port')}`);
         });
       }
     }

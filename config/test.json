@@ -1,5 +1,4 @@
-//the filename has to be either dev, prod, test or ... .json 
-{ 
+{
     "DBHost": "//localhost/enginemaintenancetest",
 
     "port": 8000,
@@ -8,14 +7,12 @@
 
     "frontEndUrl": "https://www.google.com/",
 
-    //gmail app password for the account my.equipment.maintenance@gmail.com
     "gmailAppPassword": "an application specific password for my.equipment.maintenance@gmail.com",
 
     "JWT_PrivateKey": "secret",
 
-    "LogLevel": "debug",
+    "LogLevel": "info",
 
-    // Size limit of the image folder for one user
     "userImageFolderLimitInByte": 400000,
     "ImageFolder": "tests/uploads/",
 
