@@ -17,6 +17,10 @@
 
     "gmailAppPassword": "an application specific password for my.equipment.maintenance@gmail.com",
 
+    // Log level of the winston logger: error | warn | info | http | verbose | debug | silly.
+    // Optional, defaults to info. Use debug only for local development.
+    "LogLevel": "info",
+
     "JWT_PrivateKey": "This is supposed to be a secret. It helps to build the JWT",
 
     // Size limit of the image folder for one user

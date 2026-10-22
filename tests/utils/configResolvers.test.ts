@@ -1,3 +1,5 @@
+process.env.NODE_ENV = 'test';
+
 import chai from 'chai';
 import {
   DEFAULT_LISTEN_HOST,
